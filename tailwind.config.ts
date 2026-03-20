@@ -13,11 +13,19 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        main: ['Nunito', 'sans-serif'],
+        sans: ['Nunito Sans', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
+        border2: "hsl(var(--border2))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
+        bg2: "hsl(var(--bg2))",
+        bg3: "hsl(var(--bg3))",
+        bg4: "hsl(var(--bg4))",
         foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
@@ -47,6 +55,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        teal: "hsl(var(--teal))",
+        teal2: "hsl(var(--teal2))",
+        "asp-yellow": "hsl(var(--yellow))",
+        "asp-green": "hsl(var(--green))",
+        "asp-blue": "hsl(var(--blue))",
+        "asp-purple": "hsl(var(--purple))",
+        "asp-red": "hsl(var(--red))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -65,20 +80,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
