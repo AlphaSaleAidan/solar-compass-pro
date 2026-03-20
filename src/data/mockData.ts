@@ -113,9 +113,11 @@ const makeProjectData = (
   const watts = parseFloat(base.systemSize) * 1000;
   const adderTotal = base.adders.reduce((s, a) => s + a.cost, 0);
   const projectCost = watts * 2.35 + adderTotal;
+  const contractValue = Math.round(projectCost * 1.65);
   return {
     ...base,
     projectCost,
+    contractValue,
     interestRate: 2.99,
     loanTerms: '25 year @ 2.99%',
     dates,
@@ -123,6 +125,76 @@ const makeProjectData = (
     checklist,
   };
 };
+
+export type CreditStatus = 'new' | 'credit_passed' | 'credit_fail';
+
+export interface SellProject {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  highBill: number;
+  lowBill: number;
+  allElectric: boolean;
+  creditStatus: CreditStatus;
+  createdAt: string;
+  checklist: CustomerChecklist;
+  documents: { name: string; sent: boolean; signed: boolean }[];
+  surveyPhotos: string[];
+}
+
+export const SELL_PROJECTS: SellProject[] = [
+  {
+    id: 'SP-001', firstName: 'Carlos', lastName: 'Rivera', email: 'carlos.r@email.com', phone: '(713) 555-0412',
+    address: '2910 Westpark Dr, Houston, TX 77098', highBill: 340, lowBill: 145, allElectric: true,
+    creditStatus: 'credit_passed', createdAt: '2026-03-14',
+    checklist: { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [
+      { name: 'ASP Agreement', sent: true, signed: true },
+      { name: 'Installer Contract', sent: true, signed: false },
+      { name: 'Loan Authorization', sent: false, signed: false },
+    ],
+    surveyPhotos: [],
+  },
+  {
+    id: 'SP-002', firstName: 'Natasha', lastName: 'Brooks', email: 'natasha.b@email.com', phone: '(832) 555-0198',
+    address: '8450 Beechnut St, Houston, TX 77036', highBill: 290, lowBill: 120, allElectric: false,
+    creditStatus: 'credit_passed', createdAt: '2026-03-12',
+    checklist: { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false },
+    documents: [
+      { name: 'ASP Agreement', sent: true, signed: true },
+      { name: 'Installer Contract', sent: true, signed: true },
+      { name: 'Loan Authorization', sent: true, signed: true },
+    ],
+    surveyPhotos: [],
+  },
+  {
+    id: 'SP-003', firstName: 'Derek', lastName: 'Simmons', email: 'derek.s@email.com', phone: '(281) 555-0334',
+    address: '1500 Memorial Dr, Houston, TX 77007', highBill: 180, lowBill: 70, allElectric: true,
+    creditStatus: 'credit_fail', createdAt: '2026-03-10',
+    checklist: { creditPassed: false, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [
+      { name: 'ASP Agreement', sent: true, signed: false },
+      { name: 'Installer Contract', sent: false, signed: false },
+      { name: 'Loan Authorization', sent: false, signed: false },
+    ],
+    surveyPhotos: [],
+  },
+  {
+    id: 'SP-004', firstName: 'Yolanda', lastName: 'Castillo', email: 'yolanda.c@email.com', phone: '(713) 555-0556',
+    address: '3720 Almeda Rd, Houston, TX 77004', highBill: 220, lowBill: 95, allElectric: false,
+    creditStatus: 'credit_fail', createdAt: '2026-03-08',
+    checklist: { creditPassed: false, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [
+      { name: 'ASP Agreement', sent: true, signed: false },
+      { name: 'Installer Contract', sent: false, signed: false },
+      { name: 'Loan Authorization', sent: false, signed: false },
+    ],
+    surveyPhotos: [],
+  },
+];
 
 export const PROJECTS: Project[] = [
   makeProjectData(
