@@ -8,6 +8,7 @@ import Pipeline from '@/components/sales/Pipeline';
 import Commissions from '@/components/sales/Commissions';
 import CalendarTab from '@/components/sales/CalendarTab';
 import RankingsTab from '@/components/sales/RankingsTab';
+import SellTab from '@/components/sales/SellTab';
 import QCReview from '@/components/ops/QCReview';
 import Communication from '@/components/ops/Communication';
 import PlusPortal from '@/components/plus/PlusPortal';
