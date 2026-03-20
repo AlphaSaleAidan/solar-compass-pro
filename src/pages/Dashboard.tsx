@@ -14,11 +14,8 @@ import PlusPortal from '@/components/plus/PlusPortal';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  if (!user) return null;
-
-  const isPlus = user.portalMode === 'asp_plus';
-  const isSalesRep = user.role === 'sales_rep';
-
+  const isPlus = user?.portalMode === 'asp_plus';
+  const isSalesRep = user?.role === 'sales_rep';
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';
   const [activeTab, setActiveTab] = useState(defaultTab);
 
