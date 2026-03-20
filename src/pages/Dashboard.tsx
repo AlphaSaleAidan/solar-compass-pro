@@ -19,6 +19,8 @@ const Dashboard = () => {
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';
   const [activeTab, setActiveTab] = useState(defaultTab);
 
+  if (!user) return null;
+
   const renderContent = () => {
     if (isPlus) {
       return <PlusPortal />;
