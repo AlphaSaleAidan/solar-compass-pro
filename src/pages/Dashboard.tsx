@@ -47,6 +47,8 @@ const Dashboard = () => {
           return <CalendarTab />;
         case 'Rankings':
           return <RankingsTab />;
+        case '🦁':
+          return <SellTab />;
         default:
           return null;
       }

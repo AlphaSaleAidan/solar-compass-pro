@@ -12,7 +12,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const isPlus = user.portalMode === 'asp_plus';
 
   const aspTabs = user.role === 'sales_rep'
-    ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings']
+    ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', '🦁']
     : ['QC Review', 'Projects', 'Communication'];
 
   const aspPlusTabs = ['Projects', 'Milestones', 'Documents', 'Funding'];

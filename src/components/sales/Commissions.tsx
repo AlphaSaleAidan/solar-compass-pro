@@ -4,7 +4,7 @@ import { COMMISSIONS } from '@/data/mockData';
 const Commissions = () => {
   const [calcSize, setCalcSize] = useState('10');
   const [calcPPW, setCalcPPW] = useState('3.85');
-  const [calcRedline, setCalcRedline] = useState('2.80');
+  const [calcRedline, setCalcRedline] = useState('2.35');
   const [calcAdders, setCalcAdders] = useState('8500');
   const [calcSplit, setCalcSplit] = useState('60');
 
@@ -38,6 +38,11 @@ const Commissions = () => {
           <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase mb-1.5">📅 Next Pay Date</div>
           <div className="text-2xl font-black text-white">Apr 15</div>
         </div>
+      </div>
+
+      {/* Redline notice */}
+      <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-xs text-primary font-bold">
+        📌 Current Redline: <span className="text-lg font-black">$2.35/W</span> · Formula: (Sold PPW − Redline) × Watts − Adders × Split% = Your Commission
       </div>
 
       {/* Commission Calculator */}
@@ -79,7 +84,7 @@ const Commissions = () => {
         <table className="w-full">
           <thead>
             <tr className="bg-bg3">
-              {['Project', 'System', 'Sold PPW', 'Adders', 'Commission', 'Your Split', 'Status', 'Pay Date'].map((h) => (
+              {['Project', 'System', 'Sold PPW', 'Redline', 'Adders', 'Commission', 'Your Split', 'Status', 'Pay Date'].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-[10px] text-muted-foreground font-extrabold tracking-[1.5px] uppercase border-b border-border">{h}</th>
               ))}
             </tr>
@@ -93,6 +98,7 @@ const Commissions = () => {
                 </td>
                 <td className="px-4 py-3 border-b border-border text-sm text-muted-foreground">{c.systemSize}</td>
                 <td className="px-4 py-3 border-b border-border text-sm text-muted-foreground">${c.soldPPW}</td>
+                <td className="px-4 py-3 border-b border-border text-sm text-asp-yellow font-bold">${c.redline}</td>
                 <td className="px-4 py-3 border-b border-border text-sm text-muted-foreground">${c.adderCost.toLocaleString()}</td>
                 <td className="px-4 py-3 border-b border-border text-sm font-bold text-primary">${c.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                 <td className="px-4 py-3 border-b border-border text-sm font-bold text-white">${c.yourCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
