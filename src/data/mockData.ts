@@ -113,9 +113,11 @@ const makeProjectData = (
   const watts = parseFloat(base.systemSize) * 1000;
   const adderTotal = base.adders.reduce((s, a) => s + a.cost, 0);
   const projectCost = watts * 2.35 + adderTotal;
+  const contractValue = Math.round(projectCost * 1.65);
   return {
     ...base,
     projectCost,
+    contractValue,
     interestRate: 2.99,
     loanTerms: '25 year @ 2.99%',
     dates,
@@ -123,6 +125,76 @@ const makeProjectData = (
     checklist,
   };
 };
+
+export type CreditStatus = 'new' | 'credit_passed' | 'credit_fail';
+
+export interface SellProject {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  highBill: number;
+  lowBill: number;
+  allElectric: boolean;
+  creditStatus: CreditStatus;
+  createdAt: string;
+  checklist: CustomerChecklist;
+  documents: { name: string; sent: boolean; signed: boolean }[];
+  surveyPhotos: string[];
+}
+
+export const SELL_PROJECTS: SellProject[] = [
+  {
+    id: 'SP-001', firstName: 'Carlos', lastName: 'Rivera', email: 'carlos.r@email.com', phone: '(713) 555-0412',
+    address: '2910 Westpark Dr, Houston, TX 77098', highBill: 340, lowBill: 145, allElectric: true,
+    creditStatus: 'credit_passed', createdAt: '2026-03-14',
+    checklist: { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [
+      { name: 'ASP Agreement', sent: true, signed: true },
+      { name: 'Installer Contract', sent: true, signed: false },
+      { name: 'Loan Authorization', sent: false, signed: false },
+    ],
+    surveyPhotos: [],
+  },
+  {
+    id: 'SP-002', firstName: 'Natasha', lastName: 'Brooks', email: 'natasha.b@email.com', phone: '(832) 555-0198',
+    address: '8450 Beechnut St, Houston, TX 77036', highBill: 290, lowBill: 120, allElectric: false,
+    creditStatus: 'credit_passed', createdAt: '2026-03-12',
+    checklist: { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false },
+    documents: [
+      { name: 'ASP Agreement', sent: true, signed: true },
+      { name: 'Installer Contract', sent: true, signed: true },
+      { name: 'Loan Authorization', sent: true, signed: true },
+    ],
+    surveyPhotos: [],
+  },
+  {
+    id: 'SP-003', firstName: 'Derek', lastName: 'Simmons', email: 'derek.s@email.com', phone: '(281) 555-0334',
+    address: '1500 Memorial Dr, Houston, TX 77007', highBill: 180, lowBill: 70, allElectric: true,
+    creditStatus: 'credit_fail', createdAt: '2026-03-10',
+    checklist: { creditPassed: false, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [
+      { name: 'ASP Agreement', sent: true, signed: false },
+      { name: 'Installer Contract', sent: false, signed: false },
+      { name: 'Loan Authorization', sent: false, signed: false },
+    ],
+    surveyPhotos: [],
+  },
+  {
+    id: 'SP-004', firstName: 'Yolanda', lastName: 'Castillo', email: 'yolanda.c@email.com', phone: '(713) 555-0556',
+    address: '3720 Almeda Rd, Houston, TX 77004', highBill: 220, lowBill: 95, allElectric: false,
+    creditStatus: 'credit_fail', createdAt: '2026-03-08',
+    checklist: { creditPassed: false, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [
+      { name: 'ASP Agreement', sent: true, signed: false },
+      { name: 'Installer Contract', sent: false, signed: false },
+      { name: 'Loan Authorization', sent: false, signed: false },
+    ],
+    surveyPhotos: [],
+  },
+];
 
 export const PROJECTS: Project[] = [
   makeProjectData(
@@ -347,10 +419,23 @@ export const INSTALLED_HOMES = [
   { lat: 29.7503, lng: -95.3575, address: '2200 Travis St, Houston, TX', customer: 'Williams Family', systemSize: '9.8 kW', installDate: '2026-01-28' },
   { lat: 29.8168, lng: -95.4146, address: '3450 N Shepherd Dr, Houston, TX', customer: 'Brown Family', systemSize: '11.5 kW', installDate: '2026-02-15' },
   { lat: 29.6966, lng: -95.4173, address: '7800 Kirby Dr, Houston, TX', customer: 'Davis Family', systemSize: '7.2 kW', installDate: '2025-10-20' },
-  { lat: 27.8006, lng: -97.3964, address: '456 Ocean Dr, Corpus Christi, TX', customer: 'Martinez Family', systemSize: '9 kW', installDate: '2025-12-12' },
-  { lat: 27.7436, lng: -97.4019, address: '789 Staples St, Corpus Christi, TX', customer: 'Rodriguez Family', systemSize: '10.5 kW', installDate: '2026-02-01' },
-  { lat: 27.7700, lng: -97.3820, address: '321 Shoreline Blvd, Corpus Christi, TX', customer: 'Nguyen Family', systemSize: '8 kW', installDate: '2026-03-05' },
   { lat: 29.7900, lng: -95.3900, address: '4400 Heights Blvd, Houston, TX', customer: 'Wilson Family', systemSize: '13 kW', installDate: '2026-02-20' },
   { lat: 29.7100, lng: -95.2900, address: '6000 Lawndale St, Houston, TX', customer: 'Lopez Family', systemSize: '8.8 kW', installDate: '2025-09-30' },
   { lat: 29.6500, lng: -95.2800, address: '12000 Gulf Fwy, Houston, TX', customer: 'Taylor Family', systemSize: '11 kW', installDate: '2026-01-05' },
+  { lat: 29.8300, lng: -95.4500, address: '1800 W 34th St, Houston, TX', customer: 'Anderson Family', systemSize: '9.4 kW', installDate: '2025-08-20' },
+  { lat: 29.7400, lng: -95.5100, address: '9200 Fondren Rd, Houston, TX', customer: 'Thomas Family', systemSize: '10.8 kW', installDate: '2025-07-15' },
+  { lat: 29.6800, lng: -95.3400, address: '5500 Telephone Rd, Houston, TX', customer: 'Jackson Family', systemSize: '7.6 kW', installDate: '2026-02-28' },
+  { lat: 29.7950, lng: -95.3200, address: '3100 Lyons Ave, Houston, TX', customer: 'Harris Family', systemSize: '8.2 kW', installDate: '2025-11-05' },
+  { lat: 29.7200, lng: -95.4700, address: '6700 Hillcroft Ave, Houston, TX', customer: 'Clark Family', systemSize: '11.2 kW', installDate: '2025-10-10' },
+  { lat: 29.6700, lng: -95.5200, address: '10500 Beechnut St, Houston, TX', customer: 'Lewis Family', systemSize: '9.0 kW', installDate: '2026-03-01' },
+  { lat: 29.8500, lng: -95.3800, address: '1400 Crosstimbers St, Houston, TX', customer: 'Robinson Family', systemSize: '12.5 kW', installDate: '2025-09-12' },
+  { lat: 29.7350, lng: -95.3100, address: '4800 Navigation Blvd, Houston, TX', customer: 'Walker Family', systemSize: '8.0 kW', installDate: '2026-01-22' },
+  { lat: 29.6600, lng: -95.4600, address: '8800 W Bellfort Ave, Houston, TX', customer: 'Young Family', systemSize: '10.0 kW', installDate: '2025-12-18' },
+  { lat: 29.8100, lng: -95.5000, address: '2200 Mangum Rd, Houston, TX', customer: 'Allen Family', systemSize: '9.5 kW', installDate: '2026-02-05' },
+  { lat: 29.7700, lng: -95.3000, address: '3600 Wayside Dr, Houston, TX', customer: 'King Family', systemSize: '7.8 kW', installDate: '2025-08-30' },
+  { lat: 27.8006, lng: -97.3964, address: '456 Ocean Dr, Corpus Christi, TX', customer: 'Martinez Family', systemSize: '9 kW', installDate: '2025-12-12' },
+  { lat: 27.7436, lng: -97.4019, address: '789 Staples St, Corpus Christi, TX', customer: 'Rodriguez Family', systemSize: '10.5 kW', installDate: '2026-02-01' },
+  { lat: 27.7700, lng: -97.3820, address: '321 Shoreline Blvd, Corpus Christi, TX', customer: 'Nguyen Family', systemSize: '8 kW', installDate: '2026-03-05' },
+  { lat: 27.7550, lng: -97.4200, address: '1400 Ayers St, Corpus Christi, TX', customer: 'Perez Family', systemSize: '11 kW', installDate: '2025-11-20' },
+  { lat: 27.7800, lng: -97.3700, address: '600 N Water St, Corpus Christi, TX', customer: 'Ramirez Family', systemSize: '9.5 kW', installDate: '2026-01-15' },
 ];
