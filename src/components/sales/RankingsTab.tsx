@@ -1,21 +1,25 @@
 import { RANKINGS } from '@/data/mockData';
+import { Trophy, Medal, Award, Ticket } from 'lucide-react';
 
 const RankingsTab = () => {
   return (
     <div className="space-y-5 animate-fade-in-up">
-      <h2 className="text-lg font-black text-white">🏆 Company Rankings</h2>
+      <div className="flex items-center gap-2">
+        <Trophy className="w-5 h-5 text-asp-yellow" />
+        <h2 className="text-lg font-black text-foreground">Company Rankings</h2>
+      </div>
 
       {/* Top 3 Podium */}
       <div className="flex gap-4 items-end justify-center mb-6">
         {[RANKINGS[1], RANKINGS[0], RANKINGS[2]].map((r, i) => {
           const heights = ['h-32', 'h-40', 'h-28'];
           const colors = ['bg-gray-400', 'bg-asp-yellow', 'bg-orange-400'];
-          const medals = ['🥈', '🥇', '🥉'];
-          const order = [1, 0, 2];
+          const icons = [Medal, Trophy, Award];
+          const Icon = icons[i];
           return (
             <div key={r.rank} className="flex flex-col items-center gap-2 w-36">
-              <span className="text-3xl">{medals[i]}</span>
-              <div className="text-sm font-extrabold text-white">{r.name}</div>
+              <Icon className={`w-8 h-8 ${i === 1 ? 'text-asp-yellow' : i === 0 ? 'text-gray-400' : 'text-orange-400'}`} />
+              <div className="text-sm font-extrabold text-foreground">{r.name}</div>
               <div className="text-xs text-muted-foreground">{r.deals} deals · {r.installs} installs</div>
               <div className={`w-full ${heights[i]} ${colors[i]} rounded-t-lg flex items-center justify-center`}>
                 <div className="text-center">
@@ -33,17 +37,26 @@ const RankingsTab = () => {
         <div className="bg-asp-yellow/10 border border-asp-yellow/25 rounded-xl p-4 text-center">
           <div className="text-sm font-bold text-asp-yellow">Top 1-3</div>
           <div className="text-2xl font-black text-asp-yellow">200%</div>
-          <div className="text-[10px] text-muted-foreground">Ticket Earning</div>
+          <div className="flex items-center justify-center gap-1 mt-1">
+            <Ticket className="w-3 h-3 text-muted-foreground" />
+            <div className="text-[10px] text-muted-foreground">Ticket Earning</div>
+          </div>
         </div>
         <div className="bg-primary/10 border border-primary/25 rounded-xl p-4 text-center">
           <div className="text-sm font-bold text-primary">Top 4-10</div>
           <div className="text-2xl font-black text-primary">100%</div>
-          <div className="text-[10px] text-muted-foreground">Ticket Earning</div>
+          <div className="flex items-center justify-center gap-1 mt-1">
+            <Ticket className="w-3 h-3 text-muted-foreground" />
+            <div className="text-[10px] text-muted-foreground">Ticket Earning</div>
+          </div>
         </div>
         <div className="bg-asp-blue/10 border border-asp-blue/25 rounded-xl p-4 text-center">
           <div className="text-sm font-bold text-asp-blue">Top 11-20</div>
           <div className="text-2xl font-black text-asp-blue">50%</div>
-          <div className="text-[10px] text-muted-foreground">Ticket Earning</div>
+          <div className="flex items-center justify-center gap-1 mt-1">
+            <Ticket className="w-3 h-3 text-muted-foreground" />
+            <div className="text-[10px] text-muted-foreground">Ticket Earning</div>
+          </div>
         </div>
       </div>
 
@@ -63,7 +76,7 @@ const RankingsTab = () => {
                 <td className="px-4 py-3 border-b border-border">
                   <span className={`text-sm font-black ${r.rank <= 3 ? 'text-asp-yellow' : 'text-foreground'}`}>#{r.rank}</span>
                 </td>
-                <td className="px-4 py-3 border-b border-border text-sm font-bold text-white">{r.name}</td>
+                <td className="px-4 py-3 border-b border-border text-sm font-bold text-foreground">{r.name}</td>
                 <td className="px-4 py-3 border-b border-border text-sm text-muted-foreground">{r.deals}</td>
                 <td className="px-4 py-3 border-b border-border text-sm text-muted-foreground">{r.installs}</td>
                 <td className="px-4 py-3 border-b border-border text-sm font-bold text-primary">${r.revenue.toLocaleString()}</td>
