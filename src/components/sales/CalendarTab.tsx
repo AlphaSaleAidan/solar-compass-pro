@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { APPOINTMENTS } from '@/data/mockData';
-import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, UserPlus, MessageSquare, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, MessageSquare, ArrowRight } from 'lucide-react';
 
-const CalendarTab = () => {
+interface CalendarTabProps {
+  onConvertToProject?: (data: { name: string; email: string; phone: string; address: string }) => void;
+}
+
+const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
   const [showNewAppt, setShowNewAppt] = useState(false);
   const [expandedAppt, setExpandedAppt] = useState<number | null>(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
@@ -10,12 +14,43 @@ const CalendarTab = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const newAppt = {
+      id: Date.now(),
+      name: form.name,
+      address: form.address,
+      phone: form.phone,
+      email: form.email,
+      date: form.date,
+      time: form.time,
+      highBill: Number(form.highBill) || 0,
+      lowBill: Number(form.lowBill) || 0,
+      allElectric: form.allElectric === 'yes',
+      stars: 0,
+      setter: 'You',
+      closer: null as string | null,
+      status: 'open',
+      gotBill: false,
+      gotContact: !!(form.phone && form.email),
+      bothHomeowners: false,
+      meterPhoto: false,
+      billOver250: Number(form.highBill) > 250,
+      outcome: null as string | null,
+      closerNotes: '',
+      billPhoto: null as string | null,
+      meterPhotoUrl: null as string | null,
+      surveyPhotos: [] as string[],
+    };
+    setAppointments(prev => [newAppt, ...prev]);
     setShowNewAppt(false);
     setForm({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
   };
 
   const getStarCount = (appt: typeof APPOINTMENTS[0]) => {
     return [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250].filter(Boolean).length;
+  };
+
+  const setOutcome = (apptId: number, outcome: string) => {
+    setAppointments(prev => prev.map(a => a.id === apptId ? { ...a, outcome } : a));
   };
 
   const outcomeColors: Record<string, string> = {
@@ -32,8 +67,19 @@ const CalendarTab = () => {
     no_sit: 'No Sit',
   };
 
-  // Calendar view data
-  const calendarDates = [...new Set(appointments.map(a => a.date))].sort().reverse();
+  // Full month calendar - get all dates for March 2026
+  const currentMonth = new Date(2026, 2, 1); // March 2026
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+  const monthDays = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return { day, dateStr, appts: appointments.filter(a => a.date === dateStr) };
+  });
+
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -110,7 +156,6 @@ const CalendarTab = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    {/* Date/Time Badge */}
                     <div className="bg-primary/10 border border-primary/25 rounded-lg px-3 py-2 text-center min-w-[70px]">
                       <div className="text-[10px] text-primary font-bold uppercase">{new Date(a.date + 'T12:00').toLocaleDateString('en-US', { weekday: 'short' })}</div>
                       <div className="text-lg font-black text-primary">{new Date(a.date + 'T12:00').getDate()}</div>
@@ -120,6 +165,14 @@ const CalendarTab = () => {
                       <div className="text-sm font-bold text-foreground">{a.name}</div>
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
                         <MapPin className="w-3 h-3" /> {a.address}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Phone className="w-3 h-3" /> {a.phone}
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Mail className="w-3 h-3" /> {a.email}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="text-xs">
@@ -132,13 +185,11 @@ const CalendarTab = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {/* Stars */}
                     <div className="flex items-center gap-0.5">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star key={i} className={`w-4 h-4 ${i < starCount ? 'text-asp-yellow fill-asp-yellow' : 'text-muted-foreground/20'}`} />
                       ))}
                     </div>
-                    {/* Status/Outcome */}
                     {a.outcome ? (
                       <span className={`px-2.5 py-1 rounded text-[10px] font-extrabold uppercase border ${outcomeColors[a.outcome]}`}>
                         {outcomeLabels[a.outcome]}
@@ -189,6 +240,7 @@ const CalendarTab = () => {
                         {['closed', 'no_close', 'credit_fail', 'no_sit'].map(o => (
                           <button
                             key={o}
+                            onClick={(e) => { e.stopPropagation(); setOutcome(a.id, o); }}
                             className={`px-2 py-1 rounded text-[10px] font-bold border transition-all ${
                               a.outcome === o ? outcomeColors[o] : 'bg-bg4 border-border text-muted-foreground hover:border-border2'
                             }`}
@@ -222,13 +274,24 @@ const CalendarTab = () => {
                     </div>
                   )}
 
-                  {/* Notes input for adding new notes */}
-                  <div>
-                    <textarea
-                      placeholder="Add notes about this appointment..."
-                      className="w-full px-3 py-2 bg-bg3 border border-border rounded-md text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/50 resize-none h-16"
-                    />
-                  </div>
+                  {/* Notes input */}
+                  <textarea
+                    placeholder="Add notes about this appointment..."
+                    className="w-full px-3 py-2 bg-bg3 border border-border rounded-md text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/50 resize-none h-16"
+                  />
+
+                  {/* Convert to Project button */}
+                  {!a.outcome && onConvertToProject && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onConvertToProject({ name: a.name, email: a.email, phone: a.phone, address: a.address });
+                      }}
+                      className="w-full py-2.5 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5" /> Convert to Project
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -236,39 +299,76 @@ const CalendarTab = () => {
         })}
       </div>
 
-      {/* Full Calendar View */}
+      {/* Full Month Calendar View */}
       <div className="bg-bg2 border border-border rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <Calendar className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-black text-foreground">Calendar Overview</h3>
+          <h3 className="text-sm font-black text-foreground">March 2026 Calendar</h3>
         </div>
-        <div className="space-y-2">
-          {calendarDates.map(date => {
-            const dayAppts = appointments.filter(a => a.date === date);
-            const dayName = new Date(date + 'T12:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+        
+        {/* Week headers */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {weekDays.map(d => (
+            <div key={d} className="text-[10px] text-muted-foreground font-bold text-center py-1">{d}</div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {/* Empty cells for days before month starts */}
+          {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+            <div key={`empty-${i}`} className="h-20 bg-bg3/30 rounded-md" />
+          ))}
+          
+          {monthDays.map(({ day, dateStr, appts: dayAppts }) => {
+            const isToday = dateStr === '2026-03-28';
             return (
-              <div key={date} className="bg-bg3 rounded-lg p-3">
-                <div className="text-xs font-bold text-foreground mb-2">{dayName}</div>
-                <div className="flex flex-wrap gap-2">
-                  {dayAppts.map(a => {
-                    const color = a.outcome === 'closed' ? 'bg-asp-green/20 border-asp-green/40 text-asp-green'
-                      : a.outcome === 'no_close' || a.outcome === 'no_sit' ? 'bg-asp-blue/20 border-asp-blue/40 text-asp-blue'
-                      : a.outcome === 'credit_fail' ? 'bg-asp-red/20 border-asp-red/40 text-asp-red'
-                      : 'bg-bg4 border-border text-muted-foreground';
+              <div
+                key={day}
+                className={`h-20 rounded-md p-1 overflow-hidden ${
+                  isToday ? 'bg-primary/10 border border-primary/30' : 'bg-bg3/50 border border-transparent'
+                }`}
+              >
+                <div className={`text-[10px] font-bold mb-0.5 ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>{day}</div>
+                <div className="space-y-0.5">
+                  {dayAppts.slice(0, 2).map(a => {
+                    const dotColor = a.outcome === 'closed' ? 'bg-asp-green'
+                      : a.outcome === 'no_close' ? 'bg-asp-blue'
+                      : a.outcome === 'credit_fail' || a.outcome === 'no_sit' ? 'bg-asp-red'
+                      : 'bg-muted-foreground';
                     return (
                       <div
                         key={a.id}
-                        className={`px-3 py-1.5 rounded-lg border text-[11px] font-bold cursor-pointer hover:opacity-80 transition-opacity ${color}`}
+                        className="flex items-center gap-1 cursor-pointer hover:opacity-70"
                         onClick={() => setExpandedAppt(expandedAppt === a.id ? null : a.id)}
                       >
-                        {a.time} · {a.name}
+                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+                        <span className="text-[8px] text-foreground truncate font-bold">{a.time}</span>
                       </div>
                     );
                   })}
+                  {dayAppts.length > 2 && (
+                    <div className="text-[7px] text-muted-foreground font-bold">+{dayAppts.length - 2} more</div>
+                  )}
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+          {[
+            { color: 'bg-asp-green', label: 'Closed' },
+            { color: 'bg-asp-blue', label: 'No Close' },
+            { color: 'bg-asp-red', label: 'Credit Fail / No Sit' },
+            { color: 'bg-muted-foreground', label: 'Open' },
+          ].map(l => (
+            <div key={l.label} className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full ${l.color}`} />
+              <span className="text-[9px] text-muted-foreground font-bold">{l.label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
