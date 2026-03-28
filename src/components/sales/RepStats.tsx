@@ -1,28 +1,29 @@
-import { DollarSign, BarChart3, Wrench, Calendar, Star, Flame, Ticket, TrendingUp, XCircle, CheckCircle, UserX } from 'lucide-react';
+import { useState } from 'react';
+import { DollarSign, BarChart3, Wrench, Calendar, Star, Flame, Ticket, TrendingUp, XCircle, CheckCircle, UserX, ChevronDown, ChevronUp, MapPin, Phone, Mail, Camera, FileText } from 'lucide-react';
 import { REP_STATS, APPOINTMENTS } from '@/data/mockData';
 
 const RepStats = () => {
+  const [expandedAppt, setExpandedAppt] = useState<number | null>(null);
+
   const stats = [
     { label: 'Yearly Paid Out', value: `$${REP_STATS.yearlyPaidOut.toLocaleString()}`, icon: DollarSign, color: 'text-asp-green' },
     { label: 'Pending Pipeline', value: `$${REP_STATS.pendingPipeline.toLocaleString()}`, icon: BarChart3, color: 'text-primary' },
     { label: 'Installs', value: REP_STATS.installCount.toString(), icon: Wrench, color: 'text-asp-yellow' },
   ];
 
-  // Today's appointments
   const today = new Date().toISOString().split('T')[0];
   const todaysAppts = APPOINTMENTS.filter(a => a.date === today || a.date === '2026-03-28');
   const getStarCount = (appt: typeof APPOINTMENTS[0]) => {
-    return [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250].filter(Boolean).length;
+    const criteria = [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250];
+    return criteria.filter(Boolean).length;
   };
 
-  // Closing metrics
   const closingPct = REP_STATS.totalSits > 0 ? Math.round(((REP_STATS.totalCloses + REP_STATS.creditFails) / REP_STATS.totalSits) * 100) : 0;
   const totalDeals = REP_STATS.creditPassed + REP_STATS.creditFails + REP_STATS.nonClosed;
   const creditPassedPct = totalDeals > 0 ? Math.round((REP_STATS.creditPassed / totalDeals) * 100) : 0;
   const creditFailPct = totalDeals > 0 ? Math.round((REP_STATS.creditFails / totalDeals) * 100) : 0;
   const nonClosedPct = totalDeals > 0 ? Math.round((REP_STATS.nonClosed / totalDeals) * 100) : 0;
 
-  // Streak
   const streak = REP_STATS.dealStreak;
   const streakStages = [
     { label: '+50% Tickets', threshold: 1, boost: '50%' },
@@ -96,7 +97,7 @@ const RepStats = () => {
         </div>
       </div>
 
-      {/* Next Incoming Appointments Today */}
+      {/* Next Incoming Appointments Today — CLICKABLE */}
       <div className="bg-bg2 border border-border rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Calendar className="w-4 h-4 text-primary" />
@@ -106,17 +107,57 @@ const RepStats = () => {
           <div className="space-y-2">
             {todaysAppts.map((a) => {
               const starCount = getStarCount(a);
+              const isExpanded = expandedAppt === a.id;
               return (
-                <div key={a.id} className="flex items-center justify-between bg-bg3 rounded-lg px-3 py-2">
-                  <div>
-                    <div className="text-sm font-bold text-foreground">{a.name}</div>
-                    <div className="text-[10px] text-muted-foreground">{a.time}</div>
+                <div key={a.id} className="bg-bg3 rounded-lg overflow-hidden">
+                  <div
+                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-bg4/50 transition-colors"
+                    onClick={() => setExpandedAppt(isExpanded ? null : a.id)}
+                  >
+                    <div>
+                      <div className="text-sm font-bold text-foreground">{a.name}</div>
+                      <div className="text-[10px] text-muted-foreground">{a.time}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} className={`w-3 h-3 ${i < starCount ? 'text-asp-yellow fill-asp-yellow' : 'text-muted-foreground/30'}`} />
+                        ))}
+                      </div>
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className={`w-3 h-3 ${i < starCount ? 'text-asp-yellow fill-asp-yellow' : 'text-muted-foreground/30'}`} />
-                    ))}
-                  </div>
+                  {isExpanded && (
+                    <div className="px-3 pb-3 pt-1 border-t border-border animate-fade-in-up space-y-2">
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <MapPin className="w-3 h-3" /> {a.address}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Phone className="w-3 h-3" /> {a.phone}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Mail className="w-3 h-3" /> {a.email}
+                        </div>
+                        <div className="text-muted-foreground">
+                          Bills: <span className="text-asp-red font-bold">${a.highBill}</span> / <span className="text-asp-green font-bold">${a.lowBill}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-[10px]">
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <FileText className="w-3 h-3" /> Bill: {a.billPhoto ? <span className="text-asp-green">Uploaded</span> : <span className="text-asp-red">Missing</span>}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Camera className="w-3 h-3" /> Meter: {a.meterPhoto ? <span className="text-asp-green">Yes</span> : <span className="text-asp-red">No</span>}
+                        </div>
+                      </div>
+                      {a.closerNotes && (
+                        <div className="text-[10px] text-muted-foreground bg-bg4 rounded px-2 py-1">
+                          <strong className="text-foreground">Notes:</strong> {a.closerNotes}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
