@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PROJECTS, MILESTONE_NAMES, COMMISSIONS } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Zap, Battery, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, Calendar, Mail, Phone, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
+import { Zap, Battery, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, Calendar, Mail, Phone, ChevronDown, ChevronUp, BarChart3, Camera, Shield } from 'lucide-react';
 
 const Pipeline = () => {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
