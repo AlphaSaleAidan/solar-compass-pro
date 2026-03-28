@@ -1,10 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { INSTALLED_HOMES, SELL_PROJECTS, SellProject, CreditStatus } from '@/data/mockData';
+import { INSTALLED_HOMES, SELL_PROJECTS, SellProject, CreditStatus, APPOINTMENTS } from '@/data/mockData';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
 
-const SellTab = () => {
+interface SellTabProps {
+  convertedAppointment?: typeof APPOINTMENTS[0] | null;
+  onConvertHandled?: () => void;
+}
+
+const SellTab = ({ convertedAppointment, onConvertHandled }: SellTabProps) => {
   const [activeSubTab, setActiveSubTab] = useState<'create' | 'projects'>('create');
   const [projectFilter, setProjectFilter] = useState<CreditStatus | 'all'>('all');
   const [projects, setProjects] = useState<SellProject[]>(SELL_PROJECTS);
