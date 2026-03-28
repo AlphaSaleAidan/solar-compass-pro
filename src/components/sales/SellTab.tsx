@@ -103,6 +103,7 @@ const SellTab = ({ convertedAppointment, onConvertHandled }: SellTabProps) => {
         { name: 'ASP Agreement', sent: false, signed: false },
         { name: 'Installer Contract', sent: false, signed: false },
         { name: 'Loan Authorization', sent: false, signed: false },
+        { name: 'Welcome Call Email', sent: false, signed: false },
       ],
       surveyPhotos: [],
     };
