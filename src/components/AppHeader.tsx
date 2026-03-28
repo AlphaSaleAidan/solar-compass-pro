@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Zap, LogOut, User } from 'lucide-react';
+import { Zap, LogOut, User, Shield } from 'lucide-react';
 
 interface AppHeaderProps {
   activeTab: string;
@@ -53,7 +53,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
                 : isPlus ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' : 'text-muted-foreground hover:text-foreground hover:bg-bg3'
             }`}
           >
-            {tab}
+            {tab === '🦁' ? <Shield className="w-4 h-4" /> : tab}
           </button>
         ))}
       </nav>
