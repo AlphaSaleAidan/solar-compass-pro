@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AppHeader from '@/components/AppHeader';
 import PuzzleGame from '@/components/sales/PuzzleGame';
@@ -12,7 +12,6 @@ import SellTab from '@/components/sales/SellTab';
 import QCReview from '@/components/ops/QCReview';
 import Communication from '@/components/ops/Communication';
 import PlusPortal from '@/components/plus/PlusPortal';
-import { APPOINTMENTS } from '@/data/mockData';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -20,14 +19,8 @@ const Dashboard = () => {
   const isSalesRep = user?.role === 'sales_rep';
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const [convertedAppt, setConvertedAppt] = useState<typeof APPOINTMENTS[0] | null>(null);
 
   if (!user) return null;
-
-  const handleConvertToProject = (appt: typeof APPOINTMENTS[0]) => {
-    setConvertedAppt(appt);
-    setActiveTab('🦁');
-  };
 
   const renderContent = () => {
     if (isPlus) {
@@ -51,11 +44,11 @@ const Dashboard = () => {
         case 'Commissions':
           return <Commissions />;
         case 'Calendar':
-          return <CalendarTab onConvertToProject={handleConvertToProject} />;
+          return <CalendarTab />;
         case 'Rankings':
           return <RankingsTab />;
         case '🦁':
-          return <SellTab convertedAppointment={convertedAppt} onConvertHandled={() => setConvertedAppt(null)} />;
+          return <SellTab />;
         default:
           return null;
       }

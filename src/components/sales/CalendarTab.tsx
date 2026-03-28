@@ -1,64 +1,21 @@
 import { useState } from 'react';
 import { APPOINTMENTS } from '@/data/mockData';
-import { Calendar, Plus, Star, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, MessageSquare, ArrowRight } from 'lucide-react';
+import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, UserPlus, MessageSquare, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
-interface CalendarTabProps {
-  onConvertToProject?: (appt: typeof APPOINTMENTS[0]) => void;
-}
-
-const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
+const CalendarTab = () => {
   const [showNewAppt, setShowNewAppt] = useState(false);
   const [expandedAppt, setExpandedAppt] = useState<number | null>(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
   const [appointments, setAppointments] = useState(APPOINTMENTS);
-  const [calendarMonth, setCalendarMonth] = useState(() => {
-    const now = new Date();
-    return { year: 2026, month: 2 }; // March 2026 (0-indexed)
-  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newAppt = {
-      id: Date.now(),
-      name: form.name,
-      address: form.address || 'TBD',
-      phone: form.phone,
-      email: form.email,
-      date: form.date,
-      time: form.time,
-      highBill: Number(form.highBill) || 0,
-      lowBill: Number(form.lowBill) || 0,
-      allElectric: form.allElectric === 'yes',
-      stars: 0,
-      setter: 'You',
-      closer: null as string | null,
-      status: 'open',
-      gotBill: false,
-      gotContact: !!(form.phone && form.email),
-      bothHomeowners: false,
-      meterPhoto: false,
-      billOver250: (Number(form.highBill) || 0) > 250,
-      outcome: null as string | null,
-      closerNotes: '',
-      billPhoto: null as string | null,
-      meterPhotoUrl: null as string | null,
-      surveyPhotos: [] as string[],
-    };
-    setAppointments(prev => [newAppt, ...prev]);
     setShowNewAppt(false);
     setForm({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
   };
 
   const getStarCount = (appt: typeof APPOINTMENTS[0]) => {
     return [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250].filter(Boolean).length;
-  };
-
-  const handleDisposition = (apptId: number, outcome: string) => {
-    setAppointments(prev => prev.map(a => a.id === apptId ? { ...a, outcome } : a));
-  };
-
-  const handleAssignCloser = (apptId: number, closer: string) => {
-    setAppointments(prev => prev.map(a => a.id === apptId ? { ...a, closer, status: closer ? 'assigned' : a.status } : a));
   };
 
   const outcomeColors: Record<string, string> = {
@@ -75,26 +32,8 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
     no_sit: 'No Sit',
   };
 
-  // Full month calendar logic
-  const { year, month } = calendarMonth;
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startPad = firstDay.getDay();
-  const totalDays = lastDay.getDate();
-  const monthName = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-  const calendarCells: (number | null)[] = [];
-  for (let i = 0; i < startPad; i++) calendarCells.push(null);
-  for (let d = 1; d <= totalDays; d++) calendarCells.push(d);
-  while (calendarCells.length % 7 !== 0) calendarCells.push(null);
-
-  const getApptsForDay = (day: number) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return appointments.filter(a => a.date === dateStr);
-  };
-
-  const prevMonth = () => setCalendarMonth(prev => prev.month === 0 ? { year: prev.year - 1, month: 11 } : { ...prev, month: prev.month - 1 });
-  const nextMonth = () => setCalendarMonth(prev => prev.month === 11 ? { year: prev.year + 1, month: 0 } : { ...prev, month: prev.month + 1 });
+  // Calendar view data
+  const calendarDates = [...new Set(appointments.map(a => a.date))].sort().reverse();
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -172,23 +111,15 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     {/* Date/Time Badge */}
-                    <div className="bg-gradient-to-b from-primary/15 to-primary/5 border border-primary/25 rounded-xl px-3 py-2.5 text-center min-w-[74px]">
-                      <div className="text-[10px] text-primary/70 font-bold uppercase tracking-wider">{new Date(a.date + 'T12:00').toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                      <div className="text-2xl font-black text-primary leading-none my-0.5">{new Date(a.date + 'T12:00').getDate()}</div>
+                    <div className="bg-primary/10 border border-primary/25 rounded-lg px-3 py-2 text-center min-w-[70px]">
+                      <div className="text-[10px] text-primary font-bold uppercase">{new Date(a.date + 'T12:00').toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                      <div className="text-lg font-black text-primary">{new Date(a.date + 'T12:00').getDate()}</div>
                       <div className="text-[10px] text-primary font-bold">{a.time}</div>
                     </div>
                     <div>
                       <div className="text-sm font-bold text-foreground">{a.name}</div>
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
                         <MapPin className="w-3 h-3" /> {a.address}
-                      </div>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Phone className="w-3 h-3" /> {a.phone}
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Mail className="w-3 h-3" /> {a.email}
-                        </div>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="text-xs">
@@ -258,7 +189,6 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
                         {['closed', 'no_close', 'credit_fail', 'no_sit'].map(o => (
                           <button
                             key={o}
-                            onClick={(e) => { e.stopPropagation(); handleDisposition(a.id, o); }}
                             className={`px-2 py-1 rounded text-[10px] font-bold border transition-all ${
                               a.outcome === o ? outcomeColors[o] : 'bg-bg4 border-border text-muted-foreground hover:border-border2'
                             }`}
@@ -272,29 +202,14 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
                     {/* Assign Closer */}
                     <div className="bg-bg3 rounded-lg p-3">
                       <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Assign Closer</div>
-                      <select
-                        value={a.closer || ''}
-                        onChange={(e) => handleAssignCloser(a.id, e.target.value)}
-                        className="w-full px-2 py-1.5 bg-bg4 border border-border rounded-md text-xs text-foreground outline-none focus:border-primary"
-                      >
+                      <select className="w-full px-2 py-1.5 bg-bg4 border border-border rounded-md text-xs text-foreground outline-none focus:border-primary">
                         <option value="">Select closer...</option>
-                        <option value="Jordan Mills">Jordan Mills</option>
-                        <option value="Samantha Cole">Samantha Cole</option>
-                        <option value="Caitlin Fox">Caitlin Fox</option>
+                        <option value="jordan">Jordan Mills</option>
+                        <option value="sam">Samantha Cole</option>
+                        <option value="caitlin">Caitlin Fox</option>
                       </select>
                     </div>
                   </div>
-
-                  {/* Convert to Project Button */}
-                  {onConvertToProject && !a.outcome && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onConvertToProject(a); }}
-                      className="w-full py-2.5 bg-primary/10 border border-primary/30 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center justify-center gap-2"
-                    >
-                      <ArrowRight className="w-3.5 h-3.5" />
-                      Convert to Project
-                    </button>
-                  )}
 
                   {/* Notes */}
                   {a.closerNotes && (
@@ -307,6 +222,7 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
                     </div>
                   )}
 
+                  {/* Notes input for adding new notes */}
                   <div>
                     <textarea
                       placeholder="Add notes about this appointment..."
@@ -320,60 +236,32 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
         })}
       </div>
 
-      {/* Full Month Calendar View */}
+      {/* Full Calendar View */}
       <div className="bg-bg2 border border-border rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-black text-foreground">Calendar Overview</h3>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={prevMonth} className="px-2 py-1 bg-bg3 rounded text-xs text-muted-foreground hover:text-foreground transition-colors">←</button>
-            <span className="text-sm font-bold text-foreground min-w-[140px] text-center">{monthName}</span>
-            <button onClick={nextMonth} className="px-2 py-1 bg-bg3 rounded text-xs text-muted-foreground hover:text-foreground transition-colors">→</button>
-          </div>
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-black text-foreground">Calendar Overview</h3>
         </div>
-
-        {/* Legend */}
-        <div className="flex gap-4 mb-3">
-          <div className="flex items-center gap-1.5 text-[10px]"><div className="w-2.5 h-2.5 rounded-full bg-asp-green" /> <span className="text-muted-foreground">Closed</span></div>
-          <div className="flex items-center gap-1.5 text-[10px]"><div className="w-2.5 h-2.5 rounded-full bg-asp-blue" /> <span className="text-muted-foreground">No Close</span></div>
-          <div className="flex items-center gap-1.5 text-[10px]"><div className="w-2.5 h-2.5 rounded-full bg-asp-red" /> <span className="text-muted-foreground">Credit Fail / No Sit</span></div>
-          <div className="flex items-center gap-1.5 text-[10px]"><div className="w-2.5 h-2.5 rounded-full bg-primary" /> <span className="text-muted-foreground">Upcoming</span></div>
-        </div>
-
-        {/* Day headers */}
-        <div className="grid grid-cols-7 gap-1 mb-1">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-            <div key={d} className="text-[10px] font-bold text-muted-foreground text-center py-1">{d}</div>
-          ))}
-        </div>
-
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1">
-          {calendarCells.map((day, idx) => {
-            if (day === null) return <div key={idx} className="min-h-[60px] bg-bg3/30 rounded" />;
-            const dayAppts = getApptsForDay(day);
-            const today = new Date();
-            const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+        <div className="space-y-2">
+          {calendarDates.map(date => {
+            const dayAppts = appointments.filter(a => a.date === date);
+            const dayName = new Date(date + 'T12:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
             return (
-              <div key={idx} className={`min-h-[60px] bg-bg3/50 rounded p-1 ${isToday ? 'ring-1 ring-primary' : ''}`}>
-                <div className={`text-[10px] font-bold mb-0.5 ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>{day}</div>
-                <div className="space-y-0.5">
+              <div key={date} className="bg-bg3 rounded-lg p-3">
+                <div className="text-xs font-bold text-foreground mb-2">{dayName}</div>
+                <div className="flex flex-wrap gap-2">
                   {dayAppts.map(a => {
-                    const dotColor = a.outcome === 'closed' ? 'bg-asp-green'
-                      : a.outcome === 'no_close' ? 'bg-asp-blue'
-                      : a.outcome === 'credit_fail' || a.outcome === 'no_sit' ? 'bg-asp-red'
-                      : 'bg-primary';
+                    const color = a.outcome === 'closed' ? 'bg-asp-green/20 border-asp-green/40 text-asp-green'
+                      : a.outcome === 'no_close' || a.outcome === 'no_sit' ? 'bg-asp-blue/20 border-asp-blue/40 text-asp-blue'
+                      : a.outcome === 'credit_fail' ? 'bg-asp-red/20 border-asp-red/40 text-asp-red'
+                      : 'bg-bg4 border-border text-muted-foreground';
                     return (
                       <div
                         key={a.id}
+                        className={`px-3 py-1.5 rounded-lg border text-[11px] font-bold cursor-pointer hover:opacity-80 transition-opacity ${color}`}
                         onClick={() => setExpandedAppt(expandedAppt === a.id ? null : a.id)}
-                        className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
-                        title={`${a.time} · ${a.name}${a.outcome ? ` — ${outcomeLabels[a.outcome]}` : ''}${a.closerNotes ? `\nNotes: ${a.closerNotes}` : ''}`}
                       >
-                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
-                        <span className="text-[9px] text-foreground/70 truncate">{a.time.replace(' PM', 'p').replace(' AM', 'a')}</span>
+                        {a.time} · {a.name}
                       </div>
                     );
                   })}
