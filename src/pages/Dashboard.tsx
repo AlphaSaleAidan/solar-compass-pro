@@ -11,6 +11,9 @@ import RankingsTab from '@/components/sales/RankingsTab';
 import SellTab from '@/components/sales/SellTab';
 import QCReview from '@/components/ops/QCReview';
 import Communication from '@/components/ops/Communication';
+import MilestoneVerification from '@/components/ops/MilestoneVerification';
+import ProjectEditor from '@/components/ops/ProjectEditor';
+import SuperSupport from '@/components/ops/SuperSupport';
 import PlusPortal from '@/components/plus/PlusPortal';
 
 const Dashboard = () => {
@@ -64,10 +67,16 @@ const Dashboard = () => {
     switch (activeTab) {
       case 'QC Review':
         return <QCReview />;
+      case 'Milestones':
+        return <MilestoneVerification />;
       case 'Projects':
         return <Pipeline />;
+      case 'Editor':
+        return <ProjectEditor />;
       case 'Communication':
         return <Communication />;
+      case 'Super Support':
+        return <SuperSupport />;
       default:
         return null;
     }
