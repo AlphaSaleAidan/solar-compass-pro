@@ -3,8 +3,13 @@ import { INSTALLED_HOMES, SELL_PROJECTS, SellProject, CreditStatus } from '@/dat
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
+import { Crown, Map, Camera, Plus, FolderOpen, Sun, Battery, Phone, Mail, User, DollarSign, FileText } from 'lucide-react';
 
-const SellTab = () => {
+interface SellTabProps {
+  initialProjectData?: { name: string; email: string; phone: string; address: string } | null;
+}
+
+const SellTab = ({ initialProjectData }: SellTabProps) => {
   const [activeSubTab, setActiveSubTab] = useState<'create' | 'projects'>('create');
   const [projectFilter, setProjectFilter] = useState<CreditStatus | 'all'>('all');
   const [projects, setProjects] = useState<SellProject[]>(SELL_PROJECTS);
@@ -18,6 +23,23 @@ const SellTab = () => {
     highBill: '', lowBill: '', allElectric: true,
   });
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
+
+  // Handle incoming project data from calendar conversion
+  useEffect(() => {
+    if (initialProjectData) {
+      const names = initialProjectData.name.split(' ');
+      setNewProject({
+        firstName: names[0] || '',
+        lastName: names.slice(1).join(' ') || '',
+        email: initialProjectData.email,
+        phone: initialProjectData.phone,
+        highBill: '', lowBill: '', allElectric: true,
+      });
+      setAddress(initialProjectData.address);
+      setShowNewProjectForm(true);
+      setActiveSubTab('create');
+    }
+  }, [initialProjectData]);
 
   useEffect(() => {
     return () => {
@@ -78,6 +100,7 @@ const SellTab = () => {
         { name: 'ASP Agreement', sent: false, signed: false },
         { name: 'Installer Contract', sent: false, signed: false },
         { name: 'Loan Authorization', sent: false, signed: false },
+        { name: 'Welcome Call Email', sent: false, signed: false },
       ],
       surveyPhotos: [],
     };
@@ -100,12 +123,21 @@ const SellTab = () => {
     credit_fail: projects.filter(p => p.creditStatus === 'credit_fail').length,
   };
 
+  // Sold deals data (simulated from credit_passed projects)
+  const soldDeals = projects.filter(p => p.creditStatus === 'credit_passed').map(p => ({
+    ...p,
+    systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
+    ppw: (4.0 + Math.random() * 0.5).toFixed(2),
+    financier: ['GoodLeap', 'Sunlight Financial', 'Mosaic'][Math.floor(Math.random() * 3)],
+    battery: 'Duracell 20kW',
+    terms: '25 year @ 2.99%',
+  }));
+
   return (
     <div className="relative min-h-[calc(100vh-58px)] overflow-hidden">
       {/* Underwater ocean background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-b from-[hsl(200,80%,12%)] via-[hsl(195,75%,18%)] to-[hsl(210,70%,8%)]" />
-        {/* Sunrays from above */}
         <div className="absolute inset-0 overflow-hidden">
           {[...Array(8)].map((_, i) => (
             <div
@@ -123,7 +155,6 @@ const SellTab = () => {
               }}
             />
           ))}
-          {/* Caustic light patterns */}
           {[...Array(15)].map((_, i) => (
             <div
               key={`caustic-${i}`}
@@ -139,7 +170,6 @@ const SellTab = () => {
               }}
             />
           ))}
-          {/* Floating particles / bubbles */}
           {[...Array(12)].map((_, i) => (
             <div
               key={`bubble-${i}`}
@@ -165,17 +195,17 @@ const SellTab = () => {
           rel="noopener noreferrer"
           className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] backdrop-blur-md border border-white/10 rounded-lg text-white/80 text-xs font-bold hover:bg-white/10 transition-all duration-150 active:scale-[0.97]"
         >
-          ☀️ Aurora Solar
+          <Sun className="w-3.5 h-3.5" /> Aurora Solar
         </a>
         <Dialog open={showMap} onOpenChange={setShowMap}>
           <DialogTrigger asChild>
             <button className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] backdrop-blur-md border border-white/10 rounded-lg text-white/80 text-xs font-bold hover:bg-white/10 transition-all duration-150 active:scale-[0.97]">
-              🗺️ Installed Homes Map
+              <Map className="w-3.5 h-3.5" /> Installed Homes Map
             </button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[85vh] bg-[hsl(210,20%,10%)] border-white/10">
             <DialogHeader>
-              <DialogTitle className="text-white font-black">🗺️ Installed Homes Map</DialogTitle>
+              <DialogTitle className="text-white font-black flex items-center gap-2"><Map className="w-4 h-4" /> Installed Homes Map</DialogTitle>
             </DialogHeader>
             <InstalledHomesMap homes={INSTALLED_HOMES} />
           </DialogContent>
@@ -184,29 +214,29 @@ const SellTab = () => {
           onClick={startCamera}
           className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] backdrop-blur-md border border-white/10 rounded-lg text-white/80 text-xs font-bold hover:bg-white/10 transition-all duration-150 active:scale-[0.97]"
         >
-          📷 Site Survey Camera
+          <Camera className="w-3.5 h-3.5" /> Site Survey Camera
         </button>
 
         <div className="ml-auto flex gap-1">
           <button
             onClick={() => setActiveSubTab('create')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] flex items-center gap-1.5 ${
               activeSubTab === 'create'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
             }`}
           >
-            ✦ Create
+            <Plus className="w-3.5 h-3.5" /> Create
           </button>
           <button
             onClick={() => setActiveSubTab('projects')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] flex items-center gap-1.5 ${
               activeSubTab === 'projects'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
             }`}
           >
-            📁 Projects ({projects.length})
+            <FolderOpen className="w-3.5 h-3.5" /> Projects ({projects.length})
           </button>
         </div>
       </div>
@@ -215,13 +245,13 @@ const SellTab = () => {
       {showCamera && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col">
           <div className="flex items-center justify-between p-4 bg-black/80">
-            <span className="text-white font-bold text-sm">📷 Site Survey Camera</span>
+            <span className="text-white font-bold text-sm flex items-center gap-2"><Camera className="w-4 h-4" /> Site Survey Camera</span>
             <div className="flex gap-2">
               <button onClick={capturePhoto} className="px-4 py-2 bg-primary rounded-lg text-primary-foreground text-xs font-bold active:scale-[0.97]">
-                📸 Capture
+                Capture
               </button>
               <button onClick={stopCamera} className="px-4 py-2 bg-[hsl(0,70%,50%)] rounded-lg text-white text-xs font-bold active:scale-[0.97]">
-                ✕ Close
+                Close
               </button>
             </div>
           </div>
@@ -267,11 +297,14 @@ const SellTab = () => {
             ) : (
               <div className="w-full max-w-xl bg-black/30 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 space-y-4">
                 <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-lg font-black text-white">📋 New Project Details</h2>
+                  <h2 className="text-lg font-black text-white flex items-center gap-2">
+                    <FileText className="w-5 h-5" /> New Project Details
+                  </h2>
                   <button onClick={() => setShowNewProjectForm(false)} className="text-white/40 hover:text-white text-sm">✕</button>
                 </div>
-                <div className="bg-white/[0.04] rounded-lg p-3 text-xs text-white/60">
-                  <strong className="text-primary">📍 Address:</strong> {address}
+                <div className="bg-white/[0.04] rounded-lg p-3 text-xs text-white/60 flex items-center gap-2">
+                  <Map className="w-3.5 h-3.5 text-primary" />
+                  <strong className="text-primary">Address:</strong> {address}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -307,6 +340,17 @@ const SellTab = () => {
                   </button>
                 </div>
 
+                {/* Documents section including Welcome Call */}
+                <div className="bg-white/[0.04] rounded-lg p-3">
+                  <div className="text-[10px] text-white/40 font-bold tracking-wider uppercase mb-2">Documents</div>
+                  <div className="space-y-1.5 text-xs text-white/50">
+                    <div className="flex items-center gap-2"><FileText className="w-3 h-3" /> ASP Agreement</div>
+                    <div className="flex items-center gap-2"><FileText className="w-3 h-3" /> Installer Contract</div>
+                    <div className="flex items-center gap-2"><FileText className="w-3 h-3" /> Loan Authorization</div>
+                    <div className="flex items-center gap-2"><Mail className="w-3 h-3 text-primary" /> Welcome Call Email (via DocuSign)</div>
+                  </div>
+                </div>
+
                 <div className="bg-white/[0.04] rounded-lg p-3">
                   <div className="text-[10px] text-white/40 font-bold tracking-wider uppercase mb-2">Customer Checklist</div>
                   <div className="space-y-1.5 text-xs text-white/50">
@@ -320,9 +364,9 @@ const SellTab = () => {
 
                 <button
                   onClick={handleCreateProject}
-                  className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-black text-sm tracking-wide hover:bg-primary/90 transition-all duration-150 active:scale-[0.97] shadow-lg shadow-primary/25"
+                  className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-black text-sm tracking-wide hover:bg-primary/90 transition-all duration-150 active:scale-[0.97] shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
                 >
-                  🚀 Create Project & Sync to Aurora
+                  <Crown className="w-4 h-4" /> Create Project & Sync to Aurora
                 </button>
               </div>
             )}
@@ -333,10 +377,10 @@ const SellTab = () => {
             {/* Filter pills */}
             <div className="flex gap-2 flex-wrap">
               {([
-                { key: 'all', label: 'All', color: 'white' },
-                { key: 'new', label: 'New', color: 'hsl(var(--primary))' },
-                { key: 'credit_passed', label: 'Credit Passed', color: 'hsl(150, 60%, 50%)' },
-                { key: 'credit_fail', label: 'Credit Fail', color: 'hsl(0, 70%, 55%)' },
+                { key: 'all', label: 'All' },
+                { key: 'new', label: 'New' },
+                { key: 'credit_passed', label: 'Credit Passed' },
+                { key: 'credit_fail', label: 'Credit Fail' },
               ] as const).map(f => (
                 <button
                   key={f.key}
@@ -369,6 +413,55 @@ const SellTab = () => {
                 ))
               )}
             </div>
+
+            {/* Sold Deals Summary */}
+            {soldDeals.length > 0 && (
+              <div className="bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <DollarSign className="w-4 h-4 text-asp-green" />
+                  <h3 className="text-sm font-black text-white">Sold Deals Summary</h3>
+                </div>
+                <div className="space-y-2">
+                  {soldDeals.map(deal => (
+                    <div key={deal.id} className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <User className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-sm font-bold text-white">{deal.firstName} {deal.lastName}</span>
+                        </div>
+                        <span className="text-[10px] text-asp-green font-bold px-2 py-0.5 bg-asp-green/10 rounded border border-asp-green/20">SOLD</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-[11px]">
+                        <div>
+                          <div className="text-white/40 font-bold uppercase text-[9px]">System</div>
+                          <div className="text-white font-bold">{deal.systemSize}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/40 font-bold uppercase text-[9px]">PPW</div>
+                          <div className="text-white font-bold">${deal.ppw}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/40 font-bold uppercase text-[9px]">Financier</div>
+                          <div className="text-white font-bold">{deal.financier}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/40 font-bold uppercase text-[9px]">Battery</div>
+                          <div className="text-white font-bold flex items-center gap-1"><Battery className="w-3 h-3" />{deal.battery}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/40 font-bold uppercase text-[9px]">Terms</div>
+                          <div className="text-white font-bold">{deal.terms}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/40 font-bold uppercase text-[9px]">Contact</div>
+                          <div className="text-white font-bold flex items-center gap-1"><Phone className="w-3 h-3" />{deal.phone}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
