@@ -19,8 +19,14 @@ const Dashboard = () => {
   const isSalesRep = user?.role === 'sales_rep';
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [convertedProjectData, setConvertedProjectData] = useState<{ name: string; email: string; phone: string; address: string } | null>(null);
 
   if (!user) return null;
+
+  const handleConvertToProject = (data: { name: string; email: string; phone: string; address: string }) => {
+    setConvertedProjectData(data);
+    setActiveTab('🦁');
+  };
 
   const renderContent = () => {
     if (isPlus) {
@@ -44,11 +50,11 @@ const Dashboard = () => {
         case 'Commissions':
           return <Commissions />;
         case 'Calendar':
-          return <CalendarTab />;
+          return <CalendarTab onConvertToProject={handleConvertToProject} />;
         case 'Rankings':
           return <RankingsTab />;
         case '🦁':
-          return <SellTab />;
+          return <SellTab initialProjectData={convertedProjectData} />;
         default:
           return null;
       }
