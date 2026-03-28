@@ -12,13 +12,13 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
 
   const isPlus = user.portalMode === 'asp_plus';
 
-  const aspTabs = user.role === 'sales_rep'
-    ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', '🦁']
-  
   const getTabDisplay = (tab: string) => {
     if (tab === '🦁') return <Crown className="w-4 h-4" />;
     return tab;
   };
+
+  const aspTabs = user.role === 'sales_rep'
+    ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', '🦁']
     : ['QC Review', 'Projects', 'Communication'];
 
   const aspPlusTabs = ['Projects', 'Milestones', 'Documents', 'Funding'];
