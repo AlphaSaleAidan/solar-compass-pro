@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Zap, LogOut, User } from 'lucide-react';
+import { Zap, LogOut, User, Shield } from 'lucide-react';
 
 interface AppHeaderProps {
   activeTab: string;
