@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { Dices, Ticket, Trophy, Sparkles } from 'lucide-react';
 import { SPIN_PRIZES, SPIN_TIERS, TICKET_EARNING_RULES, REP_STATS } from '@/data/mockData';
 
 const ShopSpin = () => {
@@ -8,19 +9,28 @@ const ShopSpin = () => {
   const [wonPrize, setWonPrize] = useState<typeof SPIN_PRIZES[0] | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
-  // Filter prizes by tier
   const tierMap: Record<string, string[]> = {
     'Normal Spin': ['normal'],
-    'Lucky Spin': ['normal', 'lucky'],
-    'Golden Spin': ['normal', 'lucky', 'golden'],
-    'Alpha Spin': ['normal', 'lucky', 'golden', 'alpha'],
-    'Super Alpha Spin': ['normal', 'lucky', 'golden', 'alpha', 'super_alpha'],
+    'Golden Spin': ['normal', 'golden'],
+    'Alpha Spin': ['normal', 'golden', 'alpha'],
+    'Super Alpha Spin': ['normal', 'golden', 'alpha', 'super_alpha'],
   };
 
   const tier = SPIN_TIERS[selectedTier];
   const eligiblePrizes = SPIN_PRIZES.filter((p) => tierMap[tier.name]?.includes(p.tier));
 
-  // Build a long repeating track
+  // Weight prizes: for non-Super Alpha, drastically reduce $400+ items
+  const getWeightedPrizes = () => {
+    if (tier.name === 'Super Alpha Spin') return eligiblePrizes;
+    return eligiblePrizes.flatMap(p => {
+      if (p.value >= 400) return [p]; // 1x weight for expensive
+      if (p.value >= 200) return [p, p]; // 2x
+      return [p, p, p, p]; // 4x weight for cheap items
+    });
+  };
+
+  const weightedPrizes = getWeightedPrizes();
+
   const trackItems: typeof SPIN_PRIZES = [];
   for (let i = 0; i < 60; i++) {
     trackItems.push(eligiblePrizes[i % eligiblePrizes.length]);
@@ -32,7 +42,12 @@ const ShopSpin = () => {
     setSpinning(true);
     setWonPrize(null);
 
+    // Pick winner from weighted pool
+    const winner = weightedPrizes[Math.floor(Math.random() * weightedPrizes.length)];
     const winIndex = 35 + Math.floor(Math.random() * 10);
+    // Replace the track item at winIndex with the winner
+    trackItems[winIndex] = winner;
+
     const itemWidth = 102;
     const offset = winIndex * itemWidth - 200 + Math.random() * 60;
 
@@ -51,13 +66,12 @@ const ShopSpin = () => {
 
     setTimeout(() => {
       setSpinning(false);
-      setWonPrize(trackItems[winIndex]);
+      setWonPrize(winner);
     }, 4200);
-  }, [spinning, tickets, tier, trackItems]);
+  }, [spinning, tickets, tier, trackItems, weightedPrizes]);
 
   const tierColors: Record<string, string> = {
     gray: 'bg-gray-500/15 border-gray-500/30 text-gray-400',
-    blue: 'bg-asp-blue/12 border-asp-blue/30 text-asp-blue',
     yellow: 'bg-asp-yellow/12 border-asp-yellow/35 text-asp-yellow',
     teal: 'bg-primary/12 border-primary/30 text-primary',
     purple: 'bg-asp-purple/12 border-asp-purple/30 text-asp-purple',
@@ -65,7 +79,6 @@ const ShopSpin = () => {
 
   const itemTierColors: Record<string, string> = {
     normal: 'bg-gray-500/15 border-gray-500/30',
-    lucky: 'bg-asp-blue/12 border-asp-blue/30',
     golden: 'bg-asp-yellow/12 border-asp-yellow/35',
     alpha: 'bg-primary/12 border-primary/30',
     super_alpha: 'bg-asp-purple/12 border-asp-purple/30',
@@ -74,8 +87,8 @@ const ShopSpin = () => {
   return (
     <div className="bg-bg2 border border-border rounded-xl p-5 animate-fade-in-up stagger-2">
       <div className="flex items-center gap-2.5 mb-1">
-        <span className="text-lg">🎰</span>
-        <h3 className="text-lg font-black text-white">ASP Rewards Shop</h3>
+        <Dices className="w-5 h-5 text-primary" />
+        <h3 className="text-lg font-black text-foreground">ASP Rewards Shop</h3>
       </div>
       <p className="text-xs text-muted-foreground mb-5">Spend tickets to spin for prizes. Higher tiers unlock better rewards!</p>
 
@@ -85,11 +98,11 @@ const ShopSpin = () => {
           <button
             key={t.name}
             onClick={() => !spinning && setSelectedTier(i)}
-            className={`px-3 py-2 rounded-lg text-[11px] font-bold border transition-all duration-150 ${
+            className={`px-3 py-2 rounded-lg text-[11px] font-bold border transition-all duration-150 flex items-center gap-1 ${
               selectedTier === i ? tierColors[t.color] + ' shadow-lg' : 'bg-bg3 border-border text-muted-foreground hover:border-border2'
             }`}
           >
-            {t.name} ({t.tickets}🎟️)
+            {t.name} ({t.tickets} <Ticket className="w-3 h-3 inline" />)
           </button>
         ))}
       </div>
@@ -130,7 +143,8 @@ const ShopSpin = () => {
               : 'bg-gradient-to-br from-primary to-teal2 text-primary-foreground hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,212,200,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none'
           }`}
         >
-          {spinning ? '🎰 Spinning...' : `🎰 SPIN (${tier.tickets} ticket${tier.tickets > 1 ? 's' : ''})`}
+          <Dices className="w-4 h-4" />
+          {spinning ? 'Spinning...' : `SPIN (${tier.tickets} ticket${tier.tickets > 1 ? 's' : ''})`}
         </button>
       </div>
 
@@ -139,7 +153,10 @@ const ShopSpin = () => {
         <div className="mt-4 p-4 rounded-lg border border-primary bg-primary/5 flex items-center gap-3.5 animate-scale-in">
           <span className="text-4xl">{wonPrize.icon}</span>
           <div>
-            <div className="text-base font-black text-white">🎉 {wonPrize.name}</div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-asp-yellow" />
+              <span className="text-base font-black text-foreground">{wonPrize.name}</span>
+            </div>
             <div className="text-[11px] font-bold tracking-wider uppercase text-primary mt-0.5">
               ~${wonPrize.value} value
             </div>
@@ -149,12 +166,15 @@ const ShopSpin = () => {
 
       {/* Ticket Earning Rules */}
       <div className="mt-5 pt-4 border-t border-border">
-        <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-2.5">🎟️ How to Earn Tickets</h4>
+        <div className="flex items-center gap-1.5 mb-2.5">
+          <Ticket className="w-4 h-4 text-muted-foreground" />
+          <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase">How to Earn Tickets</h4>
+        </div>
         <div className="space-y-1.5">
           {TICKET_EARNING_RULES.map((r) => (
             <div key={r.action} className="flex items-center justify-between py-1.5 px-3 bg-bg3 rounded-md">
               <span className="text-xs text-foreground">{r.action}</span>
-              <span className="text-xs font-bold text-primary">+{r.tickets} 🎟️</span>
+              <span className="text-xs font-bold text-primary flex items-center gap-1">+{r.tickets} <Ticket className="w-3 h-3" /></span>
             </div>
           ))}
         </div>

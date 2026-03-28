@@ -1,32 +1,164 @@
-import { REP_STATS } from '@/data/mockData';
+import { DollarSign, BarChart3, Wrench, Calendar, Star, Flame, Ticket, TrendingUp, XCircle, CheckCircle, UserX } from 'lucide-react';
+import { REP_STATS, APPOINTMENTS } from '@/data/mockData';
 
 const RepStats = () => {
   const stats = [
-    { label: 'Yearly Paid Out', value: `$${REP_STATS.yearlyPaidOut.toLocaleString()}`, icon: '💰', color: 'text-asp-green' },
-    { label: 'Pending Pipeline', value: `$${REP_STATS.pendingPipeline.toLocaleString()}`, icon: '📊', color: 'text-primary' },
-    { label: 'Installs', value: REP_STATS.installCount.toString(), icon: '🔧', color: 'text-asp-yellow' },
+    { label: 'Yearly Paid Out', value: `$${REP_STATS.yearlyPaidOut.toLocaleString()}`, icon: DollarSign, color: 'text-asp-green' },
+    { label: 'Pending Pipeline', value: `$${REP_STATS.pendingPipeline.toLocaleString()}`, icon: BarChart3, color: 'text-primary' },
+    { label: 'Installs', value: REP_STATS.installCount.toString(), icon: Wrench, color: 'text-asp-yellow' },
   ];
+
+  // Today's appointments
+  const today = new Date().toISOString().split('T')[0];
+  const todaysAppts = APPOINTMENTS.filter(a => a.date === today || a.date === '2026-03-28');
+  const getStarCount = (appt: typeof APPOINTMENTS[0]) => {
+    return [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250].filter(Boolean).length;
+  };
+
+  // Closing metrics
+  const closingPct = REP_STATS.totalSits > 0 ? Math.round(((REP_STATS.totalCloses + REP_STATS.creditFails) / REP_STATS.totalSits) * 100) : 0;
+  const totalDeals = REP_STATS.creditPassed + REP_STATS.creditFails + REP_STATS.nonClosed;
+  const creditPassedPct = totalDeals > 0 ? Math.round((REP_STATS.creditPassed / totalDeals) * 100) : 0;
+  const creditFailPct = totalDeals > 0 ? Math.round((REP_STATS.creditFails / totalDeals) * 100) : 0;
+  const nonClosedPct = totalDeals > 0 ? Math.round((REP_STATS.nonClosed / totalDeals) * 100) : 0;
+
+  // Streak
+  const streak = REP_STATS.dealStreak;
+  const streakStages = [
+    { label: '+50% Tickets', threshold: 1, boost: '50%' },
+    { label: '+100% Tickets', threshold: 2, boost: '100%' },
+    { label: '+200% Tickets', threshold: 3, boost: '200%' },
+  ];
+  const activeStage = streak >= 3 ? 2 : streak >= 2 ? 1 : streak >= 1 ? 0 : -1;
 
   return (
     <div className="space-y-3 animate-fade-in-up stagger-1">
+      {/* Streak Bar */}
+      <div className="bg-bg2 border border-border rounded-xl p-4">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="relative">
+            <Flame className="w-7 h-7 text-asp-blue" fill="hsl(var(--blue))" />
+            <span className="absolute -top-1 -right-2 text-xs font-black text-white bg-asp-blue rounded-full w-5 h-5 flex items-center justify-center">{streak}</span>
+          </div>
+          <div>
+            <div className="text-sm font-black text-foreground">Deal Streak</div>
+            <div className="text-[10px] text-muted-foreground">Sell every day to keep your streak!</div>
+          </div>
+        </div>
+        <div className="flex gap-1 items-center">
+          {streakStages.map((stage, i) => (
+            <div key={i} className="flex-1 relative">
+              <div className={`h-3 rounded-full transition-all duration-500 ${
+                i <= activeStage
+                  ? 'bg-gradient-to-r from-asp-blue to-primary shadow-[0_0_10px_hsl(var(--blue)/0.4)]'
+                  : 'bg-bg4'
+              }`} />
+              <div className={`text-[9px] font-bold mt-1 text-center ${i <= activeStage ? 'text-asp-blue' : 'text-muted-foreground'}`}>
+                {stage.label}
+              </div>
+              <div className={`text-[8px] text-center ${i <= activeStage ? 'text-primary' : 'text-muted-foreground/50'}`}>
+                {stage.threshold}+ day{stage.threshold > 1 ? 's' : ''}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Stats */}
       {stats.map((s) => (
         <div key={s.label} className="bg-bg2 border border-border rounded-xl p-4 flex items-center gap-3">
-          <span className="text-xl">{s.icon}</span>
+          <s.icon className={`w-5 h-5 ${s.color}`} />
           <div className="flex-1">
             <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">{s.label}</div>
             <div className={`text-xl font-black ${s.color}`}>{s.value}</div>
           </div>
         </div>
       ))}
+
+      {/* Monthly Appointments */}
       <div className="bg-bg2 border border-border rounded-xl p-4">
-        <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase mb-1">📅 Monthly Appointments</div>
+        <div className="flex items-center gap-2 mb-1">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Monthly Appointments</div>
+        </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-xl font-black text-white">{REP_STATS.monthlyAppointments}</span>
+          <span className="text-xl font-black text-foreground">{REP_STATS.monthlyAppointments}</span>
           <span className="text-xs text-muted-foreground">this month</span>
         </div>
         <div className="mt-2 flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Avg Rating:</span>
-          <span className="text-sm font-bold text-asp-yellow">{'⭐'.repeat(Math.floor(REP_STATS.avgRating))} {REP_STATS.avgRating}</span>
+          <div className="flex items-center gap-0.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(REP_STATS.avgRating) ? 'text-asp-yellow fill-asp-yellow' : 'text-muted-foreground/30'}`} />
+            ))}
+            <span className="text-sm font-bold text-asp-yellow ml-1">{REP_STATS.avgRating}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Next Incoming Appointments Today */}
+      <div className="bg-bg2 border border-border rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Calendar className="w-4 h-4 text-primary" />
+          <div className="text-[10px] text-primary font-bold tracking-[1.5px] uppercase">Next Appointments Today</div>
+        </div>
+        {todaysAppts.length > 0 ? (
+          <div className="space-y-2">
+            {todaysAppts.map((a) => {
+              const starCount = getStarCount(a);
+              return (
+                <div key={a.id} className="flex items-center justify-between bg-bg3 rounded-lg px-3 py-2">
+                  <div>
+                    <div className="text-sm font-bold text-foreground">{a.name}</div>
+                    <div className="text-[10px] text-muted-foreground">{a.time}</div>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`w-3 h-3 ${i < starCount ? 'text-asp-yellow fill-asp-yellow' : 'text-muted-foreground/30'}`} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground text-center py-2">No appointments today</div>
+        )}
+      </div>
+
+      {/* Closing Metrics */}
+      <div className="bg-bg2 border border-border rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="w-4 h-4 text-primary" />
+          <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Performance Metrics</div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-bg3 rounded-lg px-3 py-2 text-center">
+            <div className="text-lg font-black text-primary">{closingPct}%</div>
+            <div className="text-[9px] text-muted-foreground font-bold uppercase">Closing %</div>
+            <div className="text-[8px] text-muted-foreground">Sit-to-Close (CF = close)</div>
+          </div>
+          <div className="bg-bg3 rounded-lg px-3 py-2 text-center">
+            <div className="flex items-center justify-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5 text-asp-green" />
+              <span className="text-lg font-black text-asp-green">{creditPassedPct}%</span>
+            </div>
+            <div className="text-[9px] text-muted-foreground font-bold uppercase">Credit Passed</div>
+          </div>
+          <div className="bg-bg3 rounded-lg px-3 py-2 text-center">
+            <div className="flex items-center justify-center gap-1">
+              <XCircle className="w-3.5 h-3.5 text-asp-red" />
+              <span className="text-lg font-black text-asp-red">{creditFailPct}%</span>
+            </div>
+            <div className="text-[9px] text-muted-foreground font-bold uppercase">Credit Fails</div>
+          </div>
+          <div className="bg-bg3 rounded-lg px-3 py-2 text-center">
+            <div className="flex items-center justify-center gap-1">
+              <UserX className="w-3.5 h-3.5 text-asp-blue" />
+              <span className="text-lg font-black text-asp-blue">{nonClosedPct}%</span>
+            </div>
+            <div className="text-[9px] text-muted-foreground font-bold uppercase">Non-Closed</div>
+          </div>
         </div>
       </div>
     </div>

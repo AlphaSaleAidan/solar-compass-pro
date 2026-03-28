@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { Zap, LogOut, User } from 'lucide-react';
 
 interface AppHeaderProps {
   activeTab: string;
@@ -33,8 +34,10 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-[58px] flex items-center px-6 gap-2 border-b border-border backdrop-blur-xl" style={{ background: isPlus ? 'rgba(255,255,255,0.97)' : 'rgba(7,9,13,0.97)' }}>
       <div className="flex items-center gap-2.5 mr-3 shrink-0">
-        <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center text-sm font-black text-primary-foreground">⚡</div>
-        <span className={`text-base font-black whitespace-nowrap ${isPlus ? 'text-gray-900' : 'text-white'}`}>
+        <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center">
+          <Zap className="w-4 h-4 text-primary-foreground" />
+        </div>
+        <span className={`text-base font-black whitespace-nowrap ${isPlus ? 'text-gray-900' : 'text-foreground'}`}>
           ASP {isPlus && <span className="text-primary">+</span>}
         </span>
       </div>
@@ -58,15 +61,16 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
       <div className="flex items-center gap-3 ml-auto">
         {roleBadge()}
         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm border ${isPlus ? 'bg-gray-100 border-gray-200' : 'bg-bg4 border-border2'}`}>
-          👤
+          <User className="w-4 h-4" />
         </div>
         <span className={`text-xs font-bold ${isPlus ? 'text-gray-700' : 'text-gray-300'}`}>{user.name}</span>
         <button
           onClick={logout}
-          className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-all duration-150 ${
+          className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-all duration-150 flex items-center gap-1.5 ${
             isPlus ? 'bg-gray-50 border-gray-200 text-gray-500 hover:border-red-300 hover:text-red-500' : 'bg-bg3 border-border text-muted-foreground hover:border-asp-red hover:text-asp-red'
           }`}
         >
+          <LogOut className="w-3 h-3" />
           Logout
         </button>
       </div>
