@@ -352,6 +352,36 @@ const SellTab = ({ convertedAppointment, onConvertHandled }: SellTabProps) => {
                 </button>
               </div>
             )}
+
+            {/* Sold Deals Summary */}
+            {projects.filter(p => p.creditStatus === 'credit_passed').length > 0 && (
+              <div className="w-full max-w-xl mt-6 bg-black/30 backdrop-blur-2xl border border-white/10 rounded-2xl p-5 mx-auto">
+                <h3 className="text-sm font-black text-white mb-3 flex items-center gap-2">
+                  <Star className="w-4 h-4 text-asp-yellow" /> Sold Deals
+                </h3>
+                <div className="space-y-2">
+                  {projects.filter(p => p.creditStatus === 'credit_passed').map(p => (
+                    <div key={p.id} className="bg-white/[0.04] border border-white/[0.06] rounded-lg p-3 flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-white">{p.firstName} {p.lastName}</div>
+                        <div className="text-[10px] text-white/40">{p.address}</div>
+                        <div className="flex items-center gap-2 mt-1 text-[10px] text-white/50">
+                          <span><Phone className="w-3 h-3 inline mr-0.5" />{p.phone}</span>
+                          <span><Mail className="w-3 h-3 inline mr-0.5" />{p.email}</span>
+                        </div>
+                      </div>
+                      <div className="text-right text-[10px] text-white/50 space-y-0.5">
+                        <div>System: <span className="text-primary font-bold">TBD kW</span></div>
+                        <div>PPW: <span className="text-white font-bold">TBD</span></div>
+                        <div>Financier: <span className="text-white font-bold">TBD</span></div>
+                        <div>Battery: <span className="text-asp-green font-bold">Yes</span></div>
+                        <div className="text-white/30">25 year @ 2.99%</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* Projects subtab */
