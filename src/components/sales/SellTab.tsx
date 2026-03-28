@@ -24,6 +24,26 @@ const SellTab = ({ convertedAppointment, onConvertHandled }: SellTabProps) => {
   });
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
 
+  // Auto-fill from converted appointment
+  useEffect(() => {
+    if (convertedAppointment) {
+      const nameParts = convertedAppointment.name.split(' ');
+      setNewProject({
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        email: convertedAppointment.email,
+        phone: convertedAppointment.phone,
+        highBill: String(convertedAppointment.highBill),
+        lowBill: String(convertedAppointment.lowBill),
+        allElectric: convertedAppointment.allElectric,
+      });
+      setAddress(convertedAppointment.address);
+      setShowNewProjectForm(true);
+      setActiveSubTab('create');
+      onConvertHandled?.();
+    }
+  }, [convertedAppointment]);
+
   useEffect(() => {
     return () => {
       if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
