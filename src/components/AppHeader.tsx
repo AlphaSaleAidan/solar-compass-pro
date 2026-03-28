@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Zap, LogOut, User } from 'lucide-react';
+import { Zap, LogOut, User, Crown } from 'lucide-react';
 
 interface AppHeaderProps {
   activeTab: string;
@@ -11,6 +11,11 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   if (!user) return null;
 
   const isPlus = user.portalMode === 'asp_plus';
+
+  const getTabDisplay = (tab: string) => {
+    if (tab === '🦁') return <Crown className="w-4 h-4" />;
+    return tab;
+  };
 
   const aspTabs = user.role === 'sales_rep'
     ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', '🦁']
@@ -53,7 +58,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
                 : isPlus ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' : 'text-muted-foreground hover:text-foreground hover:bg-bg3'
             }`}
           >
-            {tab}
+            {getTabDisplay(tab)}
           </button>
         ))}
       </nav>
