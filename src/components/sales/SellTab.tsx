@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { INSTALLED_HOMES, SELL_PROJECTS, SellProject, CreditStatus, APPOINTMENTS } from '@/data/mockData';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Star, Phone, Mail } from 'lucide-react';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
 
