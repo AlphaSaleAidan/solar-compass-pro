@@ -521,8 +521,23 @@ const FinancierPortal = () => {
                           <span className="text-xs text-muted-foreground">/ ${p.projectCost.toLocaleString()}</span>
                         </div>
                       </div>
-                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${pct}%` }} />
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                        <div className="flex gap-0.5">
+                          {Array.from({ length: 7 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
+                                i < p.currentMilestone ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                              }`}
+                            >
+                              M{i + 1}
+                            </div>
+                          ))}
+                        </div>
+                        <span className="text-xs font-black text-card-foreground ml-1 min-w-[32px] text-right">{pct}%</span>
                       </div>
                     </div>
                     {isExpanded && (
