@@ -55,6 +55,7 @@ const FinancierPortal = () => {
   const [hoveredMilestone, setHoveredMilestone] = useState<{ projectId: string; idx: number } | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedEscrow, setExpandedEscrow] = useState<number | null>(null);
+  const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
 
   const totalPortfolioContract = PROJECTS.reduce((s, p) => s + p.contractValue, 0);
   const totalSystemCost = PROJECTS.reduce((s, p) => s + p.projectCost, 0);
