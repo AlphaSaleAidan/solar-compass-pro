@@ -591,21 +591,15 @@ const FinancierPortal = () => {
                           <div className="text-[10px] text-muted-foreground">{entry.project} · {entry.milestone}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex gap-0.5">
-                          {Array.from({ length: 7 }).map((_, mi) => {
-                            const milestoneNum = parseInt(entry.milestone.match(/M(\d)/)?.[1] || '0');
-                            return (
-                              <div
-                                key={mi}
-                                className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
-                                  mi < milestoneNum ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                                }`}
-                              >
-                                M{mi + 1}
-                              </div>
-                            );
-                          })}
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold bg-primary text-primary-foreground">
+                            {entry.milestone.match(/M\d/)?.[0] || 'M1'}
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()}</div>
+                            <div className="text-[10px] text-muted-foreground">{entry.percent}% · {entry.fundedDate}</div>
+                          </div>
+                          <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()}</div>
