@@ -41,7 +41,7 @@ const InstallerPortal = () => {
 
   const installerProjects = PROJECTS.filter(p => p.installerName === 'SunTech Installations' || p.installerName === 'Pro Solar TX');
   const completedCount = installerProjects.filter(p => p.currentMilestone >= 5).length;
-  const activeCount = installerProjects.filter(p => p.status === 'active' && p.currentMilestone < 5).length;
+  const activeCount = installerProjects.filter(p => p.status !== 'completed').length;
   const avgDaysToPTO = 24;
   const onTimeRate = 87;
   const totalInstallValue = installerProjects.reduce((s, p) => s + p.projectCost, 0);
