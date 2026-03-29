@@ -69,29 +69,38 @@ const ShopSpin = () => {
 
     const weightedPrizes = getWeightedPrizes();
     const chosenPrize = weightedPrizes[Math.floor(Math.random() * weightedPrizes.length)];
-    const landingIndex = 35 + Math.floor(Math.random() * 10);
+    const landingIndex = 40;
 
-    // Place the chosen prize exactly at the landing slot
+    // Place the chosen prize at the exact landing slot
     const newTrackItems = [...trackItemsRef.current];
     newTrackItems[landingIndex] = chosenPrize;
     trackItemsRef.current = newTrackItems;
+    setTrackKey(k => k + 1); // force re-render so DOM updates
 
-    // Compute exact transform so center indicator lands on the landing slot center
-    const firstItem = trackRef.current?.firstElementChild as HTMLElement | null;
-    const itemWidth = firstItem?.getBoundingClientRect().width ?? 96;
-    const computedTrackStyle = trackRef.current ? window.getComputedStyle(trackRef.current) : null;
-    const gap = computedTrackStyle ? parseFloat(computedTrackStyle.columnGap || computedTrackStyle.gap || '6') : 6;
-    const slotWidth = itemWidth + gap;
-    const viewportWidth = trackRef.current?.parentElement?.clientWidth ?? 400;
-    const pointerX = viewportWidth / 2;
-    const targetCenterX = landingIndex * slotWidth + itemWidth / 2;
-    const maxOffset = Math.max(0, newTrackItems.length * slotWidth - pointerX - itemWidth / 2);
-    const offset = Math.min(Math.max(0, targetCenterX - pointerX), maxOffset);
-
-    if (trackRef.current) {
-      trackRef.current.style.transition = 'none';
-      trackRef.current.style.transform = 'translateX(0)';
+    // Wait for DOM to update, then measure the actual element position
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
+        if (!trackRef.current) return;
+        const container = trackRef.current.parentElement;
+        if (!container) return;
+
+        const children = trackRef.current.children;
+        const targetEl = children[landingIndex] as HTMLElement | undefined;
+        if (!targetEl) return;
+
+        const containerWidth = container.clientWidth;
+        const pointerX = containerWidth / 2;
+
+        // The target element's left offset relative to the track start
+        const targetLeft = targetEl.offsetLeft;
+        const targetCenter = targetLeft + targetEl.offsetWidth / 2;
+
+        // Scroll the track so targetCenter aligns with pointerX
+        const offset = targetCenter - pointerX;
+
+        trackRef.current.style.transition = 'none';
+        trackRef.current.style.transform = 'translateX(0)';
+
         requestAnimationFrame(() => {
           if (trackRef.current) {
             trackRef.current.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
@@ -99,29 +108,26 @@ const ShopSpin = () => {
           }
         });
       });
-    }
+    });
 
     setTimeout(() => {
-      const awardedPrize = newTrackItems[landingIndex] ?? chosenPrize;
       setSpinning(false);
-      setWonPrize(awardedPrize);
+      setWonPrize(chosenPrize);
 
-      // Add to inventory
       setInventory(prev => [...prev, {
-        name: awardedPrize.name,
-        icon: awardedPrize.icon,
-        value: awardedPrize.value,
-        tier: awardedPrize.tier,
-        sellValue: Math.round(awardedPrize.value * 0.6),
+        name: chosenPrize.name,
+        icon: chosenPrize.icon,
+        value: chosenPrize.value,
+        tier: chosenPrize.tier,
+        sellValue: Math.round(chosenPrize.value * 0.6),
       }]);
 
-      // Add cash bonuses to cash bonus section
-      if (awardedPrize.name.startsWith('Cash Bonus')) {
+      if (chosenPrize.name.startsWith('Cash Bonus')) {
         setCashBonuses(prev => [...prev, {
           id: Date.now(),
-          amount: awardedPrize.value,
+          amount: chosenPrize.value,
           redeemed: false,
-          label: awardedPrize.name,
+          label: chosenPrize.name,
         }]);
       }
     }, 4200);
