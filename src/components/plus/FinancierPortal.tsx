@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PROJECTS, MILESTONE_NAMES } from '@/data/mockData';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, Zap, Target, ArrowDownRight, ArrowUpRight, X, User, MapPin, Phone, Mail, Flag } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, Zap, X, User, MapPin, Phone, Mail, Flag } from 'lucide-react';
 
 const ESCROW_MILESTONES = [
   { name: 'SOW Confirmed', percent: 15 },
