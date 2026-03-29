@@ -45,13 +45,11 @@ const FinancierPortal = () => {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedEscrow, setExpandedEscrow] = useState<number | null>(null);
 
-  const totalPortfolio = PROJECTS.reduce((s, p) => s + p.contractValue, 0);
-  const totalFunded = PROJECTS.reduce((s, p) => s + Math.round(p.contractValue * (p.currentMilestone / p.totalMilestones)), 0);
+  const totalPortfolioContract = PROJECTS.reduce((s, p) => s + p.contractValue, 0);
+  const totalSystemCost = PROJECTS.reduce((s, p) => s + p.projectCost, 0);
+  const totalFunded = PROJECTS.reduce((s, p) => s + Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones)), 0);
   const activeProjects = PROJECTS.filter(p => p.status !== 'completed').length;
-  const defaultRate = 5.2;
-  const previousDefaultRate = 18;
   const avgDaysToPTO = 24;
-  const cancelRate = 7;
 
   const selectedProjectData = selectedProject ? PROJECTS.find(p => p.id === selectedProject) : null;
 
