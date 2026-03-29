@@ -67,16 +67,25 @@ const ShopSpin = () => {
     setWonPrize(null);
 
     const weightedPrizes = getWeightedPrizes();
-    const winner = weightedPrizes[Math.floor(Math.random() * weightedPrizes.length)];
-    const winIndex = 35 + Math.floor(Math.random() * 10);
+    const chosenPrize = weightedPrizes[Math.floor(Math.random() * weightedPrizes.length)];
+    const landingIndex = 35 + Math.floor(Math.random() * 10);
 
-    // Update the ref AND force re-render by updating state
+    // Place the chosen prize exactly at the landing slot
     const newTrackItems = [...trackItemsRef.current];
-    newTrackItems[winIndex] = winner;
+    newTrackItems[landingIndex] = chosenPrize;
     trackItemsRef.current = newTrackItems;
 
-    const itemWidth = 102;
-    const offset = winIndex * itemWidth - 200 + Math.random() * 60;
+    // Compute exact transform so center indicator lands on the landing slot center
+    const firstItem = trackRef.current?.firstElementChild as HTMLElement | null;
+    const itemWidth = firstItem?.getBoundingClientRect().width ?? 96;
+    const computedTrackStyle = trackRef.current ? window.getComputedStyle(trackRef.current) : null;
+    const gap = computedTrackStyle ? parseFloat(computedTrackStyle.columnGap || computedTrackStyle.gap || '6') : 6;
+    const slotWidth = itemWidth + gap;
+    const viewportWidth = trackRef.current?.parentElement?.clientWidth ?? 400;
+    const pointerX = viewportWidth / 2;
+    const targetCenterX = landingIndex * slotWidth + itemWidth / 2;
+    const maxOffset = Math.max(0, newTrackItems.length * slotWidth - pointerX - itemWidth / 2);
+    const offset = Math.min(Math.max(0, targetCenterX - pointerX), maxOffset);
 
     if (trackRef.current) {
       trackRef.current.style.transition = 'none';
@@ -92,23 +101,26 @@ const ShopSpin = () => {
     }
 
     setTimeout(() => {
+      const awardedPrize = newTrackItems[landingIndex] ?? chosenPrize;
       setSpinning(false);
-      setWonPrize(winner);
+      setWonPrize(awardedPrize);
+
       // Add to inventory
       setInventory(prev => [...prev, {
-        name: winner.name,
-        icon: winner.icon,
-        value: winner.value,
-        tier: winner.tier,
-        sellValue: Math.round(winner.value * 0.6),
+        name: awardedPrize.name,
+        icon: awardedPrize.icon,
+        value: awardedPrize.value,
+        tier: awardedPrize.tier,
+        sellValue: Math.round(awardedPrize.value * 0.6),
       }]);
+
       // Add cash bonuses to cash bonus section
-      if (winner.name.startsWith('Cash Bonus')) {
+      if (awardedPrize.name.startsWith('Cash Bonus')) {
         setCashBonuses(prev => [...prev, {
           id: Date.now(),
-          amount: winner.value,
+          amount: awardedPrize.value,
           redeemed: false,
-          label: winner.name,
+          label: awardedPrize.name,
         }]);
       }
     }, 4200);
