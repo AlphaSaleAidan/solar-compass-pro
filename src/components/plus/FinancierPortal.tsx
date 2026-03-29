@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PROJECTS, MILESTONE_NAMES } from '@/data/mockData';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, Zap, X, User, MapPin, Phone, Mail, Flag } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, Zap, X, User, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck } from 'lucide-react';
 
 const ESCROW_MILESTONES = [
   { name: 'SOW Confirmed', percent: 15 },
@@ -30,6 +30,17 @@ const ESCROW_PAYMENT_DETAILS = [
   { approvedDate: '2026-02-05', releasedDate: '2026-02-07', approvedBy: 'Caitlin Frost (Escrow Specialist)', notes: 'PTO granted — system activated' },
   { approvedDate: '2026-01-28', releasedDate: '2026-01-30', approvedBy: 'Marcus Reeves (Capital Ops)', notes: 'Speed bonus qualified — under 26 days' },
   { approvedDate: '2026-01-20', releasedDate: '2026-01-22', approvedBy: 'Jordan Kim (Fund Manager)', notes: 'All milestone gates cleared' },
+];
+
+const FUNDS_RELEASE_HISTORY = [
+  { project: 'ASP-2025', customer: 'Luis Martinez', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 4500, fundedDate: '2026-01-10', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Signed SOW contract', 'Utility bill verification', 'Credit approval letter'], photos: ['Roof measurement photos', 'Electrical panel photo'], report: 'SOW fully executed with customer signature verified. Utility bill confirms 1,200 kWh avg monthly usage — system sized at 8.5 kW meets 80%+ offset requirement. Credit tier confirmed at Tier 1. All origination documents present and compliant.' },
+  { project: 'ASP-2025', customer: 'Luis Martinez', milestone: 'M2 — Permit + Materials', percent: 20, amount: 6000, fundedDate: '2026-01-22', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['City permit approval', 'Material order confirmation', 'Engineering stamp'], photos: ['Permit document scan', 'Material delivery receipt'], report: 'Permit #HOU-2026-44821 approved by City of Houston on 01/20. Materials ordered through certified distributor — 22x REC Alpha 400W panels + Enphase IQ8+ microinverters. Engineering stamp from licensed PE confirms structural load compliance.' },
+  { project: 'ASP-2025', customer: 'Luis Martinez', milestone: 'M3 — Install Scheduled', percent: 15, amount: 4500, fundedDate: '2026-02-03', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['Install crew assignment', 'Homeowner install confirmation', 'Insurance certificate'], photos: ['Pre-install roof condition photos'], report: 'Install crew (Team Bravo — SunPro Installers) assigned for 02/08. Homeowner confirmed availability window. Installer insurance certificate valid through 12/2026. Pre-install roof inspection shows no structural concerns — shingles in good condition, no water damage.' },
+  { project: 'ASP-2025', customer: 'Luis Martinez', milestone: 'M4 — Install Complete', percent: 20, amount: 6000, fundedDate: '2026-02-10', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Install completion certificate', 'System commissioning report', 'Inverter serial log'], photos: ['Completed array photo', 'Inverter installation photo', 'Wiring closeup', 'Panel layout aerial'], report: 'Installation completed 02/08 — 22 panels mounted on south-facing roof at 25° tilt. All microinverters communicating. System commissioning report shows 8.5 kW DC capacity. Wiring meets NEC 2023 code. Inverter serial numbers logged and warranty registered.' },
+  { project: 'ASP-2026', customer: 'Patricia Williams', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 5250, fundedDate: '2026-02-01', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['Signed SOW contract', 'Utility bill verification', 'HOA pre-approval'], photos: ['Property exterior photo', 'Electrical panel photo'], report: 'SOW executed. System sized at 10.2 kW for 1,450 kWh monthly usage. HOA pre-approval obtained — final board vote pending for panel placement variance. Credit verification passed at Tier 2. All documents compliant.' },
+  { project: 'ASP-2026', customer: 'Patricia Williams', milestone: 'M2 — Permit + Materials', percent: 20, amount: 7000, fundedDate: '2026-02-15', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['City permit approval', 'Material order confirmation'], photos: ['Permit scan'], report: 'Permit #HOU-2026-51203 approved. Materials ordered — 26x REC Alpha 400W + Enphase IQ8+. Note: HOA final approval still pending — capital release authorized at M2 per policy as permit is independent of HOA cosmetic review.' },
+  { project: 'ASP-2030', customer: 'Angela Davis', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 4125, fundedDate: '2026-02-20', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Signed SOW contract', 'Utility bill verification'], photos: ['Roof photo', 'Meter photo'], report: 'SOW confirmed. 7.8 kW system for 1,050 kWh avg usage. 80% offset verified. Standard origination — no flags at intake.' },
+  { project: 'ASP-2030', customer: 'Angela Davis', milestone: 'M2 — Permit + Materials', percent: 20, amount: 5500, fundedDate: '2026-03-05', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['City permit approval', 'Material order confirmation'], photos: ['Permit document'], report: 'Permit approved. Materials ordered. Note: During install prep, structural damage was discovered on NE roof section — capital release paused at M3 pending homeowner repair. This M2 release was approved prior to discovery.' },
 ];
 
 const RISK_FLAGS = [
@@ -531,6 +542,99 @@ const FinancierPortal = () => {
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] text-muted-foreground">Notes</span>
                             <span className="text-xs text-muted-foreground">{details.notes}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Funds Released History */}
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-border text-sm font-extrabold text-card-foreground flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-[hsl(var(--green))]" /> Funds Released History
+              </div>
+              {FUNDS_RELEASE_HISTORY.map((entry, i) => {
+                const isOpen = expandedHistory === i;
+                return (
+                  <div key={i} className="border-b border-border">
+                    <div
+                      className="px-5 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors flex items-center justify-between"
+                      onClick={() => setExpandedHistory(isOpen ? null : i)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+                        <div>
+                          <div className="text-sm font-bold text-card-foreground">{entry.customer}</div>
+                          <div className="text-[10px] text-muted-foreground">{entry.project} · {entry.milestone}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="text-sm font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()}</div>
+                          <div className="text-[10px] text-muted-foreground">{entry.percent}% · {entry.fundedDate}</div>
+                        </div>
+                        <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
+                      </div>
+                    </div>
+                    {isOpen && (
+                      <div className="px-5 pb-4 space-y-3">
+                        {/* Approval Info */}
+                        <div className="bg-muted rounded-xl p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground">Funded Date</span>
+                            <span className="text-xs font-bold text-[hsl(var(--green))]">{entry.fundedDate}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground">Approved By</span>
+                            <span className="text-xs font-bold text-card-foreground">{entry.approvedBy}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground">Amount Released</span>
+                            <span className="text-xs font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()} ({entry.percent}%)</span>
+                          </div>
+                        </div>
+
+                        {/* Documents */}
+                        <div>
+                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5">
+                            <FileText className="w-3 h-3" /> Supporting Documents
+                          </div>
+                          <div className="space-y-1">
+                            {entry.documents.map((doc, di) => (
+                              <div key={di} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+                                <FileText className="w-3 h-3 text-primary shrink-0" />
+                                <span className="text-xs text-card-foreground">{doc}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Photos */}
+                        <div>
+                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5">
+                            <Camera className="w-3 h-3" /> Verification Photos
+                          </div>
+                          <div className="space-y-1">
+                            {entry.photos.map((photo, phi) => (
+                              <div key={phi} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+                                <Camera className="w-3 h-3 text-primary shrink-0" />
+                                <span className="text-xs text-card-foreground">{photo}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Approval Report */}
+                        <div>
+                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5">
+                            <ClipboardCheck className="w-3 h-3" /> Approval Report
+                          </div>
+                          <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
+                            <div className="text-xs text-card-foreground leading-relaxed">{entry.report}</div>
+                            <div className="mt-2 text-[10px] text-muted-foreground">— {entry.approvedBy}, {entry.fundedDate}</div>
                           </div>
                         </div>
                       </div>
