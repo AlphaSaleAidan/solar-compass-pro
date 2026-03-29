@@ -237,10 +237,11 @@ const FinancierPortal = () => {
         return (
           <div className="space-y-5">
             {/* Key Metrics */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Total Portfolio Contract Value', value: `$${Math.round(totalPortfolioContract / 1000)}k`, icon: DollarSign, color: 'text-primary', sub: `${PROJECTS.length} projects` },
                 { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / totalSystemCost) * 100)}% deployed` },
+                { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / totalPortfolioContract) * 100)}% margin` },
                 { label: 'Avg Days to PTO', value: `${avgDaysToPTO}d`, icon: Clock, color: 'text-[hsl(var(--blue))]', sub: `Target: 26d` },
               ].map((s, i) => (
                 <div key={i} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
