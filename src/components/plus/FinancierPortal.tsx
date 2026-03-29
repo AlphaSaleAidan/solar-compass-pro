@@ -601,12 +601,6 @@ const FinancierPortal = () => {
                           </div>
                           <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()}</div>
-                          <div className="text-[10px] text-muted-foreground">{entry.percent}% · {entry.fundedDate}</div>
-                        </div>
-                        <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
-                      </div>
                     </div>
                     {isOpen && (
                       <div className="px-5 pb-4 space-y-3">
