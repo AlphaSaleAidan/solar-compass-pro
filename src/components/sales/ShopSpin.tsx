@@ -153,7 +153,7 @@ const ShopSpin = () => {
     super_alpha: 'bg-asp-purple/12 border-asp-purple/30',
   };
 
-  const displayTrackItems = trackItemsRef.current.length > 0 ? trackItemsRef.current : trackItems;
+  const displayTrackItems = trackItemsRef.current.length > 0 ? [...trackItemsRef.current] : trackItems;
 
   return (
     <div className="bg-bg2 border border-border rounded-xl p-5 animate-fade-in-up stagger-2">
