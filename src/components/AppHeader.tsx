@@ -23,7 +23,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
 
   const aspPlusTabs = user.role === 'financier'
     ? ['Overview', 'Portfolio', 'Escrow', 'Risk Stack']
-    : ['Overview', 'Projects', 'Payments', 'Tickets'];
+    : ['Portal'];
 
   const tabs = isPlus ? aspPlusTabs : aspTabs;
 
