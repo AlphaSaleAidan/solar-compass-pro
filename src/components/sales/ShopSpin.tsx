@@ -186,10 +186,10 @@ const ShopSpin = () => {
           <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 text-primary text-xs">▼</span>
           <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 text-primary text-xs">▲</span>
         </div>
-        <div ref={trackRef} className="flex items-center gap-1.5 h-full py-1.5 will-change-transform">
+        <div ref={trackRef} key={trackKey} className="flex items-center gap-1.5 h-full py-1.5 will-change-transform">
           {displayTrackItems.map((item, i) => (
             <div
-              key={`${i}-${item.name}`}
+              key={`${i}-${item.name}-${trackKey}`}
               className={`shrink-0 w-24 h-[90px] rounded-lg flex flex-col items-center justify-center gap-1 border-[1.5px] ${itemTierColors[item.tier]}`}
             >
               <span className="text-2xl leading-none">{item.icon}</span>
