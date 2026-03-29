@@ -500,8 +500,12 @@ const FinancierPortal = () => {
                 <DollarSign className="w-4 h-4 text-[hsl(var(--green))]" /> Escrow by Project
               </div>
               {PROJECTS.map((p, pi) => {
-                const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
-                const pct = Math.round((funded / p.projectCost) * 100);
+                const cumulativePercents = ESCROW_MILESTONES.reduce<number[]>((acc, m) => {
+                  acc.push((acc.length > 0 ? acc[acc.length - 1] : 0) + m.percent);
+                  return acc;
+                }, []);
+                const pct = p.currentMilestone > 0 ? cumulativePercents[Math.min(p.currentMilestone - 1, cumulativePercents.length - 1)] : 0;
+                const funded = Math.round(p.projectCost * (pct / 100));
                 const isExpanded = expandedEscrow === pi;
                 const details = ESCROW_PAYMENT_DETAILS[pi % ESCROW_PAYMENT_DETAILS.length];
                 return (
@@ -587,7 +591,22 @@ const FinancierPortal = () => {
                           <div className="text-[10px] text-muted-foreground">{entry.project} · {entry.milestone}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-0.5">
+                          {Array.from({ length: 7 }).map((_, mi) => {
+                            const milestoneNum = parseInt(entry.milestone.match(/M(\d)/)?.[1] || '0');
+                            return (
+                              <div
+                                key={mi}
+                                className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
+                                  mi < milestoneNum ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                                }`}
+                              >
+                                M{mi + 1}
+                              </div>
+                            );
+                          })}
+                        </div>
                         <div className="text-right">
                           <div className="text-sm font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()}</div>
                           <div className="text-[10px] text-muted-foreground">{entry.percent}% · {entry.fundedDate}</div>
