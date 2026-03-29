@@ -28,6 +28,7 @@ const ShopSpin = () => {
   ]);
   const trackRef = useRef<HTMLDivElement>(null);
   const trackItemsRef = useRef<typeof SPIN_PRIZES>([]);
+  const [trackKey, setTrackKey] = useState(0);
 
   const tierMap: Record<string, string[]> = {
     'Normal Spin': ['normal'],
