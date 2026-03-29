@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PROJECTS, MILESTONE_NAMES } from '@/data/mockData';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, Zap, Target, ArrowDownRight, ArrowUpRight, X, User, MapPin, Phone, Mail, Flag } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, Zap, X, User, MapPin, Phone, Mail, Flag } from 'lucide-react';
 
 const ESCROW_MILESTONES = [
   { name: 'SOW Confirmed', percent: 15 },
@@ -45,13 +45,11 @@ const FinancierPortal = () => {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedEscrow, setExpandedEscrow] = useState<number | null>(null);
 
-  const totalPortfolio = PROJECTS.reduce((s, p) => s + p.contractValue, 0);
-  const totalFunded = PROJECTS.reduce((s, p) => s + Math.round(p.contractValue * (p.currentMilestone / p.totalMilestones)), 0);
+  const totalPortfolioContract = PROJECTS.reduce((s, p) => s + p.contractValue, 0);
+  const totalSystemCost = PROJECTS.reduce((s, p) => s + p.projectCost, 0);
+  const totalFunded = PROJECTS.reduce((s, p) => s + Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones)), 0);
   const activeProjects = PROJECTS.filter(p => p.status !== 'completed').length;
-  const defaultRate = 5.2;
-  const previousDefaultRate = 18;
   const avgDaysToPTO = 24;
-  const cancelRate = 7;
 
   const selectedProjectData = selectedProject ? PROJECTS.find(p => p.id === selectedProject) : null;
 
@@ -91,7 +89,7 @@ const FinancierPortal = () => {
   const renderProjectDetail = () => {
     if (!selectedProjectData) return null;
     const p = selectedProjectData;
-    const funded = Math.round(p.contractValue * (p.currentMilestone / p.totalMilestones));
+    const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setSelectedProject(null)}>
         <div className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto m-4 shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -135,7 +133,7 @@ const FinancierPortal = () => {
                   { label: 'Interest Rate', value: `${p.interestRate}%`, color: 'text-primary' },
                   { label: 'Terms', value: p.loanTerms, color: 'text-card-foreground' },
                   { label: 'Capital Released', value: `$${funded.toLocaleString()}`, color: 'text-[hsl(var(--green))]' },
-                  { label: 'In Escrow', value: `$${(p.contractValue - funded).toLocaleString()}`, color: 'text-[hsl(var(--yellow))]' },
+                  { label: 'In Escrow', value: `$${(p.projectCost - funded).toLocaleString()}`, color: 'text-[hsl(var(--yellow))]' },
                 ].map((item, i) => (
                   <div key={i} className="bg-muted rounded-xl p-3">
                     <div className="text-[10px] text-muted-foreground">{item.label}</div>
@@ -206,9 +204,9 @@ const FinancierPortal = () => {
                   <span className="text-sm font-black text-[hsl(var(--green))]">${funded.toLocaleString()}</span>
                 </div>
                 <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${(funded / p.contractValue) * 100}%` }} />
+                  <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${(funded / p.projectCost) * 100}%` }} />
                 </div>
-                <div className="text-[10px] text-muted-foreground mt-1 text-right">{Math.round((funded / p.contractValue) * 100)}% of ${p.contractValue.toLocaleString()}</div>
+                <div className="text-[10px] text-muted-foreground mt-1 text-right">{Math.round((funded / p.projectCost) * 100)}% of ${p.projectCost.toLocaleString()}</div>
               </div>
             </div>
             {/* Milestones */}
@@ -239,11 +237,10 @@ const FinancierPortal = () => {
         return (
           <div className="space-y-5">
             {/* Key Metrics */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { label: 'Total Portfolio', value: `$${(totalPortfolio / 1000000).toFixed(2)}M`, icon: DollarSign, color: 'text-primary', sub: `${PROJECTS.length} projects` },
-                { label: 'Capital Deployed', value: `$${(totalFunded / 1000000).toFixed(2)}M`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / totalPortfolio) * 100)}% deployed` },
-                { label: 'Default Rate', value: `${defaultRate}%`, icon: Shield, color: 'text-[hsl(var(--green))]', sub: `↓ from ${previousDefaultRate}%` },
+                { label: 'Total Portfolio Contract Value', value: `$${Math.round(totalPortfolioContract / 1000)}k`, icon: DollarSign, color: 'text-primary', sub: `${PROJECTS.length} projects` },
+                { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / totalSystemCost) * 100)}% deployed` },
                 { label: 'Avg Days to PTO', value: `${avgDaysToPTO}d`, icon: Clock, color: 'text-[hsl(var(--blue))]', sub: `Target: 26d` },
               ].map((s, i) => (
                 <div key={i} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
@@ -257,31 +254,8 @@ const FinancierPortal = () => {
               ))}
             </div>
 
-            {/* Before vs After */}
-            <div className="bg-card border border-border rounded-2xl p-5">
-              <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
-                <Target className="w-4 h-4 text-primary" /> ASP Impact — Before vs After
-              </h3>
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label: 'Default Rate', before: '18%', after: `${defaultRate}%`, improvement: `${Math.round(((previousDefaultRate - defaultRate) / previousDefaultRate) * 100)}%` },
-                  { label: 'Days to PTO', before: '60d', after: `${avgDaysToPTO}d`, improvement: `${Math.round(((60 - avgDaysToPTO) / 60) * 100)}%` },
-                  { label: 'Cancel Rate', before: '20%', after: `${cancelRate}%`, improvement: `${Math.round(((20 - cancelRate) / 20) * 100)}%` },
-                ].map((m, i) => (
-                  <div key={i} className="bg-muted rounded-xl p-4 text-center">
-                    <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-3">{m.label}</div>
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="text-lg font-bold text-[hsl(var(--red))]/60 line-through">{m.before}</div>
-                      <ArrowDownRight className="w-4 h-4 text-[hsl(var(--green))]" />
-                      <div className="text-lg font-black text-[hsl(var(--green))]">{m.after}</div>
-                    </div>
-                    <div className="text-xs font-bold text-[hsl(var(--green))] mt-2 flex items-center justify-center gap-1">
-                      <ArrowUpRight className="w-3 h-3" /> {m.improvement} improvement
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+
+
 
             {/* Active Projects with hoverable milestones + clickable */}
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -292,7 +266,7 @@ const FinancierPortal = () => {
                 <button onClick={() => setActiveSection('portfolio')} className="text-xs text-primary font-bold hover:underline">View All</button>
               </div>
               {PROJECTS.filter(p => p.status !== 'completed').slice(0, 5).map(p => {
-                const funded = Math.round(p.contractValue * (p.currentMilestone / p.totalMilestones));
+                const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
                 return (
                   <div
                     key={p.id}
@@ -338,19 +312,19 @@ const FinancierPortal = () => {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="bg-muted rounded-xl p-4">
                   <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-1">In Escrow</div>
-                  <div className="text-xl font-black text-[hsl(var(--yellow))]">${((totalPortfolio - totalFunded) / 1000).toFixed(0)}K</div>
+                  <div className="text-xl font-black text-[hsl(var(--yellow))]">${Math.round((totalSystemCost - totalFunded) / 1000)}k</div>
                 </div>
                 <div className="bg-muted rounded-xl p-4">
                   <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-1">Released</div>
-                  <div className="text-xl font-black text-[hsl(var(--green))]">${(totalFunded / 1000).toFixed(0)}K</div>
+                  <div className="text-xl font-black text-[hsl(var(--green))]">${Math.round(totalFunded / 1000)}k</div>
                 </div>
               </div>
               <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full transition-all" style={{ width: `${(totalFunded / totalPortfolio) * 100}%` }} />
+                <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full transition-all" style={{ width: `${(totalFunded / totalSystemCost) * 100}%` }} />
               </div>
               <div className="flex justify-between mt-2 text-[10px] text-muted-foreground">
                 <span>0%</span>
-                <span>{Math.round((totalFunded / totalPortfolio) * 100)}% deployed</span>
+                <span>{Math.round((totalFunded / totalSystemCost) * 100)}% deployed</span>
                 <span>100%</span>
               </div>
             </div>
@@ -362,8 +336,8 @@ const FinancierPortal = () => {
           <div className="space-y-3">
             {PROJECTS.map(p => {
               const isExpanded = expandedProject === p.id;
-              const funded = Math.round(p.contractValue * (p.currentMilestone / p.totalMilestones));
-              const remaining = p.contractValue - funded;
+              const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+              const remaining = p.projectCost - funded;
               return (
                 <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
                   <div className="flex gap-px h-1.5">
@@ -433,7 +407,7 @@ const FinancierPortal = () => {
                         <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Escrow Release Schedule</h4>
                         <div className="grid grid-cols-7 gap-2">
                           {ESCROW_MILESTONES.map((m, i) => {
-                            const amount = Math.round(p.contractValue * (m.percent / 100));
+                            const amount = Math.round(p.projectCost * (m.percent / 100));
                             const released = i < p.currentMilestone;
                             return (
                               <div key={i} className={`rounded-xl p-3 text-center border ${released ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-muted border-border'}`}>
@@ -477,7 +451,7 @@ const FinancierPortal = () => {
                           <span className="text-sm font-black text-[hsl(var(--yellow))]">${remaining.toLocaleString()}</span>
                         </div>
                         <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${(funded / p.contractValue) * 100}%` }} />
+                          <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${(funded / p.projectCost) * 100}%` }} />
                         </div>
                       </div>
                     </div>
@@ -513,8 +487,8 @@ const FinancierPortal = () => {
                 <DollarSign className="w-4 h-4 text-[hsl(var(--green))]" /> Escrow by Project
               </div>
               {PROJECTS.map((p, pi) => {
-                const funded = Math.round(p.contractValue * (p.currentMilestone / p.totalMilestones));
-                const pct = Math.round((funded / p.contractValue) * 100);
+                const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+                const pct = Math.round((funded / p.projectCost) * 100);
                 const isExpanded = expandedEscrow === pi;
                 const details = ESCROW_PAYMENT_DETAILS[pi % ESCROW_PAYMENT_DETAILS.length];
                 return (
@@ -531,7 +505,7 @@ const FinancierPortal = () => {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-xs text-[hsl(var(--green))] font-bold">${funded.toLocaleString()} released</span>
-                          <span className="text-xs text-muted-foreground">/ ${p.contractValue.toLocaleString()}</span>
+                          <span className="text-xs text-muted-foreground">/ ${p.projectCost.toLocaleString()}</span>
                         </div>
                       </div>
                       <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
