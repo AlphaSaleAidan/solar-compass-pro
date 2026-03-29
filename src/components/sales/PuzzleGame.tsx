@@ -72,9 +72,11 @@ const PuzzleGame = () => {
               <img
                 src={texasOutline}
                 alt=""
-                className={`w-full h-full object-contain ${pieces[i] ? 'brightness-100' : 'brightness-50'}`}
+                className="w-full h-full object-contain"
                 style={{
-                  filter: pieces[i] ? 'brightness(1) drop-shadow(0 0 6px hsl(var(--primary) / 0.5))' : 'brightness(0.3)',
+                  filter: pieces[i]
+                    ? 'brightness(0) saturate(100%) invert(30%) sepia(90%) saturate(1500%) hue-rotate(200deg) brightness(1.2) drop-shadow(0 0 3px hsl(var(--primary))) drop-shadow(0 0 1px hsl(var(--primary)))'
+                    : 'brightness(0.2) opacity(0.4)',
                 }}
               />
             </div>
