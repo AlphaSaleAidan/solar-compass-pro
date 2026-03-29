@@ -22,7 +22,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
     : ['QC Review', 'Milestones', 'Projects', 'Editor', 'Communication', 'Super Support'];
 
   const aspPlusTabs = user.role === 'financier'
-    ? ['Overview', 'Portfolio', 'Escrow', 'Risk Stack']
+    ? ['Portal']
     : ['Portal'];
 
   const tabs = isPlus ? aspPlusTabs : aspTabs;
