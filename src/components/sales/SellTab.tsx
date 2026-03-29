@@ -135,56 +135,19 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
 
   return (
     <div className="relative min-h-[calc(100vh-58px)] overflow-hidden">
-      {/* Underwater ocean background */}
+      {/* Ocean video background */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(200,80%,12%)] via-[hsl(195,75%,18%)] to-[hsl(210,70%,8%)]" />
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(8)].map((_, i) => (
-            <div
-              key={`ray-${i}`}
-              className="absolute top-0 opacity-[0.07]"
-              style={{
-                left: `${8 + i * 12}%`,
-                width: `${3 + (i % 3)}%`,
-                height: '100%',
-                background: `linear-gradient(180deg, hsla(185, 60%, 70%, 0.6) 0%, hsla(195, 70%, 50%, 0.15) 50%, transparent 85%)`,
-                transform: `rotate(${-4 + i * 1.2}deg)`,
-                transformOrigin: 'top center',
-                animation: `rayShimmer ${6 + i * 0.8}s ease-in-out infinite alternate`,
-                animationDelay: `${i * 0.5}s`,
-              }}
-            />
-          ))}
-          {[...Array(15)].map((_, i) => (
-            <div
-              key={`caustic-${i}`}
-              className="absolute rounded-full"
-              style={{
-                left: `${(i * 7.3) % 95}%`,
-                top: `${(i * 11.2 + 20) % 80}%`,
-                width: `${30 + (i % 5) * 15}px`,
-                height: `${30 + (i % 5) * 15}px`,
-                background: `radial-gradient(circle, hsla(185, 60%, 65%, 0.12) 0%, transparent 70%)`,
-                animation: `causticFloat ${4 + (i % 4) * 1.5}s ease-in-out infinite alternate`,
-                animationDelay: `${i * 0.3}s`,
-              }}
-            />
-          ))}
-          {[...Array(12)].map((_, i) => (
-            <div
-              key={`bubble-${i}`}
-              className="absolute rounded-full border border-white/10 bg-white/[0.03]"
-              style={{
-                left: `${(i * 8.5) % 100}%`,
-                bottom: `-5%`,
-                width: `${3 + (i % 4) * 2}px`,
-                height: `${3 + (i % 4) * 2}px`,
-                animation: `bubbleRise ${8 + (i % 5) * 2}s linear infinite`,
-                animationDelay: `${i * 0.7}s`,
-              }}
-            />
-          ))}
-        </div>
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ playbackRate: 0.35 }}
+          ref={(el) => { if (el) el.playbackRate = 0.35; }}
+          src="/videos/ocean-bg.mp4"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
       </div>
 
       {/* Quick action bar */}
