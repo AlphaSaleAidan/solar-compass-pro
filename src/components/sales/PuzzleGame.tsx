@@ -19,15 +19,21 @@ const PuzzleGame = () => {
   const secs = timeLeft % 60;
   const completedCount = pieces.filter(Boolean).length;
 
-  // Recognizable Texas outline — panhandle, Rio Grande, Gulf Coast
-  const texasPath = "M 25 3 L 25 35 L 3 35 L 5 40 L 9 44 L 11 49 L 9 53 L 13 57 L 17 55 L 21 60 L 18 65 L 23 70 L 27 67 L 30 72 L 26 77 L 32 82 L 37 80 L 42 85 L 47 90 L 53 95 L 58 93 L 61 88 L 58 83 L 63 78 L 68 72 L 73 66 L 78 60 L 83 54 L 88 48 L 92 42 L 96 36 L 97 30 L 96 24 L 93 18 L 88 12 L 82 7 L 76 4 L 70 3 L 64 5 L 58 3 L 52 3 L 46 5 L 40 3 L 34 3 L 28 3 Z";
+  // Clean Texas outline matching reference image — panhandle top-left, smooth curves
+  const texasPath = "M 28 2 L 28 5 L 28 10 L 28 15 L 28 20 L 28 25 L 28 30 L 28 33 L 5 33 L 5 36 L 7 39 L 10 42 L 12 46 L 11 50 L 14 54 L 18 52 L 22 56 L 19 61 L 24 66 L 28 63 L 31 68 L 27 73 L 33 78 L 38 76 L 43 81 L 48 87 L 54 93 L 58 97 L 62 94 L 64 89 L 61 84 L 65 79 L 70 73 L 75 67 L 80 60 L 84 54 L 88 48 L 92 42 L 95 36 L 97 30 L 97 24 L 95 18 L 91 13 L 86 9 L 80 5 L 74 3 L 68 2 L 62 4 L 56 2 L 50 2 L 44 4 L 38 2 L 32 2 Z";
 
-  // Divide Texas into 4 quadrants with clip paths
-  const quadrants = [
-    { clipPath: 'polygon(0% 0%, 50% 0%, 50% 50%, 0% 50%)', label: 'NW' },
-    { clipPath: 'polygon(50% 0%, 100% 0%, 100% 50%, 50% 50%)', label: 'NE' },
-    { clipPath: 'polygon(0% 50%, 50% 50%, 50% 100%, 0% 100%)', label: 'SW' },
-    { clipPath: 'polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%)', label: 'SE' },
+  // 4 separate piece paths — each is a quarter of Texas with a gap between them
+  // We'll render 4 separate SVGs, each clipped to a quadrant with inset for gap
+  const gapPx = 3; // gap in SVG units (percentage of viewBox)
+  const quadrantClips = [
+    // Top-left (panhandle area)
+    `polygon(0% 0%, calc(50% - ${gapPx}px) 0%, calc(50% - ${gapPx}px) calc(50% - ${gapPx}px), 0% calc(50% - ${gapPx}px))`,
+    // Top-right
+    `polygon(calc(50% + ${gapPx}px) 0%, 100% 0%, 100% calc(50% - ${gapPx}px), calc(50% + ${gapPx}px) calc(50% - ${gapPx}px))`,
+    // Bottom-left (Rio Grande)
+    `polygon(0% calc(50% + ${gapPx}px), calc(50% - ${gapPx}px) calc(50% + ${gapPx}px), calc(50% - ${gapPx}px) 100%, 0% 100%)`,
+    // Bottom-right (Gulf Coast)
+    `polygon(calc(50% + ${gapPx}px) calc(50% + ${gapPx}px), 100% calc(50% + ${gapPx}px), 100% 100%, calc(50% + ${gapPx}px) 100%)`,
   ];
 
   return (
@@ -51,47 +57,52 @@ const PuzzleGame = () => {
 
       {/* Texas-shaped puzzle */}
       <div className="flex justify-center mb-3">
-        <div className="relative w-40 h-40">
-          {/* Base Texas outline (unfilled) */}
+        <div className="relative w-44 h-44">
+          {/* Full Texas outline stroke (always visible) */}
           <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
-            <path d={texasPath} className="fill-bg3 stroke-border" strokeWidth="1" />
+            <path d={texasPath} fill="none" stroke="hsl(var(--foreground))" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
           </svg>
 
-          {/* Filled quadrants */}
-          {quadrants.map((q, i) => (
+          {/* 4 puzzle pieces with gaps */}
+          {quadrantClips.map((clip, i) => (
             <div
               key={i}
               className="absolute inset-0 transition-all duration-700"
-              style={{ clipPath: q.clipPath, opacity: pieces[i] ? 1 : 0 }}
+              style={{ clipPath: clip, opacity: pieces[i] ? 1 : 0 }}
             >
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 <defs>
-                  <linearGradient id={`texas-grad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.15" />
+                  <linearGradient id={`texas-piece-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
                   </linearGradient>
                 </defs>
-                <path d={texasPath} fill={`url(#texas-grad-${i})`} stroke="hsl(var(--primary))" strokeWidth="1.5" />
+                <path d={texasPath} fill={`url(#texas-piece-${i})`} stroke="hsl(var(--primary))" strokeWidth="1.5" strokeLinejoin="round" />
               </svg>
             </div>
           ))}
 
-          {/* Divider lines */}
+          {/* Gap lines — thicker dark lines creating the puzzle split */}
           <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none">
-            <line x1="50" y1="0" x2="50" y2="100" stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="3,3" />
-            <line x1="0" y1="50" x2="100" y2="50" stroke="hsl(var(--border))" strokeWidth="0.5" strokeDasharray="3,3" />
+            <clipPath id="texas-clip">
+              <path d={texasPath} />
+            </clipPath>
+            <g clipPath="url(#texas-clip)">
+              <line x1="50" y1="0" x2="50" y2="100" stroke="hsl(var(--background))" strokeWidth="4" />
+              <line x1="0" y1="50" x2="100" y2="50" stroke="hsl(var(--background))" strokeWidth="4" />
+            </g>
           </svg>
 
           {/* Question marks for unfilled pieces */}
-          {quadrants.map((q, i) => !pieces[i] && (
+          {quadrantClips.map((_, i) => !pieces[i] && (
             <div
               key={`q-${i}`}
-              className="absolute text-muted-foreground/30 font-black text-lg flex items-center justify-center"
+              className="absolute text-muted-foreground/40 font-black text-lg flex items-center justify-center"
               style={{
-                left: i % 2 === 0 ? '15%' : '60%',
-                top: i < 2 ? '15%' : '60%',
-                width: '25%',
-                height: '25%',
+                left: i % 2 === 0 ? '12%' : '58%',
+                top: i < 2 ? '12%' : '58%',
+                width: '28%',
+                height: '28%',
               }}
             >
               ?
@@ -99,18 +110,18 @@ const PuzzleGame = () => {
           ))}
 
           {/* Stars for filled pieces */}
-          {quadrants.map((q, i) => pieces[i] && (
+          {quadrantClips.map((_, i) => pieces[i] && (
             <div
               key={`s-${i}`}
               className="absolute text-primary flex items-center justify-center"
               style={{
-                left: i % 2 === 0 ? '15%' : '60%',
-                top: i < 2 ? '15%' : '60%',
-                width: '25%',
-                height: '25%',
+                left: i % 2 === 0 ? '12%' : '58%',
+                top: i < 2 ? '12%' : '58%',
+                width: '28%',
+                height: '28%',
               }}
             >
-              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-primary">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-primary">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z" />
               </svg>
             </div>
