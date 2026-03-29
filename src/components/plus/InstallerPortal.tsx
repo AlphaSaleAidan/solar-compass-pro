@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PROJECTS, MILESTONE_NAMES, INSTALLER_MILESTONES_DATA } from '@/data/mockData';
+import { PROJECTS, MILESTONE_NAMES } from '@/data/mockData';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X } from 'lucide-react';
 
 const INSTALLER_MILESTONES = [
