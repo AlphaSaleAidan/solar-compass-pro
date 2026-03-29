@@ -92,7 +92,7 @@ const FinancierPortal = () => {
     const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setSelectedProject(null)}>
-        <div className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto m-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="bg-card border border-border rounded-2xl w-full max-w-md max-h-[70vh] overflow-y-auto m-4 shadow-2xl" onClick={e => e.stopPropagation()}>
           <div className="px-6 py-4 border-b border-border flex items-center justify-between">
             <div>
               <h2 className="text-lg font-black text-card-foreground">{p.customerName}</h2>
