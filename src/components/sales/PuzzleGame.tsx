@@ -19,8 +19,8 @@ const PuzzleGame = () => {
   const secs = timeLeft % 60;
   const completedCount = pieces.filter(Boolean).length;
 
-  // Texas outline path (simplified)
-  const texasPath = "M 50 5 L 65 5 L 70 10 L 75 8 L 82 12 L 85 10 L 92 14 L 95 12 L 98 18 L 95 25 L 97 30 L 95 38 L 90 42 L 88 50 L 82 55 L 78 62 L 72 68 L 68 75 L 60 82 L 55 88 L 48 92 L 42 95 L 38 90 L 35 92 L 30 88 L 25 85 L 22 80 L 18 72 L 15 65 L 12 55 L 10 48 L 8 40 L 10 35 L 8 28 L 12 22 L 15 18 L 20 15 L 28 12 L 35 10 L 42 8 Z";
+  // Recognizable Texas outline — panhandle, Rio Grande, Gulf Coast
+  const texasPath = "M 25 3 L 25 35 L 3 35 L 5 40 L 9 44 L 11 49 L 9 53 L 13 57 L 17 55 L 21 60 L 18 65 L 23 70 L 27 67 L 30 72 L 26 77 L 32 82 L 37 80 L 42 85 L 47 90 L 53 95 L 58 93 L 61 88 L 58 83 L 63 78 L 68 72 L 73 66 L 78 60 L 83 54 L 88 48 L 92 42 L 96 36 L 97 30 L 96 24 L 93 18 L 88 12 L 82 7 L 76 4 L 70 3 L 64 5 L 58 3 L 52 3 L 46 5 L 40 3 L 34 3 L 28 3 Z";
 
   // Divide Texas into 4 quadrants with clip paths
   const quadrants = [
