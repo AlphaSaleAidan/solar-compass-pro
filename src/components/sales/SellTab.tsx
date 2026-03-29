@@ -143,7 +143,6 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ playbackRate: 0.35 }}
           ref={(el) => { if (el) el.playbackRate = 0.35; }}
           src="/videos/ocean-bg.mp4"
         />
