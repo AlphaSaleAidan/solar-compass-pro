@@ -308,7 +308,7 @@ const MilestoneVerification = () => {
                                 {isCurrent && (
                                   <div className="mt-4 flex items-center justify-between">
                                     <div className="text-[10px] text-muted-foreground">
-                                      {allReady ? '✅ All checklist items complete' : `⏳ ${sop.checklist.filter(c => milestoneState.checklistDone[c.id]).length}/${sop.checklist.length} items done`}
+                                      {allReady ? 'All checklist items complete' : `${sop.checklist.filter(c => milestoneState.checklistDone[c.id]).length}/${sop.checklist.length} items done`}
                                     </div>
                                     <button
                                       disabled={!allReady}
