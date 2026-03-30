@@ -104,14 +104,16 @@ const MilestoneVerification = ({ acceptedDeals = [] }: MilestoneVerificationProp
                     {MILESTONE_NAMES.map((_, i) => (
                       <div
                         key={i}
-                        className={`w-3 h-3 rounded-full border ${
+                        className={`w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
                           i < p.currentMilestone
-                            ? isMilestoneFlagged(p.id, i) ? 'bg-[hsl(var(--red))] border-[hsl(var(--red))]' :
-                              isMilestoneConfirmed(p.id, i) ? 'bg-[hsl(var(--green))] border-[hsl(var(--green))]' :
-                              'bg-primary border-primary'
-                            : 'bg-transparent border-border'
+                            ? isMilestoneFlagged(p.id, i) ? 'bg-[hsl(var(--red))]/15 text-[hsl(var(--red))]' :
+                              isMilestoneConfirmed(p.id, i) ? 'bg-[hsl(var(--green))]/15 text-[hsl(var(--green))]' :
+                              'bg-primary/15 text-primary'
+                            : 'bg-[hsl(var(--bg3))] text-muted-foreground'
                         }`}
-                      />
+                      >
+                        M{i + 1}
+                      </div>
                     ))}
                   </div>
                   <span className={`text-[11px] font-bold px-2.5 py-1 rounded-md ${
