@@ -24,15 +24,13 @@ type ConfirmSection =
   | null;
 
 const DOCUMENTS = [
+  'Finance Docs',
   'ASP Agreement',
-  'SOW Confirmation',
-  'Utility Authorization',
-  'HOA Approval',
-  'Site Survey Report',
-  'Permit Application',
+  'Welcome Call',
 ];
 
 const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps) => {
+  const nameParts = project.customerName.split(' ');
   const [confirmSection, setConfirmSection] = useState<ConfirmSection>(null);
   const [confirmedSections, setConfirmedSections] = useState<Set<string>>(new Set());
 
@@ -72,8 +70,8 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
           title: 'Lead Name & Contact',
           icon: '👤',
           data: [
-            { label: 'First Name', value: project.customerName.split(' ')[0] },
-            { label: 'Last Name', value: project.customerName.split(' ').slice(1).join(' ') },
+            { label: 'First Name', value: nameParts[0] },
+            { label: 'Last Name', value: nameParts.slice(1).join(' ') },
             { label: 'Email', value: project.email },
             { label: 'Phone', value: project.phone },
             { label: 'Address', value: project.address },
@@ -189,8 +187,8 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'First Name', value: project.customerName.split(' ')[0] },
-                  { label: 'Last Name', value: project.customerName.split(' ').slice(1).join(' ') },
+                  { label: 'First Name', value: nameParts[0] },
+                  { label: 'Last Name', value: nameParts.slice(1).join(' ') },
                   { label: 'Email', value: project.email },
                   { label: 'Phone', value: project.phone },
                   { label: 'Address', value: project.address },
@@ -224,6 +222,9 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
                     <span className="font-bold text-foreground">{Math.round(project.annualUsage / 12).toLocaleString()} kWh</span>
                   </div>
                 </div>
+                <a href="https://www.smartmetertexas.com" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
+                  🔗 Open Smart Meter Texas →
+                </a>
               </div>
               <div className="bg-bg3 border border-border rounded-xl p-4">
                 <div className="flex justify-between items-center mb-3">
@@ -240,6 +241,9 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
                     <span className="font-bold text-foreground">{project.battery || 'None'}</span>
                   </div>
                 </div>
+                <a href="https://aurorasolar.com" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
+                  🔗 Open Aurora Design →
+                </a>
               </div>
             </div>
 
@@ -291,6 +295,9 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
                   ✅ No structural damage or water damage detected
                 </div>
               )}
+              <a href="#" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
+                🔗 View Roof Photos →
+              </a>
             </div>
 
             {/* Document Management */}
