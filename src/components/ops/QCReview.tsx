@@ -28,7 +28,7 @@ const QCReview = () => {
                 <div className="text-[10px] text-muted-foreground mt-0.5">{p.id}</div>
               </div>
               <span className="px-2 py-0.5 bg-asp-yellow/15 text-asp-yellow border border-asp-yellow/30 rounded-full text-[10px] font-extrabold uppercase">
-                Needs Review
+                Verify
               </span>
             </div>
             <div className="space-y-1.5 text-xs text-muted-foreground">
