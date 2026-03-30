@@ -364,7 +364,7 @@ const MilestoneVerification = () => {
 
         {activeProjects.length === 0 && (
           <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-12 text-center">
-            <span className="text-4xl">📋</span>
+            <ClipboardCheck className="w-10 h-10 text-muted-foreground mx-auto" />
             <p className="text-muted-foreground mt-3">No active milestone projects yet. Accept deals from the Action ASAP queue.</p>
           </div>
         )}
