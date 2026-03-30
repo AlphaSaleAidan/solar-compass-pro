@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { MILESTONE_NAMES } from '@/data/mockData';
-import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck } from 'lucide-react';
+import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const INSTALLER_MILESTONES = [
   { name: 'SOW Confirmed', percent: 15 },
@@ -32,12 +32,21 @@ const InstallerPortal = () => {
   const store = useProjectStore();
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones'>('overview');
-  const [hoveredMilestone, setHoveredMilestone] = useState<{ projectId: string; idx: number } | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedPayment, setExpandedPayment] = useState<number | null>(null);
   const [expandedMilestoneAction, setExpandedMilestoneAction] = useState<{ projectId: string; idx: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingUpload, setPendingUpload] = useState<{ projectId: string; itemId: string } | null>(null);
+  // Popup state
+  const [popupTab, setPopupTab] = useState<'details' | 'milestones' | 'uploads' | 'chat' | 'updates'>('details');
+  const [popupExpandedM, setPopupExpandedM] = useState<number | null>(null);
+  const [chatInput, setChatInput] = useState('');
+  const [newUpdateText, setNewUpdateText] = useState('');
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [ticketSubject, setTicketSubject] = useState('');
+  const [ticketPriority, setTicketPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('high');
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const photoUploadRef = useRef<HTMLInputElement>(null);
 
   const installerName = 'SunTech Installations';
   const installerProjects = store.projects.filter(p => p.installerName === installerName || p.installerName === 'Pro Solar TX');
@@ -54,7 +63,6 @@ const InstallerPortal = () => {
 
   const selectedProjectData = selectedProject ? installerProjects.find(p => p.id === selectedProject) : null;
 
-  // Count pending actions for installer across all projects
   const pendingActions = installerProjects.reduce((count, p) => {
     const sop = MILESTONE_SOPS[p.currentMilestone];
     if (!sop) return count;
@@ -74,71 +82,533 @@ const InstallerPortal = () => {
     fileInputRef.current?.click();
   };
 
-  const renderMilestoneTooltip = (project: typeof installerProjects[0], idx: number) => {
-    const milestone = project.milestoneDetails[idx];
-    if (!milestone) return null;
-    const isPassed = idx < project.currentMilestone;
-    return (
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-card border border-border rounded-xl p-3 shadow-lg z-50 pointer-events-none">
-        <div className="text-xs font-extrabold text-card-foreground mb-1">{milestone.name}</div>
-        {isPassed ? (
-          <div className="text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Completed</div>
-        ) : (
-          <div className="text-[10px] text-[hsl(var(--yellow))] font-bold">Pending</div>
-        )}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-card border-r border-b border-border rotate-45 -mt-1" />
-      </div>
-    );
+  const handleDocUpload = (projectId: string) => {
+    const fileName = `installer-doc-${Date.now()}.pdf`;
+    store.addFinancierUpload(projectId, fileName, 'document', 'SunTech Installations');
   };
 
+  const handlePhotoUpload = (projectId: string) => {
+    const fileName = `install-photo-${Date.now()}.jpg`;
+    store.addFinancierUpload(projectId, fileName, 'photo', 'SunTech Installations');
+  };
+
+  // Enhanced project detail popup
   const renderProjectDetail = () => {
     if (!selectedProjectData) return null;
     const p = selectedProjectData;
+    const ms = store.getMilestoneState(p.id);
+    const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+    const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
+    const offset = Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100);
+    const projectTickets = store.getTicketsForProject(p.id);
+    const projectUploads = store.financierUploads[p.id] || [];
+    const projectUpdates = store.financierUpdates[p.id] || [];
+    const projectMsgs = store.projectMessages[p.id] || [];
+
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setSelectedProject(null)}>
-        <div className="bg-card border border-border rounded-2xl w-full max-w-xl max-h-[55vh] overflow-y-auto m-4 shadow-2xl" onClick={e => e.stopPropagation()}>
-          <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+      <div className="fixed inset-0 z-50 flex items-end justify-center pb-4 sm:items-center sm:pb-0" onClick={() => { setSelectedProject(null); setPopupTab('details'); setPopupExpandedM(null); }}>
+        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-3xl max-h-[75vh] overflow-hidden m-4 shadow-lg flex flex-col" onClick={e => e.stopPropagation()}>
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
             <div>
               <h2 className="text-lg font-black text-card-foreground">{p.customerName}</h2>
-              <div className="text-xs text-muted-foreground">{p.id} · {p.stage}</div>
+              <div className="text-xs text-muted-foreground">{p.id} · {p.stage} · {p.systemSize}</div>
             </div>
-            <button onClick={() => setSelectedProject(null)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80">
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowTicketModal(true)}
+                className="px-3 py-1.5 bg-[hsl(var(--red))]/10 border border-[hsl(var(--red))]/25 rounded-lg text-[10px] font-bold text-[hsl(var(--red))] hover:bg-[hsl(var(--red))]/20 transition-all flex items-center gap-1"
+              >
+                <AlertTriangle className="w-3 h-3" /> Create Ticket
+              </button>
+              <button onClick={() => { setSelectedProject(null); setPopupTab('details'); }} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
           </div>
-          <div className="p-6 space-y-5">
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { icon: User, label: 'Name', value: p.customerName },
-                { icon: MapPin, label: 'Address', value: p.address },
-                { icon: Phone, label: 'Phone', value: p.phone },
-                { icon: Mail, label: 'Email', value: p.email },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 bg-muted rounded-xl p-3">
-                  <item.icon className="w-4 h-4 text-primary shrink-0" />
-                  <div>
-                    <div className="text-[10px] text-muted-foreground">{item.label}</div>
-                    <div className="text-sm font-bold text-card-foreground">{item.value}</div>
+
+          {/* Tabs */}
+          <div className="px-6 py-2 border-b border-border flex gap-1 shrink-0">
+            {([
+              { key: 'details', label: 'Details', icon: Info },
+              { key: 'milestones', label: 'Milestones', icon: ClipboardCheck },
+              { key: 'uploads', label: 'Uploads', icon: Upload },
+              { key: 'chat', label: 'Chat', icon: MessageSquare },
+              { key: 'updates', label: 'Updates', icon: History },
+            ] as const).map(t => (
+              <button
+                key={t.key}
+                onClick={() => setPopupTab(t.key)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all ${
+                  popupTab === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                <t.icon className="w-3 h-3" /> {t.label}
+                {t.key === 'chat' && projectMsgs.length > 0 && (
+                  <span className="ml-1 px-1 py-0.5 bg-primary/20 text-primary rounded-full text-[8px] font-extrabold">{projectMsgs.length}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {popupTab === 'details' && (
+              <div className="space-y-4">
+                {/* Financial Summary */}
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
+                    { label: 'Capital Released', value: `$${funded.toLocaleString()}`, color: 'text-[hsl(var(--green))]' },
+                    { label: 'Funded %', value: `${fundedPct}%`, color: fundedPct >= 50 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]' },
+                    { label: 'Offset', value: `${offset}%`, color: offset >= 80 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--red))]' },
+                  ].map((item, i) => (
+                    <div key={i} className="bg-muted rounded-xl p-3">
+                      <div className="text-[10px] text-muted-foreground">{item.label}</div>
+                      <div className={`text-sm font-black ${item.color}`}>{item.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* System & Project Details */}
+                <div className="bg-muted/50 border border-border rounded-xl p-4">
+                  <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3">System & Project Details</h3>
+                  <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-xs">
+                    <div className="flex justify-between"><span className="text-muted-foreground">System Size</span><span className="font-bold text-card-foreground">{p.systemSize}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Battery</span><span className="font-bold text-card-foreground">{p.battery}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Sold PPW</span><span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Annual Usage</span><span className="font-bold text-card-foreground">{p.annualUsage.toLocaleString()} kWh</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Roof</span><span className={`font-bold ${p.roofCondition === 'good' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>{p.roofCondition.replace('_', ' ')}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Inverter</span><span className="font-bold text-card-foreground">Enphase IQ8+</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Rep</span><span className="font-bold text-card-foreground">{p.repName}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Financier</span><span className="font-bold text-card-foreground">ASP Capital</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Contract</span><span className="font-bold text-primary">${p.contractValue.toLocaleString()}</span></div>
                   </div>
                 </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-muted rounded-xl p-3">
-                <div className="text-[10px] text-muted-foreground">System Size</div>
-                <div className="text-sm font-black text-card-foreground">{p.systemSize}</div>
+
+                {/* Contact */}
+                <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                  <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {p.email}</span>
+                  <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {p.phone}</span>
+                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {p.address}</span>
+                </div>
+
+                {/* Adders */}
+                {p.adders.length > 0 && (
+                  <div>
+                    <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2">Adders</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {p.adders.map((a, i) => (
+                        <span key={i} className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold">
+                          {a.name} · ${a.cost.toLocaleString()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* M1-7 Quick View */}
+                <TooltipProvider delayDuration={200}>
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {MILESTONE_SOPS.map((sop, i) => {
+                      const isPassed = i < p.currentMilestone;
+                      const isCurrent = i === p.currentMilestone;
+                      const fundSt = ms.fundStatus[i] || 'none';
+                      const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
+                      return (
+                        <Tooltip key={i}>
+                          <TooltipTrigger asChild>
+                            <div
+                              onClick={() => { setPopupTab('milestones'); setPopupExpandedM(i); }}
+                              className={`rounded-xl p-2 text-center border cursor-pointer transition-all hover:scale-105 ${
+                                isPassed ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20'
+                                : isCurrent ? 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
+                                : 'bg-muted border-border'
+                              }`}
+                            >
+                              <div className={`text-[10px] font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
+                              <div className="text-[8px] text-muted-foreground mt-0.5 truncate">{sop.shortName}</div>
+                              <div className={`text-[9px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
+                              {isPassed && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-0.5" />}
+                              {isCurrent && <Clock className="w-3 h-3 text-[hsl(var(--yellow))] mx-auto mt-0.5" />}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px] bg-card border border-border text-card-foreground p-3 rounded-xl shadow-lg">
+                            <div className="text-xs font-bold mb-1">M{i + 1}: {sop.name}</div>
+                            <div className="text-[10px] text-muted-foreground mb-1.5">{sop.description}</div>
+                            <div className="text-[10px] font-bold text-primary">Fund Release: {sop.fundPercent}% · ${(amount / 1000).toFixed(1)}K</div>
+                            <div className={`text-[10px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>
+                              {isPassed ? (fundSt === 'released' ? '✓ Funds Released' : '✓ Approved') : isCurrent ? '⏳ In Progress' : '○ Pending'}
+                            </div>
+                            <div className="text-[9px] text-muted-foreground mt-1 italic">Click to view details →</div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </TooltipProvider>
+
+                {/* Capital Progress */}
+                <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-muted-foreground">Capital Released</span>
+                    <span className="text-sm font-black text-[hsl(var(--green))]">${funded.toLocaleString()} / ${p.projectCost.toLocaleString()}</span>
+                  </div>
+                  <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${fundedPct}%` }} />
+                  </div>
+                </div>
+
+                {/* Timeline */}
+                <div className="bg-muted/50 border border-border rounded-xl p-4">
+                  <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3">Project Timeline</h3>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Submitted</span><span className="font-bold text-card-foreground">{p.dates.submitted}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Site Survey</span><span className="font-bold text-card-foreground">{p.dates.siteSurvey || 'Pending'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">SOW Confirmed</span><span className="font-bold text-card-foreground">{p.dates.sowConfirmed || 'Pending'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Permit</span><span className="font-bold text-card-foreground">{p.dates.permitSubmitted || 'Pending'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Last HO Contact</span><span className="font-bold text-card-foreground">{p.dates.lastHOContact}</span></div>
+                  </div>
+                </div>
+
+                {/* Open Tickets for this project */}
+                {projectTickets.length > 0 && (
+                  <div>
+                    <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2">Active Tickets ({projectTickets.filter(t => t.status !== 'resolved').length})</h3>
+                    {projectTickets.filter(t => t.status !== 'resolved').map(t => (
+                      <div key={t.id} className="bg-[hsl(var(--red))]/5 border border-[hsl(var(--red))]/20 rounded-lg p-3 mb-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-card-foreground">{t.subject}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
+                            t.priority === 'critical' || t.priority === 'high' ? 'bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25' :
+                            'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25'
+                          }`}>{t.priority}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-1">{t.id} · Created {t.createdAt} · {t.messages.length} message(s)</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="bg-muted rounded-xl p-3">
-                <div className="text-[10px] text-muted-foreground">Battery</div>
-                <div className="text-sm font-black text-card-foreground">{p.battery}</div>
+            )}
+
+            {popupTab === 'milestones' && (
+              <div className="space-y-2">
+                {MILESTONE_SOPS.map((sop, i) => {
+                  const isPassed = i < p.currentMilestone;
+                  const isCurrent = i === p.currentMilestone;
+                  const fundSt = ms.fundStatus[i] || 'none';
+                  const isExpM = popupExpandedM === i;
+                  const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
+
+                  return (
+                    <div key={i} className="border border-border rounded-xl overflow-hidden">
+                      <div
+                        className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors ${isCurrent ? 'bg-primary/5' : ''}`}
+                        onClick={() => setPopupExpandedM(isExpM ? null : i)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-extrabold ${
+                            isPassed ? 'bg-[hsl(var(--green))]/15 text-[hsl(var(--green))]' :
+                            isCurrent ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' :
+                            'bg-muted text-muted-foreground'
+                          }`}>M{i + 1}</div>
+                          <div>
+                            <div className="text-xs font-bold text-card-foreground">{sop.name}</div>
+                            <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              {isPassed ? <><CheckCircle className="w-3 h-3 text-[hsl(var(--green))]" /> Completed</> : isCurrent ? <><Clock className="w-3 h-3 text-[hsl(var(--yellow))]" /> In Progress</> : <><Clock className="w-3 h-3" /> Pending</>}
+                              {' · '}{sop.fundPercent}% · ${(amount / 1000).toFixed(1)}K
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {(isPassed || fundSt !== 'none') && (
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                              fundSt === 'released' ? 'bg-[hsl(var(--green))]/10 text-[hsl(var(--green))]' :
+                              fundSt === 'approved' ? 'bg-[hsl(var(--blue))]/10 text-[hsl(var(--blue))]' :
+                              fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))]' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              {fundSt === 'released' ? 'Released' : fundSt === 'approved' ? 'Approved' : fundSt === 'pending' ? 'Pending' : '—'}
+                            </span>
+                          )}
+                          {isExpM ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+                        </div>
+                      </div>
+
+                      {isExpM && (
+                        <div className="border-t border-border px-4 py-3">
+                          <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                            <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">
+                              Checklist — {sop.description}
+                            </div>
+                            {sop.checklist.map(item => {
+                              const isDone = ms.checklistDone[item.id];
+                              const uploads = ms.uploads[item.id] || [];
+                              const textEntry = ms.textEntries[item.id];
+                              const dateEntry = ms.dateEntries[item.id];
+
+                              return (
+                                <div key={item.id} className={`flex items-start gap-3 p-3 rounded-lg border ${isDone ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-card border-border'}`}>
+                                  <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center shrink-0 ${isDone ? 'bg-[hsl(var(--green))]/15' : 'bg-muted'}`}>
+                                    {isDone ? <CheckCircle className="w-3 h-3 text-[hsl(var(--green))]" /> : <Clock className="w-3 h-3 text-muted-foreground" />}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center justify-between">
+                                      <div className="text-xs font-bold text-card-foreground">{item.label}</div>
+                                      <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase ${
+                                        item.actor === 'installer' ? 'bg-[hsl(var(--blue))]/10 text-[hsl(var(--blue))]' :
+                                        item.actor === 'backend_ops' ? 'bg-primary/10 text-primary' :
+                                        'bg-muted text-muted-foreground'
+                                      }`}>
+                                        {item.actor === 'backend_ops' ? 'OPS' : item.actor === 'installer' ? 'INSTALLER' : item.actor.toUpperCase()}
+                                      </span>
+                                    </div>
+                                    {uploads.length > 0 && (
+                                      <div className="mt-1.5 space-y-1">
+                                        {uploads.map((f, fi) => (
+                                          <div key={fi} className="flex items-center gap-1.5 text-[10px] text-[hsl(var(--green))]">
+                                            <FileText className="w-3 h-3" /> {f}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {textEntry && (
+                                      <div className="mt-1.5 bg-muted rounded p-2 text-[10px] text-card-foreground">{textEntry}</div>
+                                    )}
+                                    {dateEntry && (
+                                      <div className="mt-1.5 text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1"><Calendar className="w-3 h-3" /> {dateEntry}</div>
+                                    )}
+                                    {!isDone && !uploads.length && !textEntry && !dateEntry && (
+                                      <div className="mt-1 text-[10px] text-muted-foreground italic">Awaiting completion...</div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {ms.opsNotes[i] && (
+                              <div className="mt-2 bg-primary/5 border border-primary/15 rounded-lg p-3">
+                                <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Backend Ops Notes</div>
+                                <div className="text-xs text-card-foreground">{ms.opsNotes[i]}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <div className="bg-muted rounded-xl p-3">
-                <div className="text-[10px] text-muted-foreground">Inverter</div>
-                <div className="text-sm font-black text-card-foreground">Enphase IQ8+</div>
+            )}
+
+            {popupTab === 'uploads' && (
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleDocUpload(p.id)}
+                    className="px-3 py-2 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center gap-1.5"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Upload Document
+                  </button>
+                  <button
+                    onClick={() => handlePhotoUpload(p.id)}
+                    className="px-3 py-2 bg-[hsl(var(--blue))]/10 border border-[hsl(var(--blue))]/25 rounded-lg text-xs font-bold text-[hsl(var(--blue))] hover:bg-[hsl(var(--blue))]/20 transition-all flex items-center gap-1.5"
+                  >
+                    <Camera className="w-3.5 h-3.5" /> Upload Photo
+                  </button>
+                </div>
+
+                {projectUploads.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No uploads yet. Upload documents or photos above.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {projectUploads.map((u, i) => (
+                      <div key={i} className="flex items-center gap-3 bg-muted rounded-lg px-4 py-3 border border-border">
+                        {u.type === 'document' ? <FileText className="w-4 h-4 text-primary shrink-0" /> : <Camera className="w-4 h-4 text-[hsl(var(--blue))] shrink-0" />}
+                        <div className="flex-1">
+                          <div className="text-xs font-bold text-card-foreground">{u.fileName}</div>
+                          <div className="text-[10px] text-muted-foreground">{u.uploadedBy} · {u.uploadedAt}</div>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${u.type === 'document' ? 'bg-primary/10 text-primary' : 'bg-[hsl(var(--blue))]/10 text-[hsl(var(--blue))]'}`}>
+                          {u.type}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {popupTab === 'chat' && (
+              <div className="flex flex-col h-full">
+                <div className="flex-1 space-y-3 mb-4 max-h-[35vh] overflow-y-auto">
+                  {projectMsgs.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MessageSquare className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">No messages yet. Start the conversation below.</p>
+                    </div>
+                  ) : (
+                    projectMsgs.map((m, i) => (
+                      <div key={i} className={`flex gap-2.5 max-w-[80%] ${m.role === 'installer' ? 'self-end flex-row-reverse ml-auto' : ''}`}>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 ${
+                          m.role === 'installer' ? 'bg-primary/15' : m.role === 'ops' ? 'bg-[hsl(var(--blue))]/15' : 'bg-muted'
+                        }`}>
+                          {m.role === 'installer' ? <Wrench className="w-3.5 h-3.5 text-primary" /> : <User className="w-3.5 h-3.5 text-muted-foreground" />}
+                        </div>
+                        <div>
+                          <div className={`px-3.5 py-2.5 rounded-xl text-[13px] leading-relaxed ${
+                            m.role === 'installer' ? 'bg-primary text-primary-foreground font-semibold rounded-br-sm' : 'bg-muted text-card-foreground border border-border rounded-bl-sm'
+                          }`}>
+                            {m.text}
+                          </div>
+                          <div className={`text-[10px] text-muted-foreground mt-1 ${m.role === 'installer' ? 'text-right pr-1' : 'pl-1'}`}>
+                            {m.sender} · {m.time}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="flex gap-2 items-center">
+                  <input
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && chatInput.trim()) {
+                        store.addProjectMessage(p.id, { sender: 'SunTech Installations', role: 'installer', text: chatInput.trim(), time: 'Now' });
+                        setChatInput('');
+                      }
+                    }}
+                    placeholder="Type a message..."
+                    className="flex-1 px-3.5 py-2.5 bg-muted border border-border rounded-lg text-sm text-card-foreground outline-none focus:border-primary"
+                  />
+                  <button
+                    onClick={() => {
+                      if (chatInput.trim()) {
+                        store.addProjectMessage(p.id, { sender: 'SunTech Installations', role: 'installer', text: chatInput.trim(), time: 'Now' });
+                        setChatInput('');
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-primary text-primary-foreground text-sm font-extrabold rounded-lg hover:opacity-90 transition-all active:scale-95 flex items-center gap-1.5"
+                  >
+                    <Send className="w-3.5 h-3.5" /> Send
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {popupTab === 'updates' && (
+              <div className="space-y-4">
+                {/* Add update */}
+                <div className="bg-muted/50 border border-border rounded-xl p-4">
+                  <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2">Post an Update</h3>
+                  <textarea
+                    value={newUpdateText}
+                    onChange={e => setNewUpdateText(e.target.value)}
+                    placeholder="Add a project update note..."
+                    rows={2}
+                    className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-card-foreground outline-none focus:border-primary resize-none mb-2"
+                  />
+                  <button
+                    onClick={() => {
+                      if (newUpdateText.trim()) {
+                        store.addFinancierUpdate(p.id, newUpdateText.trim(), 'SunTech Installations');
+                        setNewUpdateText('');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" /> Post Update
+                  </button>
+                </div>
+
+                {/* Update history */}
+                {projectUpdates.length === 0 ? (
+                  <div className="text-center py-8">
+                    <History className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No updates yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {[...projectUpdates].reverse().map((u, i) => (
+                      <div key={i} className="bg-muted rounded-lg px-4 py-3 border border-border">
+                        <div className="text-xs text-card-foreground">{u.text}</div>
+                        <div className="text-[10px] text-muted-foreground mt-1.5">— {u.author} · {u.timestamp}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Ticket creation modal */}
+        {showTicketModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center" onClick={() => setShowTicketModal(false)}>
+            <div className="bg-card border-2 border-muted rounded-xl p-6 w-[440px] shadow-lg" onClick={e => e.stopPropagation()}>
+              <h3 className="text-base font-black text-card-foreground mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-[hsl(var(--red))]" />
+                Create Ticket for Backend Ops
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase block mb-1">Priority</label>
+                  <select
+                    value={ticketPriority}
+                    onChange={e => setTicketPriority(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-muted border border-border rounded-md text-sm text-card-foreground outline-none focus:border-primary"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase block mb-1">Subject</label>
+                  <textarea
+                    value={ticketSubject}
+                    onChange={e => setTicketSubject(e.target.value)}
+                    placeholder="Describe the issue..."
+                    rows={3}
+                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-card-foreground outline-none focus:border-primary resize-none"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end mt-4">
+                <button onClick={() => setShowTicketModal(false)} className="px-4 py-2 bg-muted border border-border rounded-lg text-xs font-bold text-muted-foreground hover:text-card-foreground transition-all">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (ticketSubject.trim()) {
+                      store.createTicket({
+                        projectId: p.id,
+                        subject: ticketSubject.trim(),
+                        priority: ticketPriority,
+                        status: 'open',
+                        createdAt: new Date().toISOString().split('T')[0],
+                        createdBy: 'SunTech Installations',
+                        createdByRole: 'installer',
+                        messages: [{ sender: 'SunTech Installations', role: 'installer', text: ticketSubject.trim(), time: 'Now' }],
+                      });
+                      setTicketSubject('');
+                      setShowTicketModal(false);
+                    }
+                  }}
+                  className="px-4 py-2 bg-[hsl(var(--red))]/15 border border-[hsl(var(--red))]/30 rounded-lg text-xs font-bold text-[hsl(var(--red))] hover:bg-[hsl(var(--red))]/25 transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" /> Submit Ticket
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   };
@@ -236,7 +706,7 @@ const InstallerPortal = () => {
                               />
                             )}
                             {item.requiresDate && dateEntry && (
-                              <div className="mt-1 text-[10px] text-[hsl(var(--green))] font-bold">📅 {dateEntry}</div>
+                              <div className="mt-1 text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1"><Calendar className="w-3 h-3" /> {dateEntry}</div>
                             )}
                             {!item.requiresUpload && !item.requiresDate && !isDone && (
                               <button
@@ -320,7 +790,6 @@ const InstallerPortal = () => {
               ))}
             </div>
 
-            {/* Pending Actions Alert */}
             {pendingActions > 0 && (
               <div className="bg-[hsl(var(--yellow))]/5 border border-[hsl(var(--yellow))]/20 rounded-2xl p-5">
                 <div className="flex items-center justify-between">
@@ -401,6 +870,7 @@ const InstallerPortal = () => {
                 <button onClick={() => setActiveSection('projects')} className="text-xs text-primary font-bold hover:underline">View All →</button>
               </div>
               {installerProjects.filter(p => p.status === 'active' || p.status === 'delayed').slice(0, 5).map(p => {
+                const ms = store.getMilestoneState(p.id);
                 const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
                 const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
                 return (
@@ -426,11 +896,16 @@ const InstallerPortal = () => {
                         <span>{p.address.split(',')[0]}</span>
                       </div>
                       <div className="flex gap-0.5">
-                        {MILESTONE_SOPS.map((_, i) => (
-                          <div key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
-                            i < p.currentMilestone ? 'bg-primary text-primary-foreground' : i === p.currentMilestone ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' : 'bg-muted text-muted-foreground'
-                          }`}>M{i + 1}</div>
-                        ))}
+                        {MILESTONE_SOPS.map((_, i) => {
+                          const fundSt = ms.fundStatus[i] || 'none';
+                          return (
+                            <div key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
+                              i < p.currentMilestone
+                                ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/20 text-[hsl(var(--green))]' : 'bg-primary text-primary-foreground'
+                                : i === p.currentMilestone ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' : 'bg-muted text-muted-foreground'
+                            }`}>M{i + 1}</div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -448,9 +923,17 @@ const InstallerPortal = () => {
           <div className="space-y-3">
             {installerProjects.map(p => {
               const isExpanded = expandedProject === p.id;
+              const ms = store.getMilestoneState(p.id);
+              const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+              const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
               return (
                 <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div onClick={() => setExpandedProject(isExpanded ? null : p.id)} className="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex gap-px h-1.5">
+                    {Array.from({ length: p.totalMilestones }).map((_, i) => (
+                      <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : 'bg-border'}`} />
+                    ))}
+                  </div>
+                  <div onClick={() => setExpandedProject(isExpanded ? null : p.id)} className="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-4">
                       {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                       <div>
@@ -460,15 +943,20 @@ const InstallerPortal = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex gap-0.5">
-                        {MILESTONE_SOPS.map((_, i) => (
-                          <div key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
-                            i < p.currentMilestone ? 'bg-primary text-primary-foreground' : i === p.currentMilestone ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' : 'bg-muted text-muted-foreground'
-                          }`}>M{i + 1}</div>
-                        ))}
+                        {MILESTONE_SOPS.map((_, i) => {
+                          const fundSt = ms.fundStatus[i] || 'none';
+                          return (
+                            <div key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
+                              i < p.currentMilestone
+                                ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/20 text-[hsl(var(--green))]' : 'bg-primary text-primary-foreground'
+                                : i === p.currentMilestone ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' : 'bg-muted text-muted-foreground'
+                            }`}>M{i + 1}</div>
+                          );
+                        })}
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-black text-[hsl(var(--green))]">${p.projectCost.toLocaleString()}</div>
-                        <div className="text-[10px] text-muted-foreground">{Math.round((p.currentMilestone / p.totalMilestones) * 100)}% funded</div>
+                        <div className="text-[10px] text-muted-foreground">{fundedPct}% funded</div>
                       </div>
                       <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
                         p.stage === 'Install Complete' || p.stage === 'PTO Granted' ? 'bg-[hsl(var(--green))]/10 text-[hsl(var(--green))]' :
@@ -479,48 +967,61 @@ const InstallerPortal = () => {
                   </div>
                   {isExpanded && (
                     <div className="border-t border-border px-5 py-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-muted rounded-xl p-3 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-primary shrink-0" />
-                          <div>
-                            <div className="text-[10px] text-muted-foreground">Address</div>
-                            <div className="text-xs font-bold text-card-foreground">{p.address}</div>
-                          </div>
-                        </div>
-                        <div className="bg-muted rounded-xl p-3 flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-primary shrink-0" />
-                          <div>
-                            <div className="text-[10px] text-muted-foreground">Phone</div>
-                            <div className="text-xs font-bold text-card-foreground">{p.phone}</div>
-                          </div>
-                        </div>
+                      {/* Quick Info */}
+                      <div className="grid grid-cols-7 gap-3 text-xs bg-muted/50 rounded-xl p-3">
+                        <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-card-foreground">{p.systemSize}</span></div>
+                        <div><span className="text-muted-foreground">Battery:</span> <span className="font-bold text-card-foreground">{p.battery}</span></div>
+                        <div><span className="text-muted-foreground">PPW:</span> <span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
+                        <div><span className="text-muted-foreground">Offset:</span> <span className={`font-bold ${Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100) >= 80 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--red))]'}`}>{Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100)}%</span></div>
+                        <div><span className="text-muted-foreground">Rep:</span> <span className="font-bold text-card-foreground">{p.repName}</span></div>
+                        <div><span className="text-muted-foreground">Usage:</span> <span className="font-bold text-card-foreground">{p.annualUsage.toLocaleString()} kWh</span></div>
+                        <div><span className="text-muted-foreground">Roof:</span> <span className={`font-bold ${p.roofCondition === 'good' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>{p.roofCondition.replace('_', ' ')}</span></div>
                       </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="bg-muted rounded-xl p-3"><div className="text-[10px] text-muted-foreground">System</div><div className="text-xs font-black text-card-foreground">{p.systemSize}</div></div>
-                        <div className="bg-muted rounded-xl p-3"><div className="text-[10px] text-muted-foreground">Battery</div><div className="text-xs font-black text-card-foreground">{p.battery}</div></div>
-                        <div className="bg-muted rounded-xl p-3"><div className="text-[10px] text-muted-foreground">Inverter</div><div className="text-xs font-black text-card-foreground">Enphase IQ8+</div></div>
+
+                      {/* Contact */}
+                      <div className="flex items-center gap-6 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {p.email}</span>
+                        <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {p.phone}</span>
+                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {p.address}</span>
                       </div>
+
+                      {/* Milestone Payments */}
                       <div>
                         <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Milestone Payments</h4>
                         <div className="grid grid-cols-7 gap-2">
-                          {INSTALLER_MILESTONES.map((m, i) => {
-                            const amount = Math.round(p.projectCost * (m.percent / 100));
+                          {MILESTONE_SOPS.map((sop, i) => {
+                            const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
                             const isPassed = i < p.currentMilestone;
+                            const isCurrent = i === p.currentMilestone;
+                            const fundSt = ms.fundStatus[i] || 'none';
                             return (
-                              <div key={i} className={`rounded-xl p-3 text-center border ${isPassed ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-muted border-border'}`}>
-                                <div className={`text-xs font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
+                              <div key={i} className={`rounded-xl p-3 text-center border cursor-pointer hover:scale-105 transition-all ${
+                                isPassed ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20'
+                                : isCurrent ? 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
+                                : 'bg-muted border-border'
+                              }`} onClick={() => setSelectedProject(p.id)}>
+                                <div className={`text-xs font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
                                 <div className={`text-sm font-black ${isPassed ? 'text-[hsl(var(--green))]' : 'text-card-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
-                                <div className="text-[9px] text-muted-foreground">{m.percent}%</div>
+                                <div className="text-[9px] text-muted-foreground">{sop.fundPercent}%</div>
                                 {isPassed && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-1" />}
+                                {isCurrent && <Clock className="w-3 h-3 text-[hsl(var(--yellow))] mx-auto mt-1" />}
                               </div>
                             );
                           })}
-                          <div className="rounded-xl p-3 text-center border bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20">
-                            <div className="text-xs font-extrabold text-[hsl(var(--yellow))]">M7</div>
-                            <div className="text-xs font-black text-[hsl(var(--yellow))]">+5%</div>
-                            <div className="text-[8px] text-muted-foreground">Speed</div>
-                          </div>
                         </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex gap-2 pt-2 border-t border-border">
+                        <button onClick={() => setSelectedProject(p.id)} className="px-3 py-1.5 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center gap-1">
+                          <Eye className="w-3 h-3" /> View Details
+                        </button>
+                        <button onClick={() => { setSelectedProject(p.id); setPopupTab('milestones'); }} className="px-3 py-1.5 bg-[hsl(var(--blue))]/10 border border-[hsl(var(--blue))]/25 rounded-lg text-xs font-bold text-[hsl(var(--blue))] hover:bg-[hsl(var(--blue))]/20 transition-all flex items-center gap-1">
+                          <ClipboardCheck className="w-3 h-3" /> Milestones
+                        </button>
+                        <button onClick={() => { setSelectedProject(p.id); setPopupTab('chat'); }} className="px-3 py-1.5 bg-[hsl(var(--green))]/10 border border-[hsl(var(--green))]/25 rounded-lg text-xs font-bold text-[hsl(var(--green))] hover:bg-[hsl(var(--green))]/20 transition-all flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" /> Chat
+                        </button>
                       </div>
                     </div>
                   )}
