@@ -55,7 +55,6 @@ const FinancierPortal = () => {
   const totalPortfolioContract = projects.reduce((s, p) => s + p.contractValue, 0);
   const totalSystemCost = projects.reduce((s, p) => s + p.projectCost, 0);
   const totalFunded = projects.reduce((s, p) => s + Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones)), 0);
-  const activeProjects = projects.filter(p => p.status !== 'completed').length;
 
   const selectedProjectData = selectedProject ? projects.find(p => p.id === selectedProject) : null;
 
