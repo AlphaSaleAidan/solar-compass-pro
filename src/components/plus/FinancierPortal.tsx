@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { MILESTONE_NAMES } from '@/data/mockData';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, Zap, X, User, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar } from 'lucide-react';
 
 const ESCROW_MILESTONES = [
   { name: 'SOW Confirmed', percent: 15 },
@@ -47,15 +46,15 @@ const FinancierPortal = () => {
   const { projects } = store;
   const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk' | 'pending'>('overview');
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
-  const [hoveredMilestone, setHoveredMilestone] = useState<{ projectId: string; idx: number } | null>(null);
+  const [expandedMilestone, setExpandedMilestone] = useState<{ projectId: string; idx: number } | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [expandedEscrow, setExpandedEscrow] = useState<number | null>(null);
   const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
+  const [flaggedProjects, setFlaggedProjects] = useState<Set<string>>(new Set());
+  const [flagNotes, setFlagNotes] = useState<Record<string, string>>({});
 
   const totalPortfolioContract = projects.reduce((s, p) => s + p.contractValue, 0);
   const totalSystemCost = projects.reduce((s, p) => s + p.projectCost, 0);
   const totalFunded = projects.reduce((s, p) => s + Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones)), 0);
-  const activeProjects = projects.filter(p => p.status !== 'completed').length;
 
   const selectedProjectData = selectedProject ? projects.find(p => p.id === selectedProject) : null;
 
@@ -66,22 +65,6 @@ const FinancierPortal = () => {
       .filter(item => item.fundStatus === 'pending' || item.fundStatus === 'approved');
   });
 
-  const renderMilestoneTooltip = (project: typeof projects[0], idx: number) => {
-    const milestone = project.milestoneDetails[idx];
-    if (!milestone) return null;
-    const isPassed = idx < project.currentMilestone;
-    return (
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-card border border-border rounded-xl p-3 shadow-lg z-50 pointer-events-none">
-        <div className="text-xs font-extrabold text-card-foreground mb-1">{milestone.name}</div>
-        {isPassed ? (
-          <div className="text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Completed</div>
-        ) : (
-          <div className="text-[10px] text-[hsl(var(--yellow))] font-bold">Pending</div>
-        )}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-card border-r border-b border-border rotate-45 -mt-1" />
-      </div>
-    );
-  };
 
   const renderProjectDetail = () => {
     if (!selectedProjectData) return null;
@@ -262,7 +245,7 @@ const FinancierPortal = () => {
 
               {pendingReleases.length === 0 && (
                 <div className="text-center py-8">
-                  <span className="text-3xl">✅</span>
+                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto" />
                   <p className="text-xs text-muted-foreground mt-2">No pending releases — all caught up!</p>
                 </div>
               )}
@@ -337,8 +320,11 @@ const FinancierPortal = () => {
               const isExpanded = expandedProject === p.id;
               const ms = store.getMilestoneState(p.id);
               const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+              const offset = Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100);
+              const isFlagged = flaggedProjects.has(p.id);
+
               return (
-                <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+                <div key={p.id} className={`bg-card border rounded-2xl overflow-hidden hover:shadow-md transition-shadow ${isFlagged ? 'border-[hsl(var(--red))]/40' : 'border-border'}`}>
                   <div className="flex gap-px h-1.5">
                     {Array.from({ length: p.totalMilestones }).map((_, i) => (
                       <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : 'bg-border'}`} />
@@ -348,11 +334,29 @@ const FinancierPortal = () => {
                     <div className="flex items-center gap-4">
                       {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                       <div>
-                        <div className="text-sm font-bold text-card-foreground">{p.customerName}</div>
-                        <div className="text-[10px] text-muted-foreground">{p.id} · {p.address.split(',').slice(-2).join(',')}</div>
+                        <div className="text-sm font-bold text-card-foreground flex items-center gap-2">
+                          {p.customerName}
+                          {isFlagged && <Flag className="w-3.5 h-3.5 text-[hsl(var(--red))]" />}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">{p.id} · {p.address}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
+                      <div className="flex gap-0.5">
+                        {MILESTONE_SOPS.map((_, i) => {
+                          const fundSt = ms.fundStatus[i] || 'none';
+                          return (
+                            <div key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
+                              i < p.currentMilestone
+                                ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/20 text-[hsl(var(--green))]' :
+                                  fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/20 text-[hsl(var(--yellow))]' :
+                                  'bg-primary text-primary-foreground'
+                                : i === p.currentMilestone ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]'
+                                : 'bg-muted text-muted-foreground'
+                            }`}>M{i + 1}</div>
+                          );
+                        })}
+                      </div>
                       <div className="text-sm font-black text-primary">${(p.contractValue / 1000).toFixed(1)}K</div>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
                         p.status === 'active' ? 'bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] border-[hsl(var(--green))]/25' :
@@ -362,48 +366,189 @@ const FinancierPortal = () => {
                       }`}>{p.status.replace('_', ' ')}</span>
                     </div>
                   </div>
+
                   {isExpanded && (
-                    <div className="border-t border-border px-5 py-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-muted rounded-xl p-3 flex items-center gap-2">
-                          <User className="w-4 h-4 text-primary shrink-0" />
-                          <div><div className="text-[10px] text-muted-foreground">Customer</div><div className="text-xs font-bold text-card-foreground">{p.customerName}</div></div>
+                    <div className="border-t border-border">
+                      {/* Quick Info */}
+                      <div className="px-5 py-3 bg-muted/50 border-b border-border grid grid-cols-7 gap-3 text-xs">
+                        <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-card-foreground">{p.systemSize}</span></div>
+                        <div><span className="text-muted-foreground">Battery:</span> <span className="font-bold text-card-foreground">{p.battery}</span></div>
+                        <div><span className="text-muted-foreground">PPW:</span> <span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
+                        <div><span className="text-muted-foreground">Offset:</span> <span className={`font-bold ${offset >= 80 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--red))]'}`}>{offset}%</span></div>
+                        <div><span className="text-muted-foreground">Installer:</span> <span className="font-bold text-card-foreground">{p.installerName}</span></div>
+                        <div><span className="text-muted-foreground">Rep:</span> <span className="font-bold text-card-foreground">{p.repName}</span></div>
+                        <div><span className="text-muted-foreground">Usage:</span> <span className="font-bold text-card-foreground">{p.annualUsage.toLocaleString()} kWh</span></div>
+                      </div>
+
+                      {/* Financial Summary */}
+                      <div className="px-5 py-3 border-b border-border">
+                        <div className="grid grid-cols-4 gap-3">
+                          {[
+                            { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}`, color: 'text-primary' },
+                            { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
+                            { label: 'Capital Released', value: `$${funded.toLocaleString()}`, color: 'text-[hsl(var(--green))]' },
+                            { label: 'Margin', value: `${Math.round(((p.contractValue - p.projectCost) / p.contractValue) * 100)}%`, color: 'text-[hsl(var(--yellow))]' },
+                          ].map((item, i) => (
+                            <div key={i} className="bg-muted rounded-xl p-3">
+                              <div className="text-[10px] text-muted-foreground">{item.label}</div>
+                              <div className={`text-sm font-black ${item.color}`}>{item.value}</div>
+                            </div>
+                          ))}
                         </div>
-                        <div className="bg-muted rounded-xl p-3 flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-primary shrink-0" />
-                          <div><div className="text-[10px] text-muted-foreground">Installer</div><div className="text-xs font-bold text-card-foreground">{p.installerName}</div></div>
+                        <div className="mt-3 w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${(funded / Math.max(p.projectCost, 1)) * 100}%` }} />
                         </div>
                       </div>
-                      <div className="grid grid-cols-7 gap-2">
-                        {ESCROW_MILESTONES.map((m, i) => {
-                          const amount = Math.round(p.projectCost * (m.percent / 100));
-                          const released = i < p.currentMilestone;
-                          const fundSt = ms.fundStatus[i] || 'none';
+
+                      {/* Contact */}
+                      <div className="px-5 py-3 border-b border-border flex items-center gap-6 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {p.email}</span>
+                        <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {p.phone}</span>
+                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {p.address}</span>
+                      </div>
+
+                      {/* Milestone SOP Detail (read-only) */}
+                      <div className="divide-y divide-border">
+                        {MILESTONE_SOPS.map((sop, milestoneIdx) => {
+                          const isPassed = milestoneIdx < p.currentMilestone;
+                          const isCurrent = milestoneIdx === p.currentMilestone;
+                          const fundSt = ms.fundStatus[milestoneIdx] || 'none';
+                          const isExpandedM = expandedMilestone?.projectId === p.id && expandedMilestone?.idx === milestoneIdx;
+
                           return (
-                            <div key={i} className={`rounded-xl p-3 text-center border ${
-                              released ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20' : 'bg-muted border-border'
-                            }`}>
-                              <div className={`text-xs font-extrabold ${released ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
-                              <div className={`text-xs font-black ${released ? 'text-[hsl(var(--green))]' : 'text-card-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
-                              <div className="text-[8px] text-muted-foreground">{m.percent}%</div>
-                              {released && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-1" />}
+                            <div key={milestoneIdx}>
+                              <div
+                                className={`px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors ${isCurrent ? 'bg-primary/5' : ''}`}
+                                onClick={() => setExpandedMilestone(isExpandedM ? null : { projectId: p.id, idx: milestoneIdx })}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-extrabold ${
+                                    isPassed ? 'bg-[hsl(var(--green))]/15 text-[hsl(var(--green))]' :
+                                    isCurrent ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' :
+                                    'bg-muted text-muted-foreground'
+                                  }`}>
+                                    M{milestoneIdx + 1}
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-bold text-card-foreground">{sop.name}</div>
+                                    <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                      {isPassed ? <><CheckCircle className="w-3 h-3 text-[hsl(var(--green))]" /> Completed</> : isCurrent ? <><Clock className="w-3 h-3 text-[hsl(var(--yellow))]" /> In Progress</> : <><Clock className="w-3 h-3" /> Pending</>} · {sop.fundPercent}%
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {(isPassed || fundSt !== 'none') && (
+                                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                                      fundSt === 'released' ? 'bg-[hsl(var(--green))]/10 text-[hsl(var(--green))]' :
+                                      fundSt === 'approved' ? 'bg-[hsl(var(--blue))]/10 text-[hsl(var(--blue))]' :
+                                      fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))]' :
+                                      'bg-muted text-muted-foreground'
+                                    }`}>
+                                      {fundSt === 'released' ? 'Released' : fundSt === 'approved' ? 'Approved' : fundSt === 'pending' ? 'Pending' : '—'}
+                                    </span>
+                                  )}
+                                  {isExpandedM ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+                                </div>
+                              </div>
+
+                              {/* Expanded checklist (read-only) */}
+                              {isExpandedM && (
+                                <div className="px-5 pb-4">
+                                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                                    <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">
+                                      Checklist — {sop.description}
+                                    </div>
+                                    {sop.checklist.map(item => {
+                                      const isDone = ms.checklistDone[item.id];
+                                      const uploads = ms.uploads[item.id] || [];
+                                      const textEntry = ms.textEntries[item.id];
+                                      const dateEntry = ms.dateEntries[item.id];
+
+                                      return (
+                                        <div key={item.id} className={`flex items-start gap-3 p-3 rounded-lg border ${isDone ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-card border-border'}`}>
+                                          <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center shrink-0 ${isDone ? 'bg-[hsl(var(--green))]/15' : 'bg-muted'}`}>
+                                            {isDone ? <CheckCircle className="w-3 h-3 text-[hsl(var(--green))]" /> : <Clock className="w-3 h-3 text-muted-foreground" />}
+                                          </div>
+                                          <div className="flex-1">
+                                            <div className="flex items-center justify-between">
+                                              <div className="text-xs font-bold text-card-foreground">{item.label}</div>
+                                              <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase ${
+                                                item.actor === 'installer' ? 'bg-[hsl(var(--blue))]/10 text-[hsl(var(--blue))]' :
+                                                item.actor === 'backend_ops' ? 'bg-primary/10 text-primary' :
+                                                'bg-muted text-muted-foreground'
+                                              }`}>
+                                                {item.actor === 'backend_ops' ? 'OPS' : item.actor === 'installer' ? 'INSTALLER' : item.actor.toUpperCase()}
+                                              </span>
+                                            </div>
+                                            {uploads.length > 0 && (
+                                              <div className="mt-1.5 space-y-1">
+                                                {uploads.map((f, fi) => (
+                                                  <div key={fi} className="flex items-center gap-1.5 text-[10px] text-[hsl(var(--green))]">
+                                                    <FileText className="w-3 h-3" /> {f}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                            {textEntry && (
+                                              <div className="mt-1.5 bg-muted rounded p-2 text-[10px] text-card-foreground">{textEntry}</div>
+                                            )}
+                                            {dateEntry && (
+                                              <div className="mt-1.5 text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1"><Calendar className="w-3 h-3" /> {dateEntry}</div>
+                                            )}
+                                            {!isDone && !uploads.length && !textEntry && !dateEntry && (
+                                              <div className="mt-1 text-[10px] text-muted-foreground italic">Awaiting completion...</div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+
+                                    {/* Ops Notes (read-only) */}
+                                    {ms.opsNotes[milestoneIdx] && (
+                                      <div className="mt-2 bg-primary/5 border border-primary/15 rounded-lg p-3">
+                                        <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Backend Ops Notes</div>
+                                        <div className="text-xs text-card-foreground">{ms.opsNotes[milestoneIdx]}</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
-                        <div className="rounded-xl p-3 text-center border bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20">
-                          <div className="text-xs font-extrabold text-[hsl(var(--yellow))]">M7</div>
-                          <div className="text-xs font-black text-[hsl(var(--yellow))]">+5%</div>
-                          <div className="text-[8px] text-muted-foreground">Speed</div>
-                        </div>
                       </div>
-                      <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs text-muted-foreground">Capital Released</span>
-                          <span className="text-sm font-black text-[hsl(var(--green))]">${funded.toLocaleString()}</span>
+
+                      {/* Flag Button */}
+                      <div className="px-5 py-3 bg-muted/30 border-t border-border flex items-center justify-between">
+                        <div className="text-[10px] text-muted-foreground">
+                          {isFlagged && flagNotes[p.id] && <span className="text-[hsl(var(--red))] font-bold">Flagged: {flagNotes[p.id]}</span>}
                         </div>
-                        <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${(funded / p.projectCost) * 100}%` }} />
-                        </div>
+                        {!isFlagged ? (
+                          <button
+                            onClick={() => {
+                              const note = prompt('Enter reason for flagging this project for review:');
+                              if (note && note.trim()) {
+                                setFlaggedProjects(prev => new Set(prev).add(p.id));
+                                setFlagNotes(prev => ({ ...prev, [p.id]: note.trim() }));
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-[hsl(var(--red))]/10 border border-[hsl(var(--red))]/25 rounded-lg text-xs text-[hsl(var(--red))] font-bold hover:bg-[hsl(var(--red))]/20 transition-all active:scale-95 flex items-center gap-1.5"
+                          >
+                            <Flag className="w-3.5 h-3.5" /> Flag for Review
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              const next = new Set(flaggedProjects);
+                              next.delete(p.id);
+                              setFlaggedProjects(next);
+                              setFlagNotes(prev => { const n = { ...prev }; delete n[p.id]; return n; });
+                            }}
+                            className="px-3 py-1.5 bg-muted border border-border rounded-lg text-xs text-muted-foreground font-bold hover:text-card-foreground transition-all active:scale-95 flex items-center gap-1.5"
+                          >
+                            <X className="w-3.5 h-3.5" /> Remove Flag
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
