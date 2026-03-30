@@ -129,6 +129,17 @@ export interface SellProject {
   checklist: CustomerChecklist;
   documents: { name: string; sent: boolean; signed: boolean }[];
   surveyPhotos: string[];
+  // SOP flow fields
+  auroraSynced?: boolean;
+  auroraData?: { systemSize: string; battery: string; financier: string; monthlyPayment: string; adders: string[] };
+  convertedToSale?: boolean;
+  welcomeCallComplete?: boolean;
+  welcomeCallAnswers?: { question: string; answer: string; correct?: boolean }[];
+  siteSurveyPhotos?: Record<string, string[]>;
+  siteSurveyComplete?: boolean;
+  submittedForApproval?: boolean;
+  approvalStatus?: 'pending' | 'clean' | 'dirty';
+  approvalNotes?: string;
 }
 
 export const SELL_PROJECTS: SellProject[] = [
