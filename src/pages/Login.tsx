@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth, UserRole, PortalMode } from '@/contexts/AuthContext';
-import { Target, Settings, Wrench, DollarSign, Zap } from 'lucide-react';
+import { Crosshair, Settings, Wrench, Landmark, Zap } from 'lucide-react';
 
 const Login = () => {
   const { login } = useAuth();
