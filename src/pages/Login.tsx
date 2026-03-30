@@ -114,7 +114,7 @@ const Login = () => {
                 {role === r.value && (
                   <span className="absolute top-2 right-2.5 text-primary text-xs font-black">✓</span>
                 )}
-                <div className="text-[28px] mb-1.5">{r.icon}</div>
+                <div className="mb-1.5 flex justify-center">{r.icon}</div>
                 <div className={`text-[13px] font-extrabold tracking-wide ${mode === 'asp' ? 'text-white' : 'text-gray-900'}`}>{r.label}</div>
                 <div className={`text-[11px] mt-0.5 ${mode === 'asp' ? 'text-gray-500' : 'text-gray-400'}`}>{r.sub}</div>
               </button>
