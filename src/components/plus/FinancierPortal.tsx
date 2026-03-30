@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Zap } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Zap, Send, Upload, Plus, History } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ESCROW_MILESTONES = [
@@ -52,6 +52,16 @@ const FinancierPortal = () => {
   const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
   const [flaggedProjects, setFlaggedProjects] = useState<Set<string>>(new Set());
   const [flagNotes, setFlagNotes] = useState<Record<string, string>>({});
+  // Popup state
+  const [popupTab, setPopupTab] = useState<'details' | 'milestones' | 'uploads' | 'chat' | 'updates'>('details');
+  const [popupExpandedM, setPopupExpandedM] = useState<number | null>(null);
+  const [newUpdateText, setNewUpdateText] = useState('');
+  const [chatInput, setChatInput] = useState('');
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [ticketSubject, setTicketSubject] = useState('');
+  const [ticketPriority, setTicketPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('high');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const totalPortfolioContract = projects.reduce((s, p) => s + p.contractValue, 0);
   const totalSystemCost = projects.reduce((s, p) => s + p.projectCost, 0);
