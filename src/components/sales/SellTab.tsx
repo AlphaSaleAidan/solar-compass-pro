@@ -105,7 +105,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
       ],
       surveyPhotos: [],
     };
-    updateSellProject(newP);
+    addSellProject(newP);
     setShowNewProjectForm(false);
     setAddress('');
     setNewProject({ firstName: '', lastName: '', email: '', phone: '', highBill: '', lowBill: '', allElectric: true });

@@ -70,6 +70,14 @@ const Dashboard = () => {
     switch (activeTab) {
       case 'QC Review':
         return <QCReview />;
+      case 'Final Approval':
+        return (
+          <FinalApprovalQueue
+            projects={sellProjects.filter(p => p.submittedForApproval)}
+            onMarkClean={markSellProjectClean}
+            onMarkDirty={markSellProjectDirty}
+          />
+        );
       case 'Milestones':
         return <MilestoneVerification />;
       case 'Projects':
