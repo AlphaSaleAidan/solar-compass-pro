@@ -66,8 +66,8 @@ const PuzzleGame = () => {
         <svg viewBox="-10 -10 120 120" className="w-40 h-40">
           <defs>
             <linearGradient id="piece-filled" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.15" />
+              <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity="0.15" />
             </linearGradient>
           </defs>
           {piecePaths.map((path, i) => (
