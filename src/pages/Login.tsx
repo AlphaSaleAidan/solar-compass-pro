@@ -17,7 +17,7 @@ const Login = () => {
 
   const aspPlusRoles: { value: UserRole; icon: React.ReactNode; label: string; sub: string }[] = [
     { value: 'installer', icon: <Wrench className="w-7 h-7 text-primary" />, label: 'Installer', sub: 'Project Tracking' },
-    { value: 'financier', icon: <DollarSign className="w-7 h-7 text-primary" />, label: 'Financier', sub: 'Funding & Escrow' },
+    { value: 'financier', icon: <Landmark className="w-7 h-7 text-primary" />, label: 'Financier', sub: 'Funding & Escrow' },
   ];
 
   const roles = mode === 'asp' ? aspRoles : aspPlusRoles;
