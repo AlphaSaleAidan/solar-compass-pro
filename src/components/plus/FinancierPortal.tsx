@@ -151,6 +151,7 @@ const FinancierPortal = () => {
             )}
 
             {/* Milestones */}
+            <TooltipProvider delayDuration={200}>
             <div className="grid grid-cols-7 gap-1.5">
               {MILESTONE_SOPS.map((sop, i) => {
                 const isPassed = i < p.currentMilestone;
@@ -158,20 +159,33 @@ const FinancierPortal = () => {
                 const fundSt = ms.fundStatus[i] || 'none';
                 const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
                 return (
-                  <div key={i} className={`rounded-xl p-2.5 text-center border ${
-                    isPassed ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20'
-                    : isCurrent ? 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
-                    : 'bg-muted border-border'
-                  }`}>
-                    <div className={`text-[10px] font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
-                    <div className="text-[8px] text-muted-foreground mt-0.5">{sop.shortName}</div>
-                    <div className={`text-[9px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
-                    {isPassed && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-0.5" />}
-                    {isCurrent && <Clock className="w-3 h-3 text-[hsl(var(--yellow))] mx-auto mt-0.5" />}
-                  </div>
+                  <Tooltip key={i}>
+                    <TooltipTrigger asChild>
+                      <div className={`rounded-xl p-2 text-center border cursor-pointer transition-all hover:scale-105 ${
+                        isPassed ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20'
+                        : isCurrent ? 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
+                        : 'bg-muted border-border'
+                      }`}>
+                        <div className={`text-[10px] font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
+                        <div className="text-[8px] text-muted-foreground mt-0.5 truncate">{sop.shortName}</div>
+                        <div className={`text-[9px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
+                        {isPassed && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-0.5" />}
+                        {isCurrent && <Clock className="w-3 h-3 text-[hsl(var(--yellow))] mx-auto mt-0.5" />}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[220px] bg-card border border-border text-card-foreground p-3 rounded-xl shadow-lg">
+                      <div className="text-xs font-bold mb-1">M{i + 1}: {sop.name}</div>
+                      <div className="text-[10px] text-muted-foreground mb-1.5">{sop.description}</div>
+                      <div className="text-[10px] font-bold text-primary">Fund Release: {sop.fundPercent}% · ${(amount / 1000).toFixed(1)}K</div>
+                      <div className={`text-[10px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>
+                        {isPassed ? (fundSt === 'released' ? '✓ Funds Released' : '✓ Approved') : isCurrent ? '⏳ In Progress' : '○ Pending'}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })}
             </div>
+            </TooltipProvider>
 
             {/* Capital progress */}
             <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
