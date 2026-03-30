@@ -93,7 +93,7 @@ const FinancierPortal = () => {
                 { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}`, color: 'text-primary' },
                 { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
                 { label: 'Capital Released', value: `$${funded.toLocaleString()}`, color: 'text-[hsl(var(--green))]' },
-                { label: 'Margin', value: `${Math.round(((p.contractValue - p.projectCost) / p.contractValue) * 100)}%`, color: 'text-[hsl(var(--yellow))]' },
+                { label: 'Project Funded %', value: `${Math.round((funded / Math.max(p.projectCost, 1)) * 100)}%`, color: 'text-[hsl(var(--yellow))]' },
               ].map((item, i) => (
                 <div key={i} className="bg-muted rounded-xl p-3">
                   <div className="text-[10px] text-muted-foreground">{item.label}</div>
