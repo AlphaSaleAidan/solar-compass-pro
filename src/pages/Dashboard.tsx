@@ -20,6 +20,7 @@ import { useProjectStore } from '@/contexts/ProjectStore';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { sellProjects, markSellProjectClean, markSellProjectDirty } = useProjectStore();
   const isPlus = user?.portalMode === 'asp_plus';
   const isSalesRep = user?.role === 'sales_rep';
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';
