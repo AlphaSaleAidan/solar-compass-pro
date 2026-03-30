@@ -30,6 +30,7 @@ const DOCUMENTS = [
 ];
 
 const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps) => {
+  const nameParts = project.customerName.split(' ');
   const [confirmSection, setConfirmSection] = useState<ConfirmSection>(null);
   const [confirmedSections, setConfirmedSections] = useState<Set<string>>(new Set());
 
