@@ -199,7 +199,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                 : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
             }`}
           >
-            <FolderOpen className="w-3.5 h-3.5" /> Projects ({projects.length})
+            <FolderOpen className="w-3.5 h-3.5" /> Projects ({sellProjects.length})
           </button>
         </div>
       </div>
