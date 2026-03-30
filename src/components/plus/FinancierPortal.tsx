@@ -132,7 +132,7 @@ const FinancierPortal = () => {
                 <div className="flex flex-wrap gap-2">
                   {p.adders.map((a, i) => (
                     <span key={i} className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold">
-                      {a.name} · ${a.price.toLocaleString()}
+                      {a.name} · ${a.cost.toLocaleString()}
                     </span>
                   ))}
                 </div>
