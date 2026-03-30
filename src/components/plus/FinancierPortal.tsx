@@ -245,7 +245,7 @@ const FinancierPortal = () => {
 
               {pendingReleases.length === 0 && (
                 <div className="text-center py-8">
-                  <span className="text-3xl">✅</span>
+                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto" />
                   <p className="text-xs text-muted-foreground mt-2">No pending releases — all caught up!</p>
                 </div>
               )}
