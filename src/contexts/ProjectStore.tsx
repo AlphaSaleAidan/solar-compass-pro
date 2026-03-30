@@ -346,6 +346,10 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Sell project actions
+  const addSellProject = useCallback((project: SellProject) => {
+    setSellProjects(prev => [project, ...prev]);
+  }, []);
+
   const updateSellProject = useCallback((project: SellProject) => {
     setSellProjects(prev => prev.map(p => p.id === project.id ? project : p));
   }, []);
