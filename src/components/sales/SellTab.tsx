@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { INSTALLED_HOMES, SELL_PROJECTS, SellProject, CreditStatus } from '@/data/mockData';
+import { INSTALLED_HOMES, type SellProject, type CreditStatus } from '@/data/mockData';
+import { useProjectStore } from '@/contexts/ProjectStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
@@ -10,9 +11,9 @@ interface SellTabProps {
 }
 
 const SellTab = ({ initialProjectData }: SellTabProps) => {
+  const { sellProjects, updateSellProject } = useProjectStore();
   const [activeSubTab, setActiveSubTab] = useState<'create' | 'projects'>('create');
   const [projectFilter, setProjectFilter] = useState<CreditStatus | 'all'>('all');
-  const [projects, setProjects] = useState<SellProject[]>(SELL_PROJECTS);
   const [address, setAddress] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
