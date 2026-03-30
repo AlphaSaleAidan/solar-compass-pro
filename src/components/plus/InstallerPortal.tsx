@@ -450,24 +450,31 @@ const InstallerPortal = () => {
               const isExpanded = expandedProject === p.id;
               return (
                 <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-                  <div onClick={() => setExpandedProject(isExpanded ? null : p.id)} className="px-5 py-4 flex items-center justify-between cursor-pointer">
+              <div onClick={() => setExpandedProject(isExpanded ? null : p.id)} className="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-4">
                       {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                       <div>
                         <div className="text-sm font-bold text-card-foreground">{p.customerName}</div>
-                        <div className="text-[10px] text-muted-foreground">{p.id} · {p.address}</div>
+                        <div className="text-[10px] text-muted-foreground">{p.id} · {p.systemSize} · {p.battery} · ${p.soldPPW.toFixed(2)}/W</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-sm font-black text-[hsl(var(--green))]">${p.contractValue.toLocaleString()}</div>
-                        <div className="text-[10px] text-muted-foreground">{p.systemSize}</div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-0.5">
+                        {MILESTONE_SOPS.map((_, i) => (
+                          <div key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
+                            i < p.currentMilestone ? 'bg-primary text-primary-foreground' : i === p.currentMilestone ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' : 'bg-muted text-muted-foreground'
+                          }`}>M{i + 1}</div>
+                        ))}
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
-                        p.status === 'active' ? 'bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] border-[hsl(var(--green))]/25' :
-                        p.status === 'delayed' ? 'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25' :
-                        'bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25'
-                      }`}>{p.status.replace('_', ' ')}</span>
+                      <div className="text-right">
+                        <div className="text-sm font-black text-[hsl(var(--green))]">${p.projectCost.toLocaleString()}</div>
+                        <div className="text-[10px] text-muted-foreground">{Math.round((p.currentMilestone / p.totalMilestones) * 100)}% funded</div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                        p.stage === 'Install Complete' || p.stage === 'PTO Granted' ? 'bg-[hsl(var(--green))]/10 text-[hsl(var(--green))]' :
+                        p.stage === 'Permit Submitted' || p.stage === 'Install Scheduled' ? 'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))]' :
+                        'bg-primary/10 text-primary'
+                      }`}>{p.stage}</span>
                     </div>
                   </div>
                   {isExpanded && (
