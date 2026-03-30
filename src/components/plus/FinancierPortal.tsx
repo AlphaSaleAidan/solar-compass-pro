@@ -46,10 +46,11 @@ const FinancierPortal = () => {
   const { projects } = store;
   const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk' | 'pending'>('overview');
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
-  const [hoveredMilestone, setHoveredMilestone] = useState<{ projectId: string; idx: number } | null>(null);
+  const [expandedMilestone, setExpandedMilestone] = useState<{ projectId: string; idx: number } | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [expandedEscrow, setExpandedEscrow] = useState<number | null>(null);
   const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
+  const [flaggedProjects, setFlaggedProjects] = useState<Set<string>>(new Set());
+  const [flagNotes, setFlagNotes] = useState<Record<string, string>>({});
 
   const totalPortfolioContract = projects.reduce((s, p) => s + p.contractValue, 0);
   const totalSystemCost = projects.reduce((s, p) => s + p.projectCost, 0);
