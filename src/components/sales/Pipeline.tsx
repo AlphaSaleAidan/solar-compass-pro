@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { PROJECTS, MILESTONE_NAMES, COMMISSIONS } from '@/data/mockData';
+import { useProjectStore } from '@/contexts/ProjectStore';
+import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import { MILESTONE_NAMES, COMMISSIONS } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Zap, Battery, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, Calendar, Mail, Phone, ChevronDown, ChevronUp, BarChart3, Camera, Shield } from 'lucide-react';
@@ -9,7 +11,8 @@ interface PipelineProps {
 }
 
 const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
-  const allProjects = [...PROJECTS, ...acceptedDeals];
+  const store = useProjectStore();
+  const allProjects = [...store.projects, ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id))];
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
   const statusColors: Record<string, string> = {
@@ -32,9 +35,9 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {allProjects.map((p) => {
-            // Get commission for this project
             const comm = COMMISSIONS.find(c => c.projectId === p.id);
             const yourComm = comm ? comm.yourCommission : 0;
+            const ms = store.getMilestoneState(p.id);
 
             return (
               <div
@@ -42,7 +45,6 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                 className="bg-bg2 border border-border rounded-xl overflow-hidden hover:border-border2 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
                 onClick={() => setExpandedProject(expandedProject === p.id ? null : p.id)}
               >
-                {/* Milestone strip */}
                 <div className="flex gap-px h-1">
                   {Array.from({ length: p.totalMilestones }).map((_, i) => (
                     <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : i === p.currentMilestone ? 'bg-primary/40' : 'bg-border'}`} />
@@ -64,7 +66,6 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                     </div>
                   </div>
 
-                  {/* System details */}
                   <div className="grid grid-cols-2 gap-1.5 mb-3 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1"><Zap className="w-3 h-3 text-primary" /> <strong className="text-foreground">{p.systemSize}</strong></div>
                     <div className="flex items-center gap-1"><Battery className="w-3 h-3 text-asp-green" /> <strong className="text-foreground">{p.battery}</strong></div>
@@ -79,44 +80,33 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                       <span className="text-xs font-extrabold text-primary">{p.stage}</span>
                     </div>
                     <div className="flex gap-1">
-                      {MILESTONE_NAMES.map((name, i) => {
-                        const detail = p.milestoneDetails[i];
+                      {MILESTONE_SOPS.map((sop, i) => {
                         const isPassed = i < p.currentMilestone;
                         const isCurrent = i === p.currentMilestone;
+                        const fundSt = ms.fundStatus[i] || 'none';
                         return (
                           <Tooltip key={i}>
                             <TooltipTrigger asChild>
-                              <div
-                                className={`h-5 w-7 rounded flex items-center justify-center text-[9px] font-extrabold cursor-help ${
-                                  isPassed
-                                    ? 'bg-primary text-primary-foreground'
-                                    : isCurrent
-                                    ? 'bg-primary/20 text-primary border border-primary'
-                                    : 'bg-bg4 text-muted-foreground'
-                                }`}
-                              >
+                              <div className={`h-5 w-7 rounded flex items-center justify-center text-[9px] font-extrabold cursor-help ${
+                                isPassed
+                                  ? fundSt === 'released' ? 'bg-asp-green/20 text-asp-green' :
+                                    fundSt === 'pending' ? 'bg-asp-yellow/20 text-asp-yellow' :
+                                    'bg-primary text-primary-foreground'
+                                  : isCurrent ? 'bg-primary/20 text-primary border border-primary'
+                                  : 'bg-bg4 text-muted-foreground'
+                              }`}>
                                 M{i + 1}
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-[260px] p-3 bg-bg2 border-border">
-                              <div className="text-xs font-black text-foreground mb-1">{name}</div>
+                              <div className="text-xs font-black text-foreground mb-1">{sop.name}</div>
+                              <div className="text-[10px] text-muted-foreground mb-1">{sop.fundPercent}% fund release</div>
                               {isPassed ? (
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1 text-[10px] text-asp-green font-bold"><CheckCircle className="w-3 h-3" /> Completed</div>
-                                  {detail?.completedDate && (
-                                    <div className="text-[10px] text-muted-foreground">Completed: {detail.completedDate}</div>
-                                  )}
-                                </div>
+                                <div className="flex items-center gap-1 text-[10px] text-asp-green font-bold"><CheckCircle className="w-3 h-3" /> Completed {fundSt === 'released' ? '· Funds Released' : fundSt === 'pending' ? '· Funds Pending' : ''}</div>
+                              ) : isCurrent ? (
+                                <div className="text-[10px] text-asp-yellow font-bold flex items-center gap-1"><Clock className="w-3 h-3" /> In Progress</div>
                               ) : (
-                                <div className="space-y-1">
-                                  <div className="text-[10px] text-asp-yellow font-bold mb-1 flex items-center gap-1">
-                                    {isCurrent ? <><Clock className="w-3 h-3" /> In Progress</> : <><Clock className="w-3 h-3" /> Pending</>}
-                                  </div>
-                                  <div className="text-[10px] text-muted-foreground font-bold">Requirements:</div>
-                                  {detail?.requirements.map((req, ri) => (
-                                    <div key={ri} className="text-[10px] text-muted-foreground pl-2">• {req}</div>
-                                  ))}
-                                </div>
+                                <div className="text-[10px] text-muted-foreground">Pending</div>
                               )}
                             </TooltipContent>
                           </Tooltip>
@@ -125,7 +115,6 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                     </div>
                   </div>
 
-                  {/* Expanded details */}
                   {expandedProject === p.id && (
                     <div className="animate-fade-in-up space-y-3">
                       <div className="bg-bg3 rounded-lg p-3">
@@ -162,19 +151,14 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                     </div>
                   )}
 
-                  {/* Customer info */}
                   <div className="text-xs text-muted-foreground space-y-0.5">
                     <div className="flex items-center gap-1"><Mail className="w-3 h-3" /> {p.email} · <Phone className="w-3 h-3" /> {p.phone}</div>
                   </div>
 
                   <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
-                    <div className="text-[11px] text-muted-foreground">
-                      <strong className="text-foreground">{p.repName}</strong> · Rep
-                    </div>
+                    <div className="text-[11px] text-muted-foreground"><strong className="text-foreground">{p.repName}</strong> · Rep</div>
                     <div className="flex items-center gap-2">
-                      <div className="text-[11px] text-muted-foreground text-right">
-                        <strong className="text-foreground">{p.installerName}</strong>
-                      </div>
+                      <div className="text-[11px] text-muted-foreground text-right"><strong className="text-foreground">{p.installerName}</strong></div>
                       {expandedProject === p.id ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                     </div>
                   </div>

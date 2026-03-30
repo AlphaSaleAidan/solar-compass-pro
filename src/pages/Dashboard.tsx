@@ -15,7 +15,6 @@ import MilestoneVerification from '@/components/ops/MilestoneVerification';
 import ProjectEditor from '@/components/ops/ProjectEditor';
 import SuperSupport from '@/components/ops/SuperSupport';
 import PlusPortal from '@/components/plus/PlusPortal';
-import type { Project } from '@/data/mockData';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -24,17 +23,12 @@ const Dashboard = () => {
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [convertedProjectData, setConvertedProjectData] = useState<{ name: string; email: string; phone: string; address: string } | null>(null);
-  const [acceptedDeals, setAcceptedDeals] = useState<Project[]>([]);
 
   if (!user) return null;
 
   const handleConvertToProject = (data: { name: string; email: string; phone: string; address: string }) => {
     setConvertedProjectData(data);
     setActiveTab('🦁');
-  };
-
-  const handleAcceptDeal = (project: Project) => {
-    setAcceptedDeals(prev => [...prev, project]);
   };
 
   const renderContent = () => {
@@ -72,11 +66,11 @@ const Dashboard = () => {
     // Backend Ops
     switch (activeTab) {
       case 'QC Review':
-        return <QCReview onAcceptDeal={handleAcceptDeal} />;
+        return <QCReview />;
       case 'Milestones':
-        return <MilestoneVerification acceptedDeals={acceptedDeals} />;
+        return <MilestoneVerification />;
       case 'Projects':
-        return <Pipeline acceptedDeals={acceptedDeals} />;
+        return <Pipeline />;
       case 'Editor':
         return <ProjectEditor />;
       case 'Communication':

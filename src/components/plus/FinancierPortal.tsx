@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { PROJECTS, MILESTONE_NAMES } from '@/data/mockData';
+import { useProjectStore } from '@/contexts/ProjectStore';
+import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import { MILESTONE_NAMES } from '@/data/mockData';
 import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, Zap, X, User, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck } from 'lucide-react';
 
 const ESCROW_MILESTONES = [
@@ -21,53 +23,50 @@ const DEFAULT_LAYERS = [
   { name: 'Battery-First Design', desc: '100% storage attachment improves satisfaction', active: true },
 ];
 
-const ESCROW_PAYMENT_DETAILS = [
-  { approvedDate: '2026-03-14', releasedDate: '2026-03-16', approvedBy: 'Marcus Reeves (Capital Ops)', notes: 'SOW verified — all documents confirmed' },
-  { approvedDate: '2026-03-08', releasedDate: '2026-03-10', approvedBy: 'Jordan Kim (Fund Manager)', notes: 'Permit approved by jurisdiction — materials ordered' },
-  { approvedDate: '2026-02-28', releasedDate: '2026-03-01', approvedBy: 'Caitlin Frost (Escrow Specialist)', notes: 'Install date locked — crew assigned' },
-  { approvedDate: '2026-02-20', releasedDate: '2026-02-22', approvedBy: 'Marcus Reeves (Capital Ops)', notes: 'Install complete — inspection photos verified' },
-  { approvedDate: '2026-02-12', releasedDate: '2026-02-14', approvedBy: 'Jordan Kim (Fund Manager)', notes: 'Utility meter inspection passed' },
-  { approvedDate: '2026-02-05', releasedDate: '2026-02-07', approvedBy: 'Caitlin Frost (Escrow Specialist)', notes: 'PTO granted — system activated' },
-  { approvedDate: '2026-01-28', releasedDate: '2026-01-30', approvedBy: 'Marcus Reeves (Capital Ops)', notes: 'Speed bonus qualified — under 26 days' },
-  { approvedDate: '2026-01-20', releasedDate: '2026-01-22', approvedBy: 'Jordan Kim (Fund Manager)', notes: 'All milestone gates cleared' },
-];
-
 const FUNDS_RELEASE_HISTORY = [
-  { project: 'ASP-2025', customer: 'Luis Martinez', milestone: 'M4 — Install Complete', percent: 20, amount: 6000, fundedDate: '2026-02-10', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Install completion certificate', 'System commissioning report', 'Inverter serial log'], photos: ['Completed array photo', 'Inverter installation photo', 'Panel layout aerial'], report: 'Installation completed 02/08 — 22 panels mounted on south-facing roof at 25° tilt. All microinverters communicating. System commissioning report shows 8.5 kW DC capacity. Wiring meets NEC 2023 code. Inverter serial numbers logged and warranty registered.' },
-  { project: 'ASP-2027', customer: 'James Robinson', milestone: 'M3 — Install Scheduled', percent: 15, amount: 5100, fundedDate: '2026-02-18', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['Install crew assignment', 'Homeowner install confirmation', 'Insurance certificate'], photos: ['Pre-install roof condition photos', 'Attic truss spacing photo'], report: 'Install crew (Team Delta — Apex Solar) assigned for 02/22. Homeowner confirmed window. Roof truss spacing measured at 24" OC — standard mount hardware approved. Insurance cert valid through 09/2026.' },
-  { project: 'ASP-2029', customer: 'Monica Chen', milestone: 'M2 — Permit + Materials', percent: 20, amount: 7400, fundedDate: '2026-02-25', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['City permit approval', 'Material order confirmation', 'Engineering stamp'], photos: ['Permit document scan', 'Material delivery receipt'], report: 'Permit #HOU-2026-53190 approved. 28x REC Alpha 400W panels + 2x Tesla Powerwall 3 ordered. Engineering stamp confirms dual-story load compliance. Materials ETA 03/02.' },
-  { project: 'ASP-2031', customer: 'Robert Tran', milestone: 'M5 — Utility Inspection', percent: 20, amount: 5800, fundedDate: '2026-03-01', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Utility inspection report', 'Meter upgrade confirmation', 'Net metering application'], photos: ['Meter swap photo', 'Inspection tag photo'], report: 'CenterPoint Energy inspection passed on 02/28. Meter upgraded to bi-directional. Net metering application submitted and accepted. System producing at rated capacity — monitoring confirms 29.2 kWh/day avg output.' },
-  { project: 'ASP-2033', customer: 'Stephanie Okafor', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 6375, fundedDate: '2026-03-05', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['Signed SOW contract', 'Utility bill verification', 'Credit approval letter'], photos: ['Property exterior photo', 'Electrical panel photo', 'Roof drone shot'], report: 'SOW executed for 12.5 kW system. Monthly usage at 1,680 kWh — 80% offset target met at 12.5 kW. Credit Tier 1 confirmed. Large two-story colonial with south/west exposure. Excellent candidate.' },
-  { project: 'ASP-2026', customer: 'Patricia Williams', milestone: 'M2 — Permit + Materials', percent: 20, amount: 7000, fundedDate: '2026-02-15', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['City permit approval', 'Material order confirmation'], photos: ['Permit scan'], report: 'Permit #HOU-2026-51203 approved. Materials ordered — 26x REC Alpha 400W + Enphase IQ8+. Note: HOA final approval still pending — capital release authorized at M2 per policy as permit is independent of HOA cosmetic review.' },
-  { project: 'ASP-2035', customer: 'David Nakamura', milestone: 'M6 — PTO Granted', percent: 10, amount: 3200, fundedDate: '2026-03-12', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['PTO certificate', 'Final system activation report', 'Warranty registration'], photos: ['System monitoring screenshot', 'Final array photo'], report: 'PTO granted by CenterPoint on 03/10. System fully activated and producing. Enphase monitoring confirms all 20 microinverters online. 30-year production warranty registered. Customer onboarding call completed — homeowner trained on app monitoring.' },
-  { project: 'ASP-2028', customer: 'Karen Washington', milestone: 'M4 — Install Complete', percent: 20, amount: 6600, fundedDate: '2026-03-08', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Install completion certificate', 'System commissioning report', 'Photo verification packet'], photos: ['Completed roof array', 'Battery wall mount', 'Main panel upgrade', 'Conduit run photo'], report: 'Install completed 03/06 by SunPro Team Alpha. 24 panels on south-facing hip roof. Tesla Powerwall 3 mounted in garage — gateway configured. Main panel upgraded from 100A to 200A. All connections torqued and labeled per NEC. System commissioning: 9.6 kW DC confirmed.' },
-  { project: 'ASP-2032', customer: 'Anthony Reyes', milestone: 'M3 — Install Scheduled', percent: 15, amount: 4950, fundedDate: '2026-03-15', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['Install crew assignment', 'Homeowner availability confirmation', 'Material staging receipt'], photos: ['Staged materials photo', 'Roof access confirmation'], report: 'Crew (Team Charlie — GridPoint Solar) locked for 03/20. All materials staged at warehouse. Homeowner confirmed — taking PTO day for install. Roof access via rear driveway confirmed. No trees or obstructions noted.' },
-  { project: 'ASP-2036', customer: 'Lisa Gutierrez', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 4800, fundedDate: '2026-03-18', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Signed SOW contract', 'Utility bill verification', 'Credit approval letter', 'Property deed'], photos: ['Front property photo', 'Electrical panel photo'], report: 'SOW signed for 9.4 kW system. Usage at 1,280 kWh/mo — offset target met. Credit Tier 1. Single-story ranch with unobstructed south roof. Clean origination — fast-tracked to permitting.' },
+  { project: 'ASP-2025', customer: 'Luis Martinez', milestone: 'M4 — Install Complete', percent: 20, amount: 6000, fundedDate: '2026-02-10', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Install completion certificate', 'System commissioning report'], photos: ['Completed array photo', 'Inverter installation photo'], report: 'Installation completed 02/08 — 22 panels mounted on south-facing roof. All microinverters communicating. System commissioning report shows 8.5 kW DC capacity.' },
+  { project: 'ASP-2027', customer: 'James Robinson', milestone: 'M3 — Install Scheduled', percent: 15, amount: 5100, fundedDate: '2026-02-18', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['Install crew assignment', 'Homeowner install confirmation'], photos: ['Pre-install roof condition photos'], report: 'Install crew assigned for 02/22. Homeowner confirmed window. Roof truss spacing 24" OC — standard mount hardware approved.' },
+  { project: 'ASP-2029', customer: 'Monica Chen', milestone: 'M2 — Permit + Materials', percent: 20, amount: 7400, fundedDate: '2026-02-25', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['City permit approval', 'Material order confirmation'], photos: ['Permit document scan'], report: 'Permit #HOU-2026-53190 approved. 28x REC Alpha 400W panels + 2x Tesla Powerwall 3 ordered.' },
+  { project: 'ASP-2031', customer: 'Robert Tran', milestone: 'M5 — Utility Inspection', percent: 20, amount: 5800, fundedDate: '2026-03-01', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Utility inspection report', 'Net metering application'], photos: ['Meter swap photo', 'Inspection tag photo'], report: 'CenterPoint Energy inspection passed. Meter upgraded to bi-directional. Net metering accepted.' },
+  { project: 'ASP-2033', customer: 'Stephanie Okafor', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 6375, fundedDate: '2026-03-05', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['Signed SOW contract', 'Utility bill verification'], photos: ['Property exterior photo'], report: 'SOW executed for 12.5 kW system. 80% offset target met. Credit Tier 1 confirmed.' },
+  { project: 'ASP-2035', customer: 'David Nakamura', milestone: 'M6 — PTO Granted', percent: 10, amount: 3200, fundedDate: '2026-03-12', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['PTO certificate', 'Warranty registration'], photos: ['System monitoring screenshot'], report: 'PTO granted by CenterPoint on 03/10. All 20 microinverters online. Warranty registered.' },
+  { project: 'ASP-2028', customer: 'Karen Washington', milestone: 'M4 — Install Complete', percent: 20, amount: 6600, fundedDate: '2026-03-08', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Install completion certificate', 'Photo verification packet'], photos: ['Completed roof array', 'Battery wall mount'], report: 'Install completed 03/06 by SunPro Team Alpha. 24 panels on south-facing hip roof. Tesla Powerwall 3 mounted.' },
+  { project: 'ASP-2032', customer: 'Anthony Reyes', milestone: 'M3 — Install Scheduled', percent: 15, amount: 4950, fundedDate: '2026-03-15', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['Install crew assignment', 'Material staging receipt'], photos: ['Staged materials photo'], report: 'Crew locked for 03/20. All materials staged. Homeowner confirmed — taking PTO day for install.' },
+  { project: 'ASP-2036', customer: 'Lisa Gutierrez', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 4800, fundedDate: '2026-03-18', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Signed SOW contract', 'Credit approval letter'], photos: ['Front property photo'], report: 'SOW signed for 9.4 kW system. Usage at 1,280 kWh/mo — offset target met. Fast-tracked to permitting.' },
+  { project: 'ASP-2037', customer: 'Priya Sharma', milestone: 'M2 — Permit + Materials', percent: 20, amount: 5200, fundedDate: '2026-03-20', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['City permit approval', 'Equipment order confirmation'], photos: ['Permit scan'], report: 'Permit approved. 24x panels + Duracell 20kW ordered. Materials ETA 03/28.' },
 ];
 
 const RISK_FLAGS = [
-  { id: 'RF-001', projectId: 'ASP-2030', customerName: 'Angela Davis', issue: 'Roof structural damage on northeast section — water damage and sagging near chimney detected during install prep. Capital release paused at M3 pending homeowner repair completion and structural engineer sign-off.', priority: 'high', daysOpen: 8, flaggedBy: 'Marcus Reeves (Capital Ops)' },
-  { id: 'RF-002', projectId: 'ASP-2034', customerName: 'Deborah White', issue: 'Financing on hold — customer credit re-evaluation triggered after employment change reported. Escrow funds locked at M2 until updated income documentation is received and verified by underwriting.', priority: 'high', daysOpen: 12, flaggedBy: 'Jordan Kim (Fund Manager)' },
-  { id: 'RF-003', projectId: 'ASP-2026', customerName: 'Patricia Williams', issue: 'HOA approval delay — panel placement variance requires written board approval. Capital deployment paused at M3. Next HOA board meeting scheduled April 2nd.', priority: 'medium', daysOpen: 5, flaggedBy: 'Caitlin Frost (Escrow Specialist)' },
+  { id: 'RF-001', projectId: 'ASP-2030', customerName: 'Angela Davis', issue: 'Roof structural damage — water damage and sagging near chimney. Capital paused at M3 pending repair.', priority: 'high', daysOpen: 8, flaggedBy: 'Marcus Reeves (Capital Ops)' },
+  { id: 'RF-002', projectId: 'ASP-2034', customerName: 'Deborah White', issue: 'Financing on hold — employment change triggered credit re-evaluation. Escrow locked at M2.', priority: 'high', daysOpen: 12, flaggedBy: 'Jordan Kim (Fund Manager)' },
+  { id: 'RF-003', projectId: 'ASP-2026', customerName: 'Patricia Williams', issue: 'HOA approval delay — panel placement variance requires board approval. Capital paused at M3.', priority: 'medium', daysOpen: 5, flaggedBy: 'Caitlin Frost (Escrow Specialist)' },
 ];
 
 const FinancierPortal = () => {
-  const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk'>('overview');
+  const store = useProjectStore();
+  const { projects } = store;
+  const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk' | 'pending'>('overview');
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [hoveredMilestone, setHoveredMilestone] = useState<{ projectId: string; idx: number } | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedEscrow, setExpandedEscrow] = useState<number | null>(null);
   const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
 
-  const totalPortfolioContract = PROJECTS.reduce((s, p) => s + p.contractValue, 0);
-  const totalSystemCost = PROJECTS.reduce((s, p) => s + p.projectCost, 0);
-  const totalFunded = PROJECTS.reduce((s, p) => s + Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones)), 0);
-  const activeProjects = PROJECTS.filter(p => p.status !== 'completed').length;
-  const avgDaysToPTO = 24;
+  const totalPortfolioContract = projects.reduce((s, p) => s + p.contractValue, 0);
+  const totalSystemCost = projects.reduce((s, p) => s + p.projectCost, 0);
+  const totalFunded = projects.reduce((s, p) => s + Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones)), 0);
+  const activeProjects = projects.filter(p => p.status !== 'completed').length;
 
-  const selectedProjectData = selectedProject ? PROJECTS.find(p => p.id === selectedProject) : null;
+  const selectedProjectData = selectedProject ? projects.find(p => p.id === selectedProject) : null;
 
-  const renderMilestoneTooltip = (project: typeof PROJECTS[0], idx: number) => {
+  // Find pending fund releases across all projects
+  const pendingReleases = projects.flatMap(p => {
+    const ms = store.getMilestoneState(p.id);
+    return MILESTONE_SOPS.map((sop, i) => ({ project: p, milestoneIdx: i, sop, fundStatus: ms.fundStatus[i] || 'none' }))
+      .filter(item => item.fundStatus === 'pending' || item.fundStatus === 'approved');
+  });
+
+  const renderMilestoneTooltip = (project: typeof projects[0], idx: number) => {
     const milestone = project.milestoneDetails[idx];
     if (!milestone) return null;
     const isPassed = idx < project.currentMilestone;
@@ -75,25 +74,9 @@ const FinancierPortal = () => {
       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-card border border-border rounded-xl p-3 shadow-lg z-50 pointer-events-none">
         <div className="text-xs font-extrabold text-card-foreground mb-1">{milestone.name}</div>
         {isPassed ? (
-          <>
-            <div className="text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1 mb-1">
-              <CheckCircle className="w-3 h-3" /> Completed
-            </div>
-            {milestone.completedDate && <div className="text-[10px] text-muted-foreground">Date: {milestone.completedDate}</div>}
-            {milestone.completedBy && <div className="text-[10px] text-muted-foreground">Verified by: {milestone.completedBy}</div>}
-          </>
+          <div className="text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Completed</div>
         ) : (
-          <>
-            <div className="text-[10px] text-[hsl(var(--yellow))] font-bold mb-1">Pending — Requirements:</div>
-            <ul className="space-y-0.5">
-              {milestone.requirements.map((r, ri) => (
-                <li key={ri} className="text-[9px] text-muted-foreground flex items-start gap-1">
-                  <span className="mt-0.5 w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
-                  {r}
-                </li>
-              ))}
-            </ul>
-          </>
+          <div className="text-[10px] text-[hsl(var(--yellow))] font-bold">Pending</div>
         )}
         <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-card border-r border-b border-border rotate-45 -mt-1" />
       </div>
@@ -103,142 +86,66 @@ const FinancierPortal = () => {
   const renderProjectDetail = () => {
     if (!selectedProjectData) return null;
     const p = selectedProjectData;
+    const ms = store.getMilestoneState(p.id);
     const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+
+    // Get installer review and SOW report from M4 if available
+    const installerReview = ms.textEntries['m4-installer-review'];
+    const sowReport = ms.textEntries['m4-sow-report'];
+
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setSelectedProject(null)}>
-        <div className="bg-card border border-border rounded-2xl w-full max-w-xl max-h-[55vh] overflow-y-auto m-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="bg-card border border-border rounded-2xl w-full max-w-xl max-h-[65vh] overflow-y-auto m-4 shadow-2xl" onClick={e => e.stopPropagation()}>
           <div className="px-6 py-4 border-b border-border flex items-center justify-between">
             <div>
               <h2 className="text-lg font-black text-card-foreground">{p.customerName}</h2>
               <div className="text-xs text-muted-foreground">{p.id} · {p.stage}</div>
             </div>
-            <button onClick={() => setSelectedProject(null)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80">
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
+            <button onClick={() => setSelectedProject(null)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80"><X className="w-4 h-4 text-muted-foreground" /></button>
           </div>
           <div className="p-6 space-y-5">
-            {/* Customer Info */}
-            <div>
-              <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Customer Information</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { icon: User, label: 'Name', value: p.customerName },
-                  { icon: MapPin, label: 'Address', value: p.address },
-                  { icon: Phone, label: 'Phone', value: p.phone },
-                  { icon: Mail, label: 'Email', value: p.email },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-muted rounded-xl p-3">
-                    <item.icon className="w-4 h-4 text-primary shrink-0" />
-                    <div>
-                      <div className="text-[10px] text-muted-foreground">{item.label}</div>
-                      <div className="text-sm font-bold text-card-foreground">{item.value}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Financial Details */}
-            <div>
-              <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Financial Details</h3>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}`, color: 'text-primary' },
-                  { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
-                  { label: 'Interest Rate', value: `${p.interestRate}%`, color: 'text-primary' },
-                  { label: 'Terms', value: p.loanTerms, color: 'text-card-foreground' },
-                  { label: 'Capital Released', value: `$${funded.toLocaleString()}`, color: 'text-[hsl(var(--green))]' },
-                  { label: 'In Escrow', value: `$${(p.projectCost - funded).toLocaleString()}`, color: 'text-[hsl(var(--yellow))]' },
-                ].map((item, i) => (
-                  <div key={i} className="bg-muted rounded-xl p-3">
-                    <div className="text-[10px] text-muted-foreground">{item.label}</div>
-                    <div className={`text-sm font-black ${item.color}`}>{item.value}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* System */}
-            <div>
-              <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">System & Adders</h3>
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                <div className="bg-muted rounded-xl p-3">
-                  <div className="text-[10px] text-muted-foreground">System Size</div>
-                  <div className="text-sm font-black text-card-foreground">{p.systemSize}</div>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}`, color: 'text-primary' },
+                { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
+                { label: 'Capital Released', value: `$${funded.toLocaleString()}`, color: 'text-[hsl(var(--green))]' },
+              ].map((item, i) => (
+                <div key={i} className="bg-muted rounded-xl p-3">
+                  <div className="text-[10px] text-muted-foreground">{item.label}</div>
+                  <div className={`text-sm font-black ${item.color}`}>{item.value}</div>
                 </div>
-                <div className="bg-muted rounded-xl p-3">
-                  <div className="text-[10px] text-muted-foreground">Battery</div>
-                  <div className="text-sm font-black text-card-foreground">{p.battery}</div>
-                </div>
-                <div className="bg-muted rounded-xl p-3">
-                  <div className="text-[10px] text-muted-foreground">Inverter</div>
-                  <div className="text-sm font-black text-card-foreground">Enphase IQ8+</div>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                {p.adders.map((a, i) => (
-                  <div key={i} className="flex items-center justify-between bg-muted rounded-xl px-4 py-2.5">
-                    <span className="text-sm font-bold text-card-foreground">{a.name}</span>
-                    <span className="text-sm font-black text-[hsl(var(--green))]">${a.cost.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
-            {/* Sales Rep & Installer */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-7 gap-1.5">
+              {MILESTONE_SOPS.map((sop, i) => {
+                const isPassed = i < p.currentMilestone;
+                const fundSt = ms.fundStatus[i] || 'none';
+                return (
+                  <div key={i} className={`rounded-xl p-2 text-center border ${
+                    isPassed ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20' : 'bg-muted border-border'
+                  }`}>
+                    <div className={`text-[10px] font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
+                    <div className="text-[8px] text-muted-foreground mt-0.5">{sop.shortName}</div>
+                    <div className="text-[8px] text-muted-foreground">{sop.fundPercent}%</div>
+                    {isPassed && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-0.5" />}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Installer Review from Backend Ops */}
+            {installerReview && (
               <div>
-                <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Sales Rep</h3>
-                <div className="bg-muted rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-card-foreground">{p.repName}</div>
-                    <div className="text-[10px] text-muted-foreground">ASP Sales Rep</div>
-                  </div>
-                </div>
+                <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-2">Installer Performance Review (from Backend Ops)</h3>
+                <div className="bg-primary/5 border border-primary/15 rounded-xl p-3 text-xs text-card-foreground">{installerReview}</div>
               </div>
+            )}
+            {/* SOW Report */}
+            {sowReport && (
               <div>
-                <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Installer</h3>
-                <div className="bg-muted rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-card-foreground">{p.installerName}</div>
-                    <div className="text-[10px] text-muted-foreground">Network Installer</div>
-                  </div>
-                </div>
+                <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-2">SOW vs Real Cost Report</h3>
+                <div className="bg-[hsl(var(--yellow))]/5 border border-[hsl(var(--yellow))]/15 rounded-xl p-3 text-xs text-card-foreground">{sowReport}</div>
               </div>
-            </div>
-            {/* Escrow Progress */}
-            <div>
-              <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Escrow Release Progress</h3>
-              <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs text-muted-foreground">Capital Released</span>
-                  <span className="text-sm font-black text-[hsl(var(--green))]">${funded.toLocaleString()}</span>
-                </div>
-                <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${(funded / p.projectCost) * 100}%` }} />
-                </div>
-                <div className="text-[10px] text-muted-foreground mt-1 text-right">{Math.round((funded / p.projectCost) * 100)}% of ${p.projectCost.toLocaleString()}</div>
-              </div>
-            </div>
-            {/* Milestones */}
-            <div>
-              <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Milestone Progress</h3>
-              <div className="grid grid-cols-7 gap-1.5">
-                {p.milestoneDetails.map((m, i) => {
-                  const isPassed = i < p.currentMilestone;
-                  return (
-                    <div key={i} className={`rounded-xl p-2 text-center border ${isPassed ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-muted border-border'}`}>
-                      <div className={`text-[10px] font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
-                      <div className="text-[8px] text-muted-foreground mt-0.5 truncate">{m.name}</div>
-                      {isPassed && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-0.5" />}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -250,13 +157,12 @@ const FinancierPortal = () => {
       case 'overview':
         return (
           <div className="space-y-5">
-            {/* Key Metrics */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Total Portfolio Contract Value', value: `$${Math.round(totalPortfolioContract / 1000)}k`, icon: DollarSign, color: 'text-primary', sub: `${PROJECTS.length} projects` },
-                { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / totalSystemCost) * 100)}% deployed` },
-                { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / totalPortfolioContract) * 100)}% margin` },
-                { label: 'Avg Days to PTO', value: `${avgDaysToPTO}d`, icon: Clock, color: 'text-[hsl(var(--blue))]', sub: `Target: 26d` },
+                { label: 'Portfolio Value', value: `$${Math.round(totalPortfolioContract / 1000)}k`, icon: DollarSign, color: 'text-primary', sub: `${projects.length} projects` },
+                { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / Math.max(totalSystemCost, 1)) * 100)}% deployed` },
+                { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / Math.max(totalPortfolioContract, 1)) * 100)}% margin` },
+                { label: 'Pending Releases', value: pendingReleases.length.toString(), icon: Clock, color: pendingReleases.length > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]', sub: pendingReleases.length > 0 ? 'Action required' : 'All clear' },
               ].map((s, i) => (
                 <div key={i} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2 mb-2">
@@ -269,49 +175,53 @@ const FinancierPortal = () => {
               ))}
             </div>
 
+            {/* Pending Fund Release Alert */}
+            {pendingReleases.length > 0 && (
+              <div className="bg-[hsl(var(--yellow))]/5 border border-[hsl(var(--yellow))]/20 rounded-2xl p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-[hsl(var(--yellow))]" />
+                    <div>
+                      <div className="text-sm font-bold text-card-foreground">{pendingReleases.length} fund release(s) awaiting approval</div>
+                      <div className="text-xs text-muted-foreground">Backend Ops has verified these milestones. Review and release funds.</div>
+                    </div>
+                  </div>
+                  <button onClick={() => setActiveSection('pending')} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:bg-primary/90 transition-all">
+                    Review Now →
+                  </button>
+                </div>
+              </div>
+            )}
 
-
-
-            {/* Active Projects with hoverable milestones + clickable */}
+            {/* Portfolio Projects */}
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
               <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
-                <h3 className="text-sm font-extrabold text-card-foreground flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-primary" /> Portfolio Projects
-                </h3>
+                <h3 className="text-sm font-extrabold text-card-foreground flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> Portfolio Projects</h3>
                 <button onClick={() => setActiveSection('portfolio')} className="text-xs text-primary font-bold hover:underline">View All</button>
               </div>
-              {PROJECTS.filter(p => p.status !== 'completed').slice(0, 5).map(p => {
-                const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+              {projects.filter(p => p.status !== 'completed').slice(0, 5).map(p => {
+                const ms = store.getMilestoneState(p.id);
                 return (
-                  <div
-                    key={p.id}
-                    className="px-5 py-3.5 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => setSelectedProject(p.id)}
-                  >
+                  <div key={p.id} className="px-5 py-3.5 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedProject(p.id)}>
                     <div>
                       <div className="text-sm font-bold text-card-foreground">{p.customerName}</div>
-                      <div className="text-[10px] text-muted-foreground">{p.id} · ${(p.contractValue / 1000).toFixed(1)}K · {p.loanTerms}</div>
+                      <div className="text-[10px] text-muted-foreground">{p.id} · ${(p.contractValue / 1000).toFixed(1)}K</div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex gap-0.5">
-                        {Array.from({ length: 7 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className={`relative w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold cursor-default ${
-                              i < p.currentMilestone ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                            }`}
-                            onMouseEnter={(e) => { e.stopPropagation(); setHoveredMilestone({ projectId: p.id, idx: i }); }}
-                            onMouseLeave={() => setHoveredMilestone(null)}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            M{i + 1}
-                            {hoveredMilestone?.projectId === p.id && hoveredMilestone?.idx === i && renderMilestoneTooltip(p, i)}
-                          </div>
-                        ))}
+                        {MILESTONE_SOPS.map((_, i) => {
+                          const fundSt = ms.fundStatus[i] || 'none';
+                          return (
+                            <div key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
+                              i < p.currentMilestone
+                                ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/20 text-[hsl(var(--green))]' :
+                                  fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/20 text-[hsl(var(--yellow))]' :
+                                  'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground'
+                            }`}>M{i + 1}</div>
+                          );
+                        })}
                       </div>
-                      <span className={`text-xs font-bold ${
-                        p.status === 'active' ? 'text-[hsl(var(--green))]' : p.status === 'delayed' ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--red))]'
-                      }`}>{p.status}</span>
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                     </div>
                   </div>
@@ -335,13 +245,87 @@ const FinancierPortal = () => {
                 </div>
               </div>
               <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full transition-all" style={{ width: `${(totalFunded / totalSystemCost) * 100}%` }} />
+                <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full transition-all" style={{ width: `${(totalFunded / Math.max(totalSystemCost, 1)) * 100}%` }} />
               </div>
-              <div className="flex justify-between mt-2 text-[10px] text-muted-foreground">
-                <span>0%</span>
-                <span>{Math.round((totalFunded / totalSystemCost) * 100)}% deployed</span>
-                <span>100%</span>
-              </div>
+            </div>
+          </div>
+        );
+
+      case 'pending':
+        return (
+          <div className="space-y-4">
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h3 className="text-sm font-extrabold text-card-foreground mb-1 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Pending Fund Releases
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">These milestones have been verified by Backend Ops. Review and approve fund release.</p>
+
+              {pendingReleases.length === 0 && (
+                <div className="text-center py-8">
+                  <span className="text-3xl">✅</span>
+                  <p className="text-xs text-muted-foreground mt-2">No pending releases — all caught up!</p>
+                </div>
+              )}
+
+              {pendingReleases.map((item, i) => {
+                const amount = Math.round(item.project.projectCost * (item.sop.fundPercent / 100));
+                const ms = store.getMilestoneState(item.project.id);
+                const installerReview = ms.textEntries['m4-installer-review'];
+                const sowReport = ms.textEntries['m4-sow-report'];
+
+                return (
+                  <div key={i} className="bg-muted rounded-xl border border-border p-4 mb-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[hsl(var(--yellow))]/15 flex items-center justify-center text-xs font-extrabold text-[hsl(var(--yellow))]">
+                          M{item.milestoneIdx + 1}
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-card-foreground">{item.project.customerName}</div>
+                          <div className="text-[10px] text-muted-foreground">{item.project.id} · {item.sop.name}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-black text-[hsl(var(--yellow))]">${amount.toLocaleString()}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.sop.fundPercent}% of system cost</div>
+                      </div>
+                    </div>
+
+                    {/* Show reports if M4 */}
+                    {item.milestoneIdx === 3 && installerReview && (
+                      <div className="mb-2 bg-card rounded-lg p-3 border border-border">
+                        <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Installer Review</div>
+                        <div className="text-xs text-card-foreground">{installerReview}</div>
+                      </div>
+                    )}
+                    {item.milestoneIdx === 3 && sowReport && (
+                      <div className="mb-2 bg-card rounded-lg p-3 border border-border">
+                        <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">SOW vs Cost Report</div>
+                        <div className="text-xs text-card-foreground">{sowReport}</div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 justify-end">
+                      {item.fundStatus === 'pending' && (
+                        <button
+                          onClick={() => store.approveFundRelease(item.project.id, item.milestoneIdx)}
+                          className="px-4 py-2 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-95 flex items-center gap-1.5"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" /> Approve Release
+                        </button>
+                      )}
+                      {item.fundStatus === 'approved' && (
+                        <button
+                          onClick={() => store.releaseFund(item.project.id, item.milestoneIdx)}
+                          className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 flex items-center gap-1.5"
+                        >
+                          <DollarSign className="w-3.5 h-3.5" /> Release Funds — ${amount.toLocaleString()}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
@@ -349,15 +333,15 @@ const FinancierPortal = () => {
       case 'portfolio':
         return (
           <div className="space-y-3">
-            {PROJECTS.map(p => {
+            {projects.map(p => {
               const isExpanded = expandedProject === p.id;
+              const ms = store.getMilestoneState(p.id);
               const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
-              const remaining = p.projectCost - funded;
               return (
                 <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
                   <div className="flex gap-px h-1.5">
                     {Array.from({ length: p.totalMilestones }).map((_, i) => (
-                      <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : i === p.currentMilestone ? 'bg-primary/40' : 'bg-border'}`} />
+                      <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : 'bg-border'}`} />
                     ))}
                   </div>
                   <div onClick={() => setExpandedProject(isExpanded ? null : p.id)} className="px-5 py-4 flex items-center justify-between cursor-pointer">
@@ -369,10 +353,7 @@ const FinancierPortal = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-sm font-black text-primary">${(p.contractValue / 1000).toFixed(1)}K</div>
-                        <div className="text-[10px] text-muted-foreground">{p.loanTerms}</div>
-                      </div>
+                      <div className="text-sm font-black text-primary">${(p.contractValue / 1000).toFixed(1)}K</div>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
                         p.status === 'active' ? 'bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] border-[hsl(var(--green))]/25' :
                         p.status === 'delayed' ? 'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25' :
@@ -383,87 +364,42 @@ const FinancierPortal = () => {
                   </div>
                   {isExpanded && (
                     <div className="border-t border-border px-5 py-4 space-y-4">
-                      {/* Customer + Rep Info */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-muted rounded-xl p-3 flex items-center gap-2">
                           <User className="w-4 h-4 text-primary shrink-0" />
-                          <div>
-                            <div className="text-[10px] text-muted-foreground">Customer</div>
-                            <div className="text-xs font-bold text-card-foreground">{p.customerName}</div>
-                            <div className="text-[10px] text-muted-foreground">{p.phone} · {p.email}</div>
-                          </div>
+                          <div><div className="text-[10px] text-muted-foreground">Customer</div><div className="text-xs font-bold text-card-foreground">{p.customerName}</div></div>
                         </div>
                         <div className="bg-muted rounded-xl p-3 flex items-center gap-2">
                           <Shield className="w-4 h-4 text-primary shrink-0" />
-                          <div>
-                            <div className="text-[10px] text-muted-foreground">Installer</div>
-                            <div className="text-xs font-bold text-card-foreground">{p.installerName}</div>
-                            <div className="text-[10px] text-muted-foreground">Rep: {p.repName}</div>
-                          </div>
+                          <div><div className="text-[10px] text-muted-foreground">Installer</div><div className="text-xs font-bold text-card-foreground">{p.installerName}</div></div>
                         </div>
                       </div>
-                      {/* System Details */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="bg-muted rounded-xl p-3">
-                          <div className="text-[10px] text-muted-foreground">System</div>
-                          <div className="text-xs font-black text-card-foreground">{p.systemSize} + {p.battery}</div>
-                        </div>
-                        <div className="bg-muted rounded-xl p-3">
-                          <div className="text-[10px] text-muted-foreground">Adders</div>
-                          <div className="text-xs font-black text-card-foreground">{p.adders.map(a => a.name).join(', ')}</div>
-                        </div>
-                        <div className="bg-muted rounded-xl p-3">
-                          <div className="text-[10px] text-muted-foreground">Inverter</div>
-                          <div className="text-xs font-black text-card-foreground">Enphase IQ8+</div>
-                        </div>
-                      </div>
-                      {/* Escrow Release */}
-                      <div>
-                        <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Escrow Release Schedule</h4>
-                        <div className="grid grid-cols-7 gap-2">
-                          {ESCROW_MILESTONES.map((m, i) => {
-                            const amount = Math.round(p.projectCost * (m.percent / 100));
-                            const released = i < p.currentMilestone;
-                            return (
-                              <div key={i} className={`rounded-xl p-3 text-center border ${released ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-muted border-border'}`}>
-                                <div className={`text-xs font-extrabold ${released ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
-                                <div className={`text-xs font-black ${released ? 'text-[hsl(var(--green))]' : 'text-card-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
-                                <div className="text-[8px] text-muted-foreground">{m.percent}%</div>
-                                {released && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-1" />}
-                              </div>
-                            );
-                          })}
-                          <div className="rounded-xl p-3 text-center border bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20">
-                            <div className="text-xs font-extrabold text-[hsl(var(--yellow))]">M7</div>
-                            <div className="text-xs font-black text-[hsl(var(--yellow))]">+5%</div>
-                            <div className="text-[8px] text-muted-foreground">Speed</div>
-                            <Zap className="w-3 h-3 text-[hsl(var(--yellow))] mx-auto mt-1" />
-                          </div>
+                      <div className="grid grid-cols-7 gap-2">
+                        {ESCROW_MILESTONES.map((m, i) => {
+                          const amount = Math.round(p.projectCost * (m.percent / 100));
+                          const released = i < p.currentMilestone;
+                          const fundSt = ms.fundStatus[i] || 'none';
+                          return (
+                            <div key={i} className={`rounded-xl p-3 text-center border ${
+                              released ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20' : 'bg-muted border-border'
+                            }`}>
+                              <div className={`text-xs font-extrabold ${released ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
+                              <div className={`text-xs font-black ${released ? 'text-[hsl(var(--green))]' : 'text-card-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
+                              <div className="text-[8px] text-muted-foreground">{m.percent}%</div>
+                              {released && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-1" />}
+                            </div>
+                          );
+                        })}
+                        <div className="rounded-xl p-3 text-center border bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20">
+                          <div className="text-xs font-extrabold text-[hsl(var(--yellow))]">M7</div>
+                          <div className="text-xs font-black text-[hsl(var(--yellow))]">+5%</div>
+                          <div className="text-[8px] text-muted-foreground">Speed</div>
                         </div>
                       </div>
-                      {/* Financial */}
-                      <div className="grid grid-cols-4 gap-3">
-                        {[
-                          { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}` },
-                          { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}` },
-                          { label: 'Interest Rate', value: `${p.interestRate}%` },
-                          { label: 'Terms', value: p.loanTerms },
-                        ].map((item, i) => (
-                          <div key={i} className="bg-muted rounded-xl p-3">
-                            <div className="text-[10px] text-muted-foreground">{item.label}</div>
-                            <div className="text-sm font-black text-card-foreground">{item.value}</div>
-                          </div>
-                        ))}
-                      </div>
-                      {/* Capital Status */}
                       <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-xs text-muted-foreground">Capital Released</span>
                           <span className="text-sm font-black text-[hsl(var(--green))]">${funded.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs text-muted-foreground">In Escrow</span>
-                          <span className="text-sm font-black text-[hsl(var(--yellow))]">${remaining.toLocaleString()}</span>
                         </div>
                         <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${(funded / p.projectCost) * 100}%` }} />
@@ -484,93 +420,16 @@ const FinancierPortal = () => {
               <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
                 <Lock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Milestone-Gated Capital Structure
               </h3>
-              <p className="text-xs text-muted-foreground mb-4">Funds held in ASP-managed escrow. 7 milestone gates — each requires documented ASP verification before release.</p>
+              <p className="text-xs text-muted-foreground mb-4">Funds held in ASP-managed escrow. 7 milestone gates — each requires documented ASP verification.</p>
               <div className="grid grid-cols-7 gap-3">
                 {ESCROW_MILESTONES.map((m, i) => (
                   <div key={i} className="bg-muted rounded-xl p-4 text-center border border-border">
                     <div className="text-base font-black text-primary mb-1">M{i + 1}</div>
                     <div className="text-lg font-black text-card-foreground">{m.percent}%</div>
-                    <div className="text-[9px] text-muted-foreground mt-1 leading-tight">{m.name}</div>
+                    <div className="text-[9px] text-muted-foreground mt-1">{m.name}</div>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Per-Project Escrow — clickable */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-border text-sm font-extrabold text-card-foreground flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-[hsl(var(--green))]" /> Escrow by Project
-              </div>
-              {PROJECTS.map((p, pi) => {
-                const cumulativePercents = ESCROW_MILESTONES.reduce<number[]>((acc, m) => {
-                  acc.push((acc.length > 0 ? acc[acc.length - 1] : 0) + m.percent);
-                  return acc;
-                }, []);
-                const pct = p.currentMilestone > 0 ? cumulativePercents[Math.min(p.currentMilestone - 1, cumulativePercents.length - 1)] : 0;
-                const funded = Math.round(p.projectCost * (pct / 100));
-                const isExpanded = expandedEscrow === pi;
-                const details = ESCROW_PAYMENT_DETAILS[pi % ESCROW_PAYMENT_DETAILS.length];
-                return (
-                  <div key={p.id} className="border-b border-border">
-                    <div
-                      className="px-5 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => setExpandedEscrow(isExpanded ? null : pi)}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
-                          <span className="text-sm font-bold text-card-foreground">{p.customerName}</span>
-                          <span className="text-[10px] text-muted-foreground">{p.id}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-[hsl(var(--green))] font-bold">${funded.toLocaleString()} released</span>
-                          <span className="text-xs text-muted-foreground">/ ${p.projectCost.toLocaleString()}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${pct}%` }} />
-                        </div>
-                        <div className="flex gap-0.5">
-                          {Array.from({ length: 7 }).map((_, i) => (
-                            <div
-                              key={i}
-                              className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
-                                i < p.currentMilestone ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                              }`}
-                            >
-                              M{i + 1}
-                            </div>
-                          ))}
-                        </div>
-                        <span className="text-xs font-black text-card-foreground ml-1 min-w-[32px] text-right">{pct}%</span>
-                      </div>
-                    </div>
-                    {isExpanded && (
-                      <div className="px-5 pb-4">
-                        <div className="bg-muted rounded-xl p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground">Last Approved On</span>
-                            <span className="text-xs font-bold text-card-foreground">{details.approvedDate}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground">Funds Released</span>
-                            <span className="text-xs font-bold text-[hsl(var(--green))]">{details.releasedDate}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground">Approved By</span>
-                            <span className="text-xs font-bold text-card-foreground">{details.approvedBy}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground">Notes</span>
-                            <span className="text-xs text-muted-foreground">{details.notes}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
             </div>
 
             {/* Funds Released History */}
@@ -582,10 +441,7 @@ const FinancierPortal = () => {
                 const isOpen = expandedHistory === i;
                 return (
                   <div key={i} className="border-b border-border">
-                    <div
-                      className="px-5 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors flex items-center justify-between"
-                      onClick={() => setExpandedHistory(isOpen ? null : i)}
-                    >
+                    <div className="px-5 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors flex items-center justify-between" onClick={() => setExpandedHistory(isOpen ? null : i)}>
                       <div className="flex items-center gap-3">
                         {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
                         <div>
@@ -593,70 +449,42 @@ const FinancierPortal = () => {
                           <div className="text-[10px] text-muted-foreground">{entry.project} · {entry.milestone}</div>
                         </div>
                       </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold bg-primary text-primary-foreground">
-                            {entry.milestone.match(/M\d/)?.[0] || 'M1'}
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()}</div>
-                            <div className="text-[10px] text-muted-foreground">{entry.percent}% · {entry.fundedDate}</div>
-                          </div>
-                          <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold bg-primary text-primary-foreground">
+                          {entry.milestone.match(/M\d/)?.[0] || 'M1'}
                         </div>
+                        <div className="text-right">
+                          <div className="text-sm font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()}</div>
+                          <div className="text-[10px] text-muted-foreground">{entry.percent}% · {entry.fundedDate}</div>
+                        </div>
+                        <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
+                      </div>
                     </div>
                     {isOpen && (
                       <div className="px-5 pb-4 space-y-3">
-                        {/* Approval Info */}
                         <div className="bg-muted rounded-xl p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground">Funded Date</span>
-                            <span className="text-xs font-bold text-[hsl(var(--green))]">{entry.fundedDate}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground">Approved By</span>
-                            <span className="text-xs font-bold text-card-foreground">{entry.approvedBy}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground">Amount Released</span>
-                            <span className="text-xs font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()} ({entry.percent}%)</span>
-                          </div>
+                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Funded Date</span><span className="text-xs font-bold text-[hsl(var(--green))]">{entry.fundedDate}</span></div>
+                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Approved By</span><span className="text-xs font-bold text-card-foreground">{entry.approvedBy}</span></div>
+                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Amount</span><span className="text-xs font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()} ({entry.percent}%)</span></div>
                         </div>
-
-                        {/* Documents */}
                         <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5">
-                            <FileText className="w-3 h-3" /> Supporting Documents
-                          </div>
+                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Documents</div>
                           <div className="space-y-1">
                             {entry.documents.map((doc, di) => (
-                              <div key={di} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-                                <FileText className="w-3 h-3 text-primary shrink-0" />
-                                <span className="text-xs text-card-foreground">{doc}</span>
-                              </div>
+                              <div key={di} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2"><FileText className="w-3 h-3 text-primary shrink-0" /><span className="text-xs text-card-foreground">{doc}</span></div>
                             ))}
                           </div>
                         </div>
-
-                        {/* Photos */}
                         <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5">
-                            <Camera className="w-3 h-3" /> Verification Photos
-                          </div>
+                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5"><Camera className="w-3 h-3" /> Photos</div>
                           <div className="space-y-1">
                             {entry.photos.map((photo, phi) => (
-                              <div key={phi} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-                                <Camera className="w-3 h-3 text-primary shrink-0" />
-                                <span className="text-xs text-card-foreground">{photo}</span>
-                              </div>
+                              <div key={phi} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2"><Camera className="w-3 h-3 text-primary shrink-0" /><span className="text-xs text-card-foreground">{photo}</span></div>
                             ))}
                           </div>
                         </div>
-
-                        {/* Approval Report */}
                         <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5">
-                            <ClipboardCheck className="w-3 h-3" /> Approval Report
-                          </div>
+                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5"><ClipboardCheck className="w-3 h-3" /> Report</div>
                           <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
                             <div className="text-xs text-card-foreground leading-relaxed">{entry.report}</div>
                             <div className="mt-2 text-[10px] text-muted-foreground">— {entry.approvedBy}, {entry.fundedDate}</div>
@@ -678,13 +506,10 @@ const FinancierPortal = () => {
               <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
                 <Shield className="w-4 h-4 text-primary" /> 7-Layer Default Reduction Stack
               </h3>
-              <p className="text-xs text-muted-foreground mb-4">Active from origination. Target: 30% default reduction from day one.</p>
               <div className="space-y-3">
                 {DEFAULT_LAYERS.map((layer, i) => (
                   <div key={i} className="flex items-center gap-4 px-4 py-3 bg-muted rounded-xl border border-border">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-black text-primary">
-                      {String(i + 1).padStart(2, '0')}
-                    </div>
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-black text-primary">{String(i + 1).padStart(2, '0')}</div>
                     <div className="flex-1">
                       <div className="text-sm font-bold text-card-foreground">{layer.name}</div>
                       <div className="text-[10px] text-muted-foreground">{layer.desc}</div>
@@ -698,17 +523,14 @@ const FinancierPortal = () => {
               </div>
             </div>
 
-            {/* Risk Flags — same style as installer tickets */}
             <div className="bg-card border border-border rounded-2xl p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-3 flex items-center gap-2">
                 <Flag className="w-4 h-4 text-[hsl(var(--red))]" /> Flagged Accounts
               </h3>
-              <p className="text-xs text-muted-foreground mb-4">Capital deployment paused on flagged projects until issues are resolved.</p>
               <div className="space-y-3">
                 {RISK_FLAGS.map(t => (
                   <div key={t.id} className={`rounded-xl border p-4 ${
-                    t.priority === 'high' ? 'bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20' :
-                    'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
+                    t.priority === 'high' ? 'bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20' : 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
                   }`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -719,39 +541,29 @@ const FinancierPortal = () => {
                           'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25'
                         }`}>{t.priority}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-[hsl(var(--yellow))] flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Open {t.daysOpen} days
-                      </span>
+                      <span className="text-[10px] font-bold text-[hsl(var(--yellow))] flex items-center gap-1"><Clock className="w-3 h-3" /> Open {t.daysOpen} days</span>
                     </div>
-                    <div className="text-xs font-bold text-card-foreground mb-2 flex items-center gap-1.5">
-                      <Flag className="w-3 h-3 text-[hsl(var(--red))]" />
+                    <div className="text-xs font-bold text-card-foreground mb-2">
+                      <Flag className="w-3 h-3 text-[hsl(var(--red))] inline mr-1" />
                       Account for <span className="text-primary">{t.customerName}</span> has been flagged by ASP Pro+ Team for the following reasons:
                     </div>
-                    <div className="text-sm text-card-foreground mb-2 bg-muted/50 rounded-lg p-3">{t.issue}</div>
-                    <div className="flex items-center justify-between">
-                      <div className="text-[10px] text-muted-foreground">{t.projectId}</div>
-                      <div className="text-[10px] text-muted-foreground">Flagged by: <span className="font-bold text-card-foreground">{t.flaggedBy}</span></div>
-                    </div>
+                    <div className="text-sm text-card-foreground bg-muted/50 rounded-lg p-3">{t.issue}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Portfolio Health */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-card border border-border rounded-2xl p-5">
                 <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Portfolio Health</h4>
                 <div className="space-y-3">
                   {[
-                    { label: 'Active', count: PROJECTS.filter(p => p.status === 'active').length, color: 'bg-[hsl(var(--green))]' },
-                    { label: 'Delayed', count: PROJECTS.filter(p => p.status === 'delayed').length, color: 'bg-[hsl(var(--yellow))]' },
-                    { label: 'On Hold', count: PROJECTS.filter(p => p.status === 'on_hold').length, color: 'bg-[hsl(var(--red))]' },
+                    { label: 'Active', count: projects.filter(p => p.status === 'active').length, color: 'bg-[hsl(var(--green))]' },
+                    { label: 'Delayed', count: projects.filter(p => p.status === 'delayed').length, color: 'bg-[hsl(var(--yellow))]' },
+                    { label: 'On Hold', count: projects.filter(p => p.status === 'on_hold').length, color: 'bg-[hsl(var(--red))]' },
                   ].map((s, i) => (
                     <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2.5 h-2.5 rounded-full ${s.color}`} />
-                        <span className="text-xs text-card-foreground">{s.label}</span>
-                      </div>
+                      <div className="flex items-center gap-2"><div className={`w-2.5 h-2.5 rounded-full ${s.color}`} /><span className="text-xs text-card-foreground">{s.label}</span></div>
                       <span className="text-sm font-black text-card-foreground">{s.count}</span>
                     </div>
                   ))}
@@ -760,14 +572,11 @@ const FinancierPortal = () => {
               <div className="bg-card border border-border rounded-2xl p-5">
                 <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">At-Risk Projects</h4>
                 <div className="space-y-3">
-                  {PROJECTS.filter(p => p.status === 'delayed' || p.status === 'on_hold').map(p => (
-                    <div key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded-lg p-1 -m-1 transition-colors" onClick={() => setSelectedProject(p.id)}>
+                  {projects.filter(p => p.status === 'delayed' || p.status === 'on_hold').map(p => (
+                    <div key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded-lg p-1 -m-1" onClick={() => setSelectedProject(p.id)}>
                       <AlertTriangle className={`w-3 h-3 ${p.status === 'delayed' ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--red))]'}`} />
-                      <div className="flex-1">
-                        <span className="text-xs font-bold text-card-foreground">{p.customerName}</span>
-                        <span className="text-[10px] text-muted-foreground ml-1.5">{p.stage}</span>
-                      </div>
-                      <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-xs font-bold text-card-foreground">{p.customerName}</span>
+                      <span className="text-[10px] text-muted-foreground">{p.stage}</span>
                     </div>
                   ))}
                 </div>
@@ -783,11 +592,11 @@ const FinancierPortal = () => {
 
   return (
     <div className="space-y-5 animate-fade-in-up">
-      {/* Section Nav */}
       <div className="flex gap-1.5">
         {([
           { key: 'overview', label: 'Overview', icon: BarChart3 },
-          { key: 'portfolio', label: 'Portfolio', icon: DollarSign },
+          { key: 'pending', label: 'Fund Releases', icon: DollarSign },
+          { key: 'portfolio', label: 'Portfolio', icon: TrendingUp },
           { key: 'escrow', label: 'Escrow', icon: Lock },
           { key: 'risk', label: 'Risk Stack', icon: Shield },
         ] as const).map(s => (
@@ -801,6 +610,9 @@ const FinancierPortal = () => {
             }`}
           >
             <s.icon className="w-3.5 h-3.5" /> {s.label}
+            {s.key === 'pending' && pendingReleases.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 bg-[hsl(var(--yellow))] text-black rounded-full text-[8px] font-extrabold">{pendingReleases.length}</span>
+            )}
           </button>
         ))}
       </div>

@@ -1,4 +1,5 @@
 import { useAuth, AuthProvider } from '@/contexts/AuthContext';
+import { ProjectStoreProvider } from '@/contexts/ProjectStore';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -12,11 +13,13 @@ const AppContent = () => {
 
 const App = () => (
   <AuthProvider>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AppContent />
-    </TooltipProvider>
+    <ProjectStoreProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AppContent />
+      </TooltipProvider>
+    </ProjectStoreProvider>
   </AuthProvider>
 );
 
