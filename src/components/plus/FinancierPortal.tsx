@@ -231,7 +231,7 @@ const FinancierPortal = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Portfolio Value', value: `$${Math.round(totalPortfolioContract / 1000)}k`, icon: DollarSign, color: 'text-primary', sub: `${projects.length} projects` },
-                { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / Math.max(totalSystemCost, 1)) * 100)}% deployed` },
+                { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k of $${Math.round(totalSystemCost / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / Math.max(totalSystemCost, 1)) * 100)}% deployed` },
                 { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / Math.max(totalPortfolioContract, 1)) * 100)}% margin` },
                 { label: 'Pending Releases', value: pendingReleases.length.toString(), icon: Clock, color: pendingReleases.length > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]', sub: pendingReleases.length > 0 ? 'Action required' : 'All clear' },
               ].map((s, i) => (
