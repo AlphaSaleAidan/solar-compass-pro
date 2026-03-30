@@ -1,44 +1,11 @@
 import { useState } from 'react';
-import { PROJECTS } from '@/data/mockData';
+import { useProjectStore } from '@/contexts/ProjectStore';
 import { Shield, Send, AlertTriangle, CheckCircle, Clock, ChevronDown, User, Zap } from 'lucide-react';
 
-interface Ticket {
-  id: string;
-  projectId: string;
-  subject: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'open' | 'in_progress' | 'resolved';
-  createdAt: string;
-  messages: { sender: string; role: string; text: string; time: string }[];
-}
-
-const INITIAL_TICKETS: Ticket[] = [
-  {
-    id: 'SS-001', projectId: 'ASP-2030', subject: 'Roof damage escalation — install blocked', priority: 'critical', status: 'open', createdAt: '2026-03-20',
-    messages: [
-      { sender: 'Admin Ops', role: 'ops', text: 'ASP-2030 (Angela Davis) has major roof damage. Install can\'t proceed until roof is repaired. Installer flagged water damage and structural sagging near chimney.', time: '10:15 AM' },
-      { sender: 'Super Support', role: 'support', text: 'Acknowledged. I\'ll coordinate with the homeowner and a roofing contractor. Placing project on hold until roof report is complete.', time: '10:22 AM' },
-    ],
-  },
-  {
-    id: 'SS-002', projectId: 'ASP-2034', subject: 'Financing hold — customer re-qualification', priority: 'high', status: 'in_progress', createdAt: '2026-03-18',
-    messages: [
-      { sender: 'Admin Ops', role: 'ops', text: 'Deborah White (ASP-2034) is on hold for financing. Credit was approved but the lender flagged the DTI ratio. Need Super Support to intervene.', time: 'Yesterday 2:30 PM' },
-      { sender: 'Super Support', role: 'support', text: 'Running re-qualification with alternative lender. Will update within 24hrs.', time: 'Yesterday 3:15 PM' },
-      { sender: 'Super Support', role: 'support', text: 'Good news — GoodLeap approved her at 2.99% / 25yr. Sending new docs now.', time: 'Today 9:00 AM' },
-    ],
-  },
-  {
-    id: 'SS-003', projectId: 'ASP-2026', subject: 'Shingle damage — installer needs guidance', priority: 'medium', status: 'open', createdAt: '2026-03-22',
-    messages: [
-      { sender: 'Admin Ops', role: 'ops', text: 'Patricia Williams (ASP-2026) has minor shingle wear on south face. Pro Solar TX wants to know if they should proceed or wait for repair.', time: '3:00 PM' },
-    ],
-  },
-];
-
 const SuperSupport = () => {
-  const [tickets, setTickets] = useState<Ticket[]>(INITIAL_TICKETS);
-  const [selectedTicket, setSelectedTicket] = useState<string | null>(INITIAL_TICKETS[0].id);
+  const store = useProjectStore();
+  const { tickets, projects } = store;
+  const [selectedTicket, setSelectedTicket] = useState<string | null>(tickets[0]?.id || null);
   const [inputVal, setInputVal] = useState('');
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [newSubject, setNewSubject] = useState('');
@@ -49,33 +16,28 @@ const SuperSupport = () => {
 
   const handleSend = () => {
     if (!inputVal.trim() || !selectedTicket) return;
-    setTickets(prev => prev.map(t =>
-      t.id === selectedTicket
-        ? { ...t, messages: [...t.messages, { sender: 'Admin Ops', role: 'ops', text: inputVal, time: 'Now' }] }
-        : t
-    ));
+    store.addTicketMessage(selectedTicket, { sender: 'Admin Ops', role: 'ops', text: inputVal, time: 'Now' });
     setInputVal('');
   };
 
   const handleCreateTicket = () => {
     if (!newSubject.trim() || !newProjectId) return;
-    const newTicket: Ticket = {
-      id: `SS-${String(tickets.length + 1).padStart(3, '0')}`,
+    store.createTicket({
       projectId: newProjectId,
       subject: newSubject,
       priority: newPriority,
       status: 'open',
       createdAt: new Date().toISOString().split('T')[0],
+      createdBy: 'Admin Ops',
+      createdByRole: 'ops',
       messages: [{ sender: 'Admin Ops', role: 'ops', text: newSubject, time: 'Now' }],
-    };
-    setTickets(prev => [newTicket, ...prev]);
-    setSelectedTicket(newTicket.id);
+    });
     setShowNewTicket(false);
     setNewSubject('');
   };
 
   const handleResolve = (ticketId: string) => {
-    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status: 'resolved' } : t));
+    store.resolveTicket(ticketId);
   };
 
   const priorityColors: Record<string, string> = {
@@ -130,6 +92,11 @@ const SuperSupport = () => {
                   <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${priorityColors[t.priority]}`}>
                     {t.priority}
                   </span>
+                  {t.createdByRole !== 'ops' && (
+                    <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-[hsl(var(--blue))]/10 text-[hsl(var(--blue))] border border-[hsl(var(--blue))]/25">
+                      {t.createdByRole}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -144,10 +111,11 @@ const SuperSupport = () => {
                 <div>
                   <div className="text-[15px] font-extrabold text-foreground">{ticket.subject}</div>
                   <div className="text-[11px] text-muted-foreground flex items-center gap-2">
-                    {ticket.projectId} · {PROJECTS.find(p => p.id === ticket.projectId)?.customerName || 'Unknown'}
+                    {ticket.projectId} · {projects.find(p => p.id === ticket.projectId)?.customerName || 'Unknown'}
                     <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${priorityColors[ticket.priority]}`}>
                       {ticket.priority}
                     </span>
+                    <span className="text-[9px] text-muted-foreground">by {ticket.createdBy}</span>
                   </div>
                 </div>
                 {ticket.status !== 'resolved' && (
@@ -163,7 +131,7 @@ const SuperSupport = () => {
                 {ticket.messages.map((m, i) => (
                   <div key={i} className={`flex gap-2.5 max-w-[80%] ${m.role === 'ops' ? 'self-end flex-row-reverse' : ''}`}>
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                      m.role === 'support' ? 'bg-[hsl(var(--red))]/15' : 'bg-[hsl(var(--bg4))]'
+                      m.role === 'support' ? 'bg-[hsl(var(--red))]/15' : m.role === 'installer' ? 'bg-[hsl(var(--blue))]/15' : m.role === 'financier' ? 'bg-[hsl(var(--yellow))]/15' : 'bg-[hsl(var(--bg4))]'
                     }`}>
                       {m.role === 'support' ? <Shield className="w-3.5 h-3.5 text-[hsl(var(--red))]" /> : <User className="w-3.5 h-3.5" />}
                     </div>
@@ -223,7 +191,7 @@ const SuperSupport = () => {
                   className="w-full px-3 py-2 bg-[hsl(var(--bg3))] border border-border rounded-md text-sm text-foreground outline-none focus:border-primary"
                 >
                   <option value="">Select project...</option>
-                  {PROJECTS.map(p => <option key={p.id} value={p.id}>{p.id} — {p.customerName}</option>)}
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.id} — {p.customerName}</option>)}
                 </select>
               </div>
               <div>
