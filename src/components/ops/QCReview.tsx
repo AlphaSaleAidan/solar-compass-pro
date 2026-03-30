@@ -3,8 +3,21 @@ import { QC_QUEUE } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
 import DealReviewDialog from './DealReviewDialog';
 
-const QCReview = () => {
+interface QCReviewProps {
+  onAcceptDeal?: (project: Project) => void;
+}
+
+const QCReview = ({ onAcceptDeal }: QCReviewProps) => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [acceptedIds, setAcceptedIds] = useState<Set<string>>(new Set());
+
+  const visibleQueue = QC_QUEUE.filter(p => !acceptedIds.has(p.id));
+
+  const handleAcceptDeal = (project: Project) => {
+    setAcceptedIds(prev => new Set(prev).add(project.id));
+    setSelectedProject(null);
+    onAcceptDeal?.(project);
+  };
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -14,7 +27,7 @@ const QCReview = () => {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {QC_QUEUE.map((p) => (
+        {visibleQueue.map((p) => (
           <div
             key={p.id}
             onClick={() => setSelectedProject(p)}
@@ -56,7 +69,7 @@ const QCReview = () => {
           </div>
         ))}
 
-        {QC_QUEUE.length === 0 && (
+        {visibleQueue.length === 0 && (
           <div className="col-span-full bg-bg2 border border-border rounded-xl p-12 text-center">
             <span className="text-4xl">✅</span>
             <p className="text-muted-foreground mt-3">No incoming deals — you're all caught up!</p>
@@ -69,6 +82,7 @@ const QCReview = () => {
           open={!!selectedProject}
           onOpenChange={(val) => !val && setSelectedProject(null)}
           project={selectedProject}
+          onAcceptDeal={handleAcceptDeal}
         />
       )}
     </div>

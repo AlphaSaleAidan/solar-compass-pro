@@ -9,7 +9,12 @@ interface FlagReport {
   notifyInstaller: boolean;
 }
 
-const MilestoneVerification = () => {
+interface MilestoneVerificationProps {
+  acceptedDeals?: typeof PROJECTS;
+}
+
+const MilestoneVerification = ({ acceptedDeals = [] }: MilestoneVerificationProps) => {
+  const allProjects = [...PROJECTS, ...acceptedDeals];
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [flagReports, setFlagReports] = useState<FlagReport[]>([]);
   const [flagModal, setFlagModal] = useState<{ projectId: string; milestone: number } | null>(null);
@@ -54,7 +59,7 @@ const MilestoneVerification = () => {
         </h2>
         <div className="flex items-center gap-3">
           <div className="px-3 py-1.5 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary">
-            {PROJECTS.filter(p => p.currentMilestone < 7).length} Active Projects
+            {allProjects.filter(p => p.currentMilestone < 7).length} Active Projects
           </div>
           <div className="px-3 py-1.5 bg-[hsl(var(--red))]/10 border border-[hsl(var(--red))]/25 rounded-lg text-xs font-bold text-[hsl(var(--red))]">
             {flagReports.length} Flagged
@@ -64,7 +69,7 @@ const MilestoneVerification = () => {
 
       {/* Projects List */}
       <div className="space-y-3">
-        {PROJECTS.map(p => {
+        {allProjects.map(p => {
           const isExpanded = expandedProject === p.id;
           const offset = getOffsetPercent(p);
           const offsetOk = offset >= 80;
@@ -99,14 +104,16 @@ const MilestoneVerification = () => {
                     {MILESTONE_NAMES.map((_, i) => (
                       <div
                         key={i}
-                        className={`w-3 h-3 rounded-full border ${
+                        className={`w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
                           i < p.currentMilestone
-                            ? isMilestoneFlagged(p.id, i) ? 'bg-[hsl(var(--red))] border-[hsl(var(--red))]' :
-                              isMilestoneConfirmed(p.id, i) ? 'bg-[hsl(var(--green))] border-[hsl(var(--green))]' :
-                              'bg-primary border-primary'
-                            : 'bg-transparent border-border'
+                            ? isMilestoneFlagged(p.id, i) ? 'bg-[hsl(var(--red))]/15 text-[hsl(var(--red))]' :
+                              isMilestoneConfirmed(p.id, i) ? 'bg-[hsl(var(--green))]/15 text-[hsl(var(--green))]' :
+                              'bg-primary/15 text-primary'
+                            : 'bg-[hsl(var(--bg3))] text-muted-foreground'
                         }`}
-                      />
+                      >
+                        M{i + 1}
+                      </div>
                     ))}
                   </div>
                   <span className={`text-[11px] font-bold px-2.5 py-1 rounded-md ${
@@ -284,7 +291,7 @@ const MilestoneVerification = () => {
                 onChange={e => setNotifyInstaller(e.target.checked)}
                 className="w-4 h-4 rounded border-border accent-primary"
               />
-              <span className="text-xs text-foreground font-bold">Auto-notify installer ({PROJECTS.find(p => p.id === flagModal.projectId)?.installerName})</span>
+              <span className="text-xs text-foreground font-bold">Auto-notify installer ({allProjects.find(p => p.id === flagModal.projectId)?.installerName})</span>
             </label>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setFlagModal(null)} className="px-4 py-2 bg-[hsl(var(--bg3))] border border-border rounded-lg text-xs font-bold text-muted-foreground hover:text-foreground transition-all">

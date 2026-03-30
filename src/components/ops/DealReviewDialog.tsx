@@ -12,6 +12,7 @@ interface DealReviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project: Project;
+  onAcceptDeal?: (project: Project) => void;
 }
 
 type ConfirmSection =
@@ -29,10 +30,13 @@ const DOCUMENTS = [
   'Welcome Call',
 ];
 
-const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps) => {
+const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealReviewDialogProps) => {
   const nameParts = project.customerName.split(' ');
   const [confirmSection, setConfirmSection] = useState<ConfirmSection>(null);
   const [confirmedSections, setConfirmedSections] = useState<Set<string>>(new Set());
+  const [annualUsage, setAnnualUsage] = useState(project.annualUsage.toString());
+
+  const parsedUsage = parseInt(annualUsage) || project.annualUsage;
 
   const markConfirmed = (section: string) => (initials: string) => {
     setConfirmedSections((prev) => new Set(prev).add(section));
@@ -84,8 +88,8 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
           title: 'Texas Smart Meter Data',
           icon: '⚡',
           data: [
-            { label: 'Annual Usage', value: `${project.annualUsage.toLocaleString()} kWh` },
-            { label: 'Monthly Average', value: `${Math.round(project.annualUsage / 12).toLocaleString()} kWh` },
+            { label: 'Annual Usage', value: `${parsedUsage.toLocaleString()} kWh` },
+            { label: 'Monthly Average', value: `${Math.round(parsedUsage / 12).toLocaleString()} kWh` },
             { label: 'Source', value: 'Texas Smart Meter' },
           ],
           message:
@@ -150,6 +154,19 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
     }
   };
 
+  const handleAcceptDeal = () => {
+    if (!allConfirmed) return;
+    const acceptedProject: Project = {
+      ...project,
+      annualUsage: parsedUsage,
+      status: 'active',
+      currentMilestone: 1,
+      stage: 'Contract Signed',
+    };
+    onAcceptDeal?.(acceptedProject);
+    onOpenChange(false);
+  };
+
   const confirmData = getConfirmData();
   const allSections = ['lead', 'smartMeter', 'systemDesign', 'siteSurvey', 'roofInspection', ...DOCUMENTS.map((_, i) => `doc-${i}`)];
   const allConfirmed = allSections.every((s) => confirmedSections.has(s));
@@ -192,7 +209,6 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
                   { label: 'Email', value: project.email },
                   { label: 'Phone', value: project.phone },
                   { label: 'Address', value: project.address },
-                  { label: 'Annual Usage (kWh)', value: project.annualUsage.toString() },
                 ].map((f) => (
                   <div key={f.label}>
                     <label className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase block mb-1">{f.label}</label>
@@ -202,6 +218,14 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
                     />
                   </div>
                 ))}
+                <div>
+                  <label className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase block mb-1">Annual Usage (kWh)</label>
+                  <input
+                    value={annualUsage}
+                    onChange={(e) => setAnnualUsage(e.target.value)}
+                    className="w-full px-3 py-2 bg-bg2 border border-border rounded-md text-sm text-foreground outline-none focus:border-primary"
+                  />
+                </div>
               </div>
             </div>
 
@@ -215,11 +239,11 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Annual Usage</span>
-                    <span className="font-bold text-primary">{project.annualUsage.toLocaleString()} kWh</span>
+                    <span className="font-bold text-primary">{parsedUsage.toLocaleString()} kWh</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Monthly Avg</span>
-                    <span className="font-bold text-foreground">{Math.round(project.annualUsage / 12).toLocaleString()} kWh</span>
+                    <span className="font-bold text-foreground">{Math.round(parsedUsage / 12).toLocaleString()} kWh</span>
                   </div>
                 </div>
                 <a href="https://www.smartmetertexas.com" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
@@ -325,6 +349,7 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
             <div className="flex gap-3 justify-end pt-2">
               <button
                 disabled={!allConfirmed}
+                onClick={handleAcceptDeal}
                 className="px-5 py-2.5 bg-asp-green/15 text-asp-green border border-asp-green/30 rounded-lg text-xs font-bold hover:bg-asp-green/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
               >
                 ✅ Accept Deal
