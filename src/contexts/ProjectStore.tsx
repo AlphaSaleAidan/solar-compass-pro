@@ -452,6 +452,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     addFinancierUpdate,
     addFinancierUpload,
     addProjectMessage,
+    addSellProject,
     updateSellProject,
     markSellProjectClean,
     markSellProjectDirty,
