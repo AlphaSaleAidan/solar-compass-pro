@@ -318,8 +318,12 @@ export const RANKINGS = [
 ];
 
 export const QC_QUEUE: Project[] = [
-  { ...PROJECTS[6], id: 'ASP-2050', customerName: 'New Lead - Rachel Kim', status: 'active', currentMilestone: 0, stage: 'QC Review' },
-  { ...PROJECTS[3], id: 'ASP-2051', customerName: 'New Lead - Tom Bradley', status: 'active', currentMilestone: 0, stage: 'QC Review', roofCondition: 'major_damage', roofIssues: ['Significant water staining on decking', 'Missing flashing around vents'] },
+  { ...PROJECTS[6], id: 'ASP-2050', customerName: 'Rachel Kim', status: 'active', currentMilestone: 0, stage: 'QC Review' },
+  { ...PROJECTS[3], id: 'ASP-2051', customerName: 'Tom Bradley', status: 'active', currentMilestone: 0, stage: 'QC Review', roofCondition: 'major_damage', roofIssues: ['Significant water staining on decking', 'Missing flashing around vents'] },
+  { ...PROJECTS[0], id: 'ASP-2052', customerName: 'Diana Vasquez', status: 'active', currentMilestone: 0, stage: 'QC Review', roofCondition: 'minor_damage', roofIssues: ['Slight granule loss on south-facing shingles'] },
+  { ...PROJECTS[1], id: 'ASP-2053', customerName: 'Kevin Okafor', status: 'active', currentMilestone: 0, stage: 'QC Review' },
+  { ...PROJECTS[4], id: 'ASP-2054', customerName: 'Samantha Liu', status: 'active', currentMilestone: 0, stage: 'QC Review', roofCondition: 'good', roofIssues: [] },
+  { ...PROJECTS[7], id: 'ASP-2055', customerName: 'Marcus Jefferson', status: 'active', currentMilestone: 0, stage: 'QC Review' },
 ];
 
 export const INSTALLED_HOMES = [

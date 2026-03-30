@@ -24,12 +24,9 @@ type ConfirmSection =
   | null;
 
 const DOCUMENTS = [
+  'Finance Docs',
   'ASP Agreement',
-  'SOW Confirmation',
-  'Utility Authorization',
-  'HOA Approval',
-  'Site Survey Report',
-  'Permit Application',
+  'Welcome Call',
 ];
 
 const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps) => {
