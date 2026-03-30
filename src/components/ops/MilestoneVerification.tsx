@@ -69,7 +69,7 @@ const MilestoneVerification = ({ acceptedDeals = [] }: MilestoneVerificationProp
 
       {/* Projects List */}
       <div className="space-y-3">
-        {PROJECTS.map(p => {
+        {allProjects.map(p => {
           const isExpanded = expandedProject === p.id;
           const offset = getOffsetPercent(p);
           const offsetOk = offset >= 80;
