@@ -11,7 +11,7 @@ const Login = () => {
   const [error, setError] = useState('');
 
   const aspRoles: { value: UserRole; icon: React.ReactNode; label: string; sub: string }[] = [
-    { value: 'sales_rep', icon: <Target className="w-7 h-7 text-primary" />, label: 'Sales Rep', sub: 'Deals & Pipeline' },
+    { value: 'sales_rep', icon: <Crosshair className="w-7 h-7 text-primary" />, label: 'Sales Rep', sub: 'Deals & Pipeline' },
     { value: 'backend_ops', icon: <Settings className="w-7 h-7 text-primary" />, label: 'Backend Ops', sub: 'QC & Operations' },
   ];
 
