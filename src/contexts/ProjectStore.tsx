@@ -344,6 +344,79 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, []);
 
+  // Sell project actions
+  const updateSellProject = useCallback((project: SellProject) => {
+    setSellProjects(prev => prev.map(p => p.id === project.id ? project : p));
+  }, []);
+
+  const markSellProjectClean = useCallback((projectId: string) => {
+    setSellProjects(prev => prev.map(p => {
+      if (p.id !== projectId) return p;
+      return { ...p, approvalStatus: 'clean' as const };
+    }));
+    // Add to main projects pipeline (installer/financier visible)
+    const sp = sellProjects.find(p => p.id === projectId);
+    if (sp && sp.auroraData) {
+      const newProject: Project = {
+        id: `ASP-${2060 + projects.length}`,
+        customerName: `${sp.firstName} ${sp.lastName}`,
+        address: sp.address,
+        email: sp.email,
+        phone: sp.phone,
+        status: 'active',
+        currentMilestone: 0,
+        totalMilestones: 7,
+        systemSize: sp.auroraData.systemSize,
+        battery: sp.auroraData.battery,
+        soldPPW: 4.25,
+        contractValue: 0,
+        projectCost: 0,
+        interestRate: 2.99,
+        loanTerms: '25 year @ 2.99%',
+        repName: 'Jordan Mills',
+        installerName: 'SunTech Installations',
+        addedDate: new Date().toISOString().split('T')[0],
+        stage: 'Contract Signed',
+        adders: sp.auroraData.adders.map(a => ({ name: a.split(' (')[0], cost: parseInt(a.match(/\$(\d+)/)?.[1] || '0') * 100 })),
+        siteSurveyPhotos: [],
+        permitStatus: 'pending',
+        roofCondition: 'good',
+        roofIssues: [],
+        annualUsage: sp.highBill * 12,
+        documentsSignedCount: 3,
+        totalDocuments: 6,
+        dates: {
+          submitted: new Date().toISOString().split('T')[0],
+          siteSurvey: null,
+          sowConfirmed: null,
+          permitSubmitted: null,
+          lastHOContact: new Date().toISOString().split('T')[0],
+        },
+        milestoneDetails: [],
+        checklist: { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false },
+      };
+      setProjects(prev => [...prev, newProject]);
+      setMilestoneStates(prev => ({
+        ...prev,
+        [newProject.id]: createDefaultMilestoneState(),
+      }));
+    }
+  }, [sellProjects, projects.length]);
+
+  const markSellProjectDirty = useCallback((projectId: string, notes: string) => {
+    setSellProjects(prev => prev.map(p =>
+      p.id === projectId ? { ...p, approvalStatus: 'dirty' as const, approvalNotes: notes } : p
+    ));
+  }, []);
+
+  const getSellProjectsPendingApproval = useCallback(() => {
+    return sellProjects.filter(p => p.approvalStatus === 'pending');
+  }, [sellProjects]);
+
+  const getSellProjectsClean = useCallback(() => {
+    return sellProjects.filter(p => p.approvalStatus === 'clean');
+  }, [sellProjects]);
+
   const value: ProjectStoreContextType = {
     projects,
     qcQueue,
@@ -352,6 +425,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     financierUpdates,
     financierUploads,
     projectMessages,
+    sellProjects,
     acceptDeal,
     toggleChecklist,
     uploadFile,
@@ -373,6 +447,11 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     addFinancierUpdate,
     addFinancierUpload,
     addProjectMessage,
+    updateSellProject,
+    markSellProjectClean,
+    markSellProjectDirty,
+    getSellProjectsPendingApproval,
+    getSellProjectsClean,
   };
 
   return (
