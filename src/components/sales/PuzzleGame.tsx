@@ -19,25 +19,27 @@ const PuzzleGame = () => {
   const secs = timeLeft % 60;
   const completedCount = pieces.filter(Boolean).length;
 
-  // Puzzle piece SVG paths — interlocking tabs/blanks
-  // Each piece is 50x50 in a 104x104 viewBox (with 2px gaps)
+  // Puzzle piece SVG paths — properly interlocking 2x2 grid
+  // Each piece occupies a 50x50 base cell. Tabs extend 8px outward, blanks indent 8px inward.
+  // Tab/blank centered at the midpoint (25) of each edge, width 14 (from 18 to 32).
+  const T = 8; // tab depth
   const piecePaths = [
-    // Top-left: tab on right, tab on bottom
-    "M0 0 H22 C22 0, 22 8, 26 8 C30 8, 30 0, 30 0 H50 V22 C50 22, 58 22, 58 26 C58 30, 50 30, 50 30 V50 H0 Z",
-    // Top-right: blank on left, tab on bottom
-    "M0 0 H50 V22 C50 22, 58 22, 58 26 C58 30, 50 30, 50 30 V50 H28 C28 50, 20 50, 20 46 C20 42, 28 42, 28 42 V0 Z",
-    // Bottom-left: tab on right, blank on top
-    "M0 0 H22 C22 0, 22 8, 26 8 C30 8, 30 0, 30 0 H50 V50 H0 V28 C0 28, 8 28, 8 24 C8 20, 0 20, 0 20 Z",
-    // Bottom-right: blank on left, blank on top
-    "M28 0 C28 0, 20 0, 20 4 C20 8, 28 8, 28 8 V50 H0 V28 C0 28, 8 28, 8 24 C8 20, 0 20, 0 20 V0 H50 V50 H0",
+    // Top-left: flat top, flat left, tab RIGHT, tab BOTTOM
+    `M0 0 H50 V18 C50 18, ${50+T} 18, ${50+T} 25 C${50+T} 32, 50 32, 50 32 V50 H32 C32 50, 32 ${50+T}, 25 ${50+T} C18 ${50+T}, 18 50, 18 50 H0 Z`,
+    // Top-right: flat top, blank LEFT (matches TL tab), flat right, tab BOTTOM
+    `M0 0 H50 V50 H32 C32 50, 32 ${50+T}, 25 ${50+T} C18 ${50+T}, 18 50, 18 50 H0 V32 C0 32, ${-T} 32, ${-T} 25 C${-T} 18, 0 18, 0 18 V0 Z`,
+    // Bottom-left: blank TOP (matches TL tab), flat left, tab RIGHT, flat bottom
+    `M0 0 H18 C18 0, 18 ${-T}, 25 ${-T} C32 ${-T}, 32 0, 32 0 H50 V18 C50 18, ${50+T} 18, ${50+T} 25 C${50+T} 32, 50 32, 50 32 V50 H0 Z`,
+    // Bottom-right: blank TOP (matches TR tab), blank LEFT (matches BL tab), flat right, flat bottom
+    `M0 0 H18 C18 0, 18 ${-T}, 25 ${-T} C32 ${-T}, 32 0, 32 0 H50 V50 H0 V32 C0 32, ${-T} 32, ${-T} 25 C${-T} 18, 0 18, 0 18 V0 Z`,
   ];
 
-  // Position offsets for each piece in the grid
+  // Position offsets — pieces with blanks need to align with neighboring tabs
   const positions = [
     { x: 0, y: 0 },
-    { x: 54, y: 0 },
-    { x: 0, y: 54 },
-    { x: 54, y: 54 },
+    { x: 50, y: 0 },
+    { x: 0, y: 50 },
+    { x: 50, y: 50 },
   ];
 
   return (
@@ -61,7 +63,7 @@ const PuzzleGame = () => {
 
       {/* Interlocking puzzle */}
       <div className="flex justify-center mb-3">
-        <svg viewBox="-2 -2 108 108" className="w-40 h-40">
+        <svg viewBox="-10 -10 120 120" className="w-40 h-40">
           <defs>
             <linearGradient id="piece-filled" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.35" />
