@@ -9,8 +9,12 @@ interface FlagReport {
   notifyInstaller: boolean;
 }
 
-const MilestoneVerification = () => {
-  const [expandedProject, setExpandedProject] = useState<string | null>(null);
+interface MilestoneVerificationProps {
+  acceptedDeals?: typeof PROJECTS;
+}
+
+const MilestoneVerification = ({ acceptedDeals = [] }: MilestoneVerificationProps) => {
+  const allProjects = [...PROJECTS, ...acceptedDeals];
   const [flagReports, setFlagReports] = useState<FlagReport[]>([]);
   const [flagModal, setFlagModal] = useState<{ projectId: string; milestone: number } | null>(null);
   const [flagReason, setFlagReason] = useState('');
