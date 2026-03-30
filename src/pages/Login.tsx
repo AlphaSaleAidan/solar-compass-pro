@@ -65,8 +65,8 @@ const Login = () => {
           {/* Logo */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-lg font-black text-primary-foreground">
-                ⚡
+              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
+                <Zap className="w-5 h-5" />
               </div>
               <span className={`text-[22px] font-black tracking-wider ${mode === 'asp' ? 'text-white' : 'text-gray-900'}`}>
                 ALPHA SALE PRO {mode === 'asp_plus' && <span className="text-primary">+</span>}
