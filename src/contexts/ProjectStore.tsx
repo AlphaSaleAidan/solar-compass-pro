@@ -59,6 +59,7 @@ interface ProjectStoreState {
   financierUpdates: Record<string, FinancierUpdate[]>;
   financierUploads: Record<string, FinancierUpload[]>;
   projectMessages: Record<string, ProjectMessage[]>;
+  sellProjects: SellProject[];
 }
 
 interface ProjectStoreActions {
