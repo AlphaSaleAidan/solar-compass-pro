@@ -74,8 +74,8 @@ const PuzzleGame = () => {
             <g key={i} transform={`translate(${positions[i].x}, ${positions[i].y})`}>
               <path
                 d={path}
-                fill={pieces[i] ? 'url(#piece-filled)' : 'hsl(var(--muted) / 0.15)'}
-                stroke={pieces[i] ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
+                 fill={pieces[i] ? 'url(#piece-filled)' : 'hsl(217 91% 60% / 0.08)'}
+                 stroke={pieces[i] ? 'hsl(217 91% 60%)' : 'hsl(217 91% 60% / 0.25)'}
                 strokeWidth="1.5"
                 className="transition-all duration-700"
               />
