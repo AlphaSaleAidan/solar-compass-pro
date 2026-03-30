@@ -170,7 +170,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
             <DialogHeader>
               <DialogTitle className="text-white font-black flex items-center gap-2"><Map className="w-4 h-4" /> Installed Homes Map</DialogTitle>
             </DialogHeader>
-            <InstalledHomesMap homes={INSTALLED_HOMES} />
+            {showMap && <InstalledHomesMap homes={INSTALLED_HOMES} />}
           </DialogContent>
         </Dialog>
         <button
