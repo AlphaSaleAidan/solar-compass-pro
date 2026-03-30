@@ -70,9 +70,7 @@ const Dashboard = () => {
       case 'Milestones':
         return <MilestoneVerification />;
       case 'Projects':
-        return <Pipeline />;
-      case 'Editor':
-        return <ProjectEditor />;
+        return <OpsProjectsTab />;
       case 'Communication':
         return <Communication />;
       case 'Super Support':
