@@ -15,6 +15,7 @@ interface MilestoneVerificationProps {
 
 const MilestoneVerification = ({ acceptedDeals = [] }: MilestoneVerificationProps) => {
   const allProjects = [...PROJECTS, ...acceptedDeals];
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [flagReports, setFlagReports] = useState<FlagReport[]>([]);
   const [flagModal, setFlagModal] = useState<{ projectId: string; milestone: number } | null>(null);
   const [flagReason, setFlagReason] = useState('');
