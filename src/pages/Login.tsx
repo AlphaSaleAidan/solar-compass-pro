@@ -10,14 +10,14 @@ const Login = () => {
   const [mode, setMode] = useState<PortalMode>('asp');
   const [error, setError] = useState('');
 
-  const aspRoles: { value: UserRole; icon: string; label: string; sub: string }[] = [
-    { value: 'sales_rep', icon: '🎯', label: 'Sales Rep', sub: 'Deals & Pipeline' },
-    { value: 'backend_ops', icon: '⚙️', label: 'Backend Ops', sub: 'QC & Operations' },
+  const aspRoles: { value: UserRole; icon: React.ReactNode; label: string; sub: string }[] = [
+    { value: 'sales_rep', icon: <Target className="w-7 h-7 text-primary" />, label: 'Sales Rep', sub: 'Deals & Pipeline' },
+    { value: 'backend_ops', icon: <Settings className="w-7 h-7 text-primary" />, label: 'Backend Ops', sub: 'QC & Operations' },
   ];
 
-  const aspPlusRoles: { value: UserRole; icon: string; label: string; sub: string }[] = [
-    { value: 'installer', icon: '🔧', label: 'Installer', sub: 'Project Tracking' },
-    { value: 'financier', icon: '💰', label: 'Financier', sub: 'Funding & Escrow' },
+  const aspPlusRoles: { value: UserRole; icon: React.ReactNode; label: string; sub: string }[] = [
+    { value: 'installer', icon: <Wrench className="w-7 h-7 text-primary" />, label: 'Installer', sub: 'Project Tracking' },
+    { value: 'financier', icon: <DollarSign className="w-7 h-7 text-primary" />, label: 'Financier', sub: 'Funding & Escrow' },
   ];
 
   const roles = mode === 'asp' ? aspRoles : aspPlusRoles;
