@@ -371,7 +371,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                     key={p.id}
                     project={p}
                     onStartCamera={startCamera}
-                    onUpdateProject={(updated) => setProjects(prev => prev.map(pr => pr.id === updated.id ? updated : pr))}
+                    onUpdateProject={(updated) => updateSellProject(updated)}
                   />
                 ))
               )}
