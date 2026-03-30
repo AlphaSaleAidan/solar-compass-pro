@@ -222,6 +222,9 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
                     <span className="font-bold text-foreground">{Math.round(project.annualUsage / 12).toLocaleString()} kWh</span>
                   </div>
                 </div>
+                <a href="https://www.smartmetertexas.com" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
+                  🔗 Open Smart Meter Texas →
+                </a>
               </div>
               <div className="bg-bg3 border border-border rounded-xl p-4">
                 <div className="flex justify-between items-center mb-3">
