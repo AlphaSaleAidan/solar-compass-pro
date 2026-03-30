@@ -172,8 +172,8 @@ const MilestoneVerification = () => {
                               </div>
                               <div>
                                 <div className="text-sm font-bold text-foreground">{sop.name}</div>
-                                <div className="text-[10px] text-muted-foreground">
-                                  {isPassed ? '✅ Completed' : isCurrent ? '🔄 In Progress' : '⏳ Pending'} · {sop.fundPercent}% fund release
+                                <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  {isPassed ? <><CheckCircle className="w-3 h-3 text-[hsl(var(--green))]" /> Completed</> : isCurrent ? <><Clock className="w-3 h-3 text-[hsl(var(--yellow))]" /> In Progress</> : <><Clock className="w-3 h-3" /> Pending</>} · {sop.fundPercent}% fund release
                                 </div>
                               </div>
                             </div>
@@ -186,7 +186,7 @@ const MilestoneVerification = () => {
                                   fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))]' :
                                   'bg-[hsl(var(--bg3))] text-muted-foreground'
                                 }`}>
-                                  {fundSt === 'released' ? '💰 Released' : fundSt === 'approved' ? '✅ Approved' : fundSt === 'pending' ? '⏳ Pending Release' : 'Not Queued'}
+                                  {fundSt === 'released' ? 'Released' : fundSt === 'approved' ? 'Approved' : fundSt === 'pending' ? 'Pending Release' : 'Not Queued'}
                                 </span>
                               )}
                               {isExpandedM ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
@@ -308,7 +308,7 @@ const MilestoneVerification = () => {
                                 {isCurrent && (
                                   <div className="mt-4 flex items-center justify-between">
                                     <div className="text-[10px] text-muted-foreground">
-                                      {allReady ? '✅ All checklist items complete' : `⏳ ${sop.checklist.filter(c => milestoneState.checklistDone[c.id]).length}/${sop.checklist.length} items done`}
+                                      {allReady ? 'All checklist items complete' : `${sop.checklist.filter(c => milestoneState.checklistDone[c.id]).length}/${sop.checklist.length} items done`}
                                     </div>
                                     <button
                                       disabled={!allReady}
@@ -364,7 +364,7 @@ const MilestoneVerification = () => {
 
         {activeProjects.length === 0 && (
           <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-12 text-center">
-            <span className="text-4xl">📋</span>
+            <ClipboardCheck className="w-10 h-10 text-muted-foreground mx-auto" />
             <p className="text-muted-foreground mt-3">No active milestone projects yet. Accept deals from the Action ASAP queue.</p>
           </div>
         )}

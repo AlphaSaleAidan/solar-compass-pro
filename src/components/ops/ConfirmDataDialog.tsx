@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,12 +6,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { CheckCircle } from 'lucide-react';
 
 interface ConfirmDataDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sectionTitle: string;
-  sectionIcon: string;
+  sectionIcon: ReactNode;
   data: { label: string; value: string }[];
   confirmMessage: string;
   onConfirm: (initials: string) => void;
@@ -51,7 +52,7 @@ const ConfirmDataDialog = ({
       <DialogContent className="bg-bg2 border-border max-w-md">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
-            <span>{sectionIcon}</span> Confirm {sectionTitle}
+            {sectionIcon} Confirm {sectionTitle}
           </DialogTitle>
         </DialogHeader>
 
@@ -105,9 +106,9 @@ const ConfirmDataDialog = ({
           <button
             onClick={handleConfirm}
             disabled={!confirmed || initials.trim().length < 2}
-            className="px-5 py-2 bg-asp-green/15 text-asp-green border border-asp-green/30 rounded-md text-xs font-bold hover:bg-asp-green/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+            className="px-5 py-2 bg-asp-green/15 text-asp-green border border-asp-green/30 rounded-md text-xs font-bold hover:bg-asp-green/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5"
           >
-            ✅ Confirm & Sign
+            <CheckCircle className="w-3.5 h-3.5" /> Confirm & Sign
           </button>
         </DialogFooter>
       </DialogContent>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import type { Project } from '@/data/mockData';
 import DealReviewDialog from './DealReviewDialog';
+import { Zap, CheckCircle } from 'lucide-react';
 
 const QCReview = () => {
   const { qcQueue, acceptDeal } = useProjectStore();
@@ -14,7 +15,9 @@ const QCReview = () => {
 
   return (
     <div className="space-y-5 animate-fade-in-up">
-      <h2 className="text-lg font-black text-white">⚡ Action ASAP</h2>
+      <h2 className="text-lg font-black text-white flex items-center gap-2">
+        <Zap className="w-5 h-5 text-primary" /> Action ASAP
+      </h2>
       <p className="text-xs text-muted-foreground -mt-3">
         Incoming deals requiring immediate review and data confirmation before proceeding.
       </p>
@@ -68,7 +71,7 @@ const QCReview = () => {
 
         {qcQueue.length === 0 && (
           <div className="col-span-full bg-bg2 border border-border rounded-xl p-12 text-center">
-            <span className="text-4xl">✅</span>
+            <CheckCircle className="w-10 h-10 text-asp-green mx-auto" />
             <p className="text-muted-foreground mt-3">No incoming deals — you're all caught up!</p>
           </div>
         )}
