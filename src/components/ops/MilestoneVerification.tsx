@@ -14,8 +14,18 @@ const MilestoneVerification = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingUpload, setPendingUpload] = useState<{ projectId: string; itemId: string } | null>(null);
 
-  // Only show projects that have been accepted from QC (currentMilestone >= 0) and aren't fully done
-  const activeProjects = projects.filter(p => p.currentMilestone < 7);
+  // Only show projects that need active milestone approval from ops
+  // A project appears here when non-ops actors have completed their checklist items for the current milestone
+  const activeProjects = projects.filter(p => {
+    if (p.currentMilestone >= 7) return false;
+    const sop = MILESTONE_SOPS[p.currentMilestone];
+    if (!sop) return false;
+    const state = store.getMilestoneState(p.id);
+    // Check if all non-ops checklist items are done (installer/sales_rep have submitted their parts)
+    const nonOpsItems = sop.checklist.filter(c => c.actor !== 'backend_ops' && c.actor !== 'financier');
+    const nonOpsDone = nonOpsItems.length === 0 || nonOpsItems.every(item => state.checklistDone[item.id]);
+    return nonOpsDone;
+  });
 
   const getOffsetPercent = (p: typeof projects[0]) => {
     const systemKw = parseFloat(p.systemSize);
