@@ -114,14 +114,14 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   };
 
   const filteredProjects = projectFilter === 'all'
-    ? projects
-    : projects.filter(p => p.creditStatus === projectFilter);
+    ? sellProjects
+    : sellProjects.filter(p => p.creditStatus === projectFilter);
 
   const statusCounts = {
-    all: projects.length,
-    new: projects.filter(p => p.creditStatus === 'new').length,
-    credit_passed: projects.filter(p => p.creditStatus === 'credit_passed').length,
-    credit_fail: projects.filter(p => p.creditStatus === 'credit_fail').length,
+    all: sellProjects.length,
+    new: sellProjects.filter(p => p.creditStatus === 'new').length,
+    credit_passed: sellProjects.filter(p => p.creditStatus === 'credit_passed').length,
+    credit_fail: sellProjects.filter(p => p.creditStatus === 'credit_fail').length,
   };
 
   // Sold deals data (simulated from credit_passed projects)
