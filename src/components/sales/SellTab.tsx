@@ -125,7 +125,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   };
 
   // Sold deals data (simulated from credit_passed projects)
-  const soldDeals = projects.filter(p => p.creditStatus === 'credit_passed').map(p => ({
+  const soldDeals = sellProjects.filter(p => p.creditStatus === 'credit_passed').map(p => ({
     ...p,
     systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
     ppw: (4.0 + Math.random() * 0.5).toFixed(2),
