@@ -4,56 +4,87 @@ import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 
 // Per-project milestone tracking state
 export interface ProjectMilestoneState {
-  // Checklist completion per item ID
   checklistDone: Record<string, boolean>;
-  // Uploaded file names per checklist item ID
   uploads: Record<string, string[]>;
-  // Text entries (reports, reviews) per checklist item ID
   textEntries: Record<string, string>;
-  // Date entries per checklist item ID
   dateEntries: Record<string, string>;
-  // Fund release status per milestone index (0-6)
   fundStatus: Record<number, 'none' | 'pending' | 'approved' | 'released'>;
-  // Ops notes per milestone
   opsNotes: Record<number, string>;
 }
 
+// Shared ticket type
+export interface SharedTicket {
+  id: string;
+  projectId: string;
+  subject: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'open' | 'in_progress' | 'resolved';
+  createdAt: string;
+  createdBy: string;
+  createdByRole: string;
+  messages: { sender: string; role: string; text: string; time: string }[];
+}
+
+// Per-project financier update
+export interface FinancierUpdate {
+  id: string;
+  projectId: string;
+  text: string;
+  author: string;
+  timestamp: string;
+}
+
+// Per-project financier upload
+export interface FinancierUpload {
+  projectId: string;
+  fileName: string;
+  type: 'document' | 'photo';
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+// Per-project communication message
+export interface ProjectMessage {
+  sender: string;
+  role: string;
+  text: string;
+  time: string;
+}
+
 interface ProjectStoreState {
-  // All projects in the system
   projects: Project[];
-  // QC queue (incoming deals)
   qcQueue: Project[];
-  // Milestone state per project ID
   milestoneStates: Record<string, ProjectMilestoneState>;
+  tickets: SharedTicket[];
+  financierUpdates: Record<string, FinancierUpdate[]>;
+  financierUploads: Record<string, FinancierUpload[]>;
+  projectMessages: Record<string, ProjectMessage[]>;
 }
 
 interface ProjectStoreActions {
-  // Accept a deal from QC queue → moves to projects
   acceptDeal: (projectId: string, updatedUsage?: number) => void;
-  // Toggle a checklist item
   toggleChecklist: (projectId: string, checklistItemId: string, done: boolean) => void;
-  // Upload a file for a checklist item
   uploadFile: (projectId: string, checklistItemId: string, fileName: string) => void;
-  // Set text entry (report/review)
   setTextEntry: (projectId: string, checklistItemId: string, text: string) => void;
-  // Set date entry
   setDateEntry: (projectId: string, checklistItemId: string, date: string) => void;
-  // Approve milestone (ops) — advances project milestone and queues fund release
   approveMilestone: (projectId: string, milestoneIndex: number) => void;
-  // Financier approves fund release
   approveFundRelease: (projectId: string, milestoneIndex: number) => void;
-  // Mark fund as released
   releaseFund: (projectId: string, milestoneIndex: number) => void;
-  // Set ops notes for a milestone
   setOpsNotes: (projectId: string, milestoneIndex: number, notes: string) => void;
-  // Get milestone state for a project
   getMilestoneState: (projectId: string) => ProjectMilestoneState;
-  // Check if all checklist items for a milestone are done (by actor or all)
   isMilestoneReady: (projectId: string, milestoneIndex: number, actor?: string) => boolean;
-  // Get projects visible to a specific portal
   getProjectsForInstaller: (installerName: string) => Project[];
   getProjectsForRep: (repName: string) => Project[];
   getAllActiveProjects: () => Project[];
+  // Ticket actions
+  createTicket: (ticket: Omit<SharedTicket, 'id'>) => void;
+  addTicketMessage: (ticketId: string, message: { sender: string; role: string; text: string; time: string }) => void;
+  resolveTicket: (ticketId: string) => void;
+  getTicketsForProject: (projectId: string) => SharedTicket[];
+  // Financier actions
+  addFinancierUpdate: (projectId: string, text: string, author: string) => void;
+  addFinancierUpload: (projectId: string, fileName: string, type: 'document' | 'photo', uploadedBy: string) => void;
+  addProjectMessage: (projectId: string, message: ProjectMessage) => void;
 }
 
 type ProjectStoreContextType = ProjectStoreState & ProjectStoreActions;
@@ -69,18 +100,27 @@ const createDefaultMilestoneState = (): ProjectMilestoneState => ({
   opsNotes: {},
 });
 
+// Initial mock messages per project
+const INITIAL_PROJECT_MESSAGES: Record<string, ProjectMessage[]> = {
+  'ASP-2025': [
+    { sender: 'Marcus Reeves', role: 'financier', text: 'M4 install photos look good. Approving fund release.', time: '2026-02-10 10:30 AM' },
+    { sender: 'Admin Ops', role: 'ops', text: 'Confirmed. Funds queued for release.', time: '2026-02-10 11:00 AM' },
+  ],
+  'ASP-2027': [
+    { sender: 'Caitlin Frost', role: 'financier', text: 'Crew assignment confirmed for ASP-2027. Materials staged.', time: '2026-02-18 9:15 AM' },
+    { sender: 'Admin Ops', role: 'ops', text: 'Homeowner confirmed install window. All clear.', time: '2026-02-18 2:00 PM' },
+  ],
+};
+
 export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const [projects, setProjects] = useState<Project[]>([...PROJECTS]);
   const [qcQueue, setQcQueue] = useState<Project[]>([...QC_QUEUE]);
   const [milestoneStates, setMilestoneStates] = useState<Record<string, ProjectMilestoneState>>(() => {
-    // Initialize milestone states for existing projects with pre-completed milestones marked
     const states: Record<string, ProjectMilestoneState> = {};
     PROJECTS.forEach(p => {
       const state = createDefaultMilestoneState();
-      // Mark completed milestones' fund status as released
       for (let i = 0; i < p.currentMilestone; i++) {
         state.fundStatus[i] = 'released';
-        // Mark all checklist items as done for completed milestones
         const sop = MILESTONE_SOPS[i];
         if (sop) {
           sop.checklist.forEach(item => {
@@ -92,6 +132,33 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     });
     return states;
   });
+
+  const [tickets, setTickets] = useState<SharedTicket[]>([
+    {
+      id: 'SS-001', projectId: 'ASP-2030', subject: 'Roof damage escalation — install blocked', priority: 'critical', status: 'open', createdAt: '2026-03-20', createdBy: 'Admin Ops', createdByRole: 'ops',
+      messages: [
+        { sender: 'Admin Ops', role: 'ops', text: 'ASP-2030 (Angela Davis) has major roof damage. Install can\'t proceed until roof is repaired.', time: '10:15 AM' },
+        { sender: 'Super Support', role: 'support', text: 'Acknowledged. Placing project on hold until roof report is complete.', time: '10:22 AM' },
+      ],
+    },
+    {
+      id: 'SS-002', projectId: 'ASP-2034', subject: 'Financing hold — customer re-qualification', priority: 'high', status: 'in_progress', createdAt: '2026-03-18', createdBy: 'Admin Ops', createdByRole: 'ops',
+      messages: [
+        { sender: 'Admin Ops', role: 'ops', text: 'Deborah White (ASP-2034) is on hold for financing. Credit was approved but the lender flagged the DTI ratio.', time: 'Yesterday 2:30 PM' },
+        { sender: 'Super Support', role: 'support', text: 'GoodLeap approved her at 2.99% / 25yr. Sending new docs now.', time: 'Today 9:00 AM' },
+      ],
+    },
+    {
+      id: 'SS-003', projectId: 'ASP-2026', subject: 'Shingle damage — installer needs guidance', priority: 'medium', status: 'open', createdAt: '2026-03-22', createdBy: 'Admin Ops', createdByRole: 'ops',
+      messages: [
+        { sender: 'Admin Ops', role: 'ops', text: 'Patricia Williams (ASP-2026) has minor shingle wear. Installer wants to know if they should proceed.', time: '3:00 PM' },
+      ],
+    },
+  ]);
+
+  const [financierUpdates, setFinancierUpdates] = useState<Record<string, FinancierUpdate[]>>({});
+  const [financierUploads, setFinancierUploads] = useState<Record<string, FinancierUpload[]>>({});
+  const [projectMessages, setProjectMessages] = useState<Record<string, ProjectMessage[]>>(INITIAL_PROJECT_MESSAGES);
 
   const getMilestoneState = useCallback((projectId: string): ProjectMilestoneState => {
     return milestoneStates[projectId] || createDefaultMilestoneState();
@@ -156,7 +223,6 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   }, [updateMilestoneState]);
 
   const approveMilestone = useCallback((projectId: string, milestoneIndex: number) => {
-    // Advance the project's current milestone
     setProjects(prev => prev.map(p => {
       if (p.id !== projectId) return p;
       const newMilestone = milestoneIndex + 1;
@@ -167,7 +233,6 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
         stage: sop ? sop.name : 'Completed',
       };
     }));
-    // Set fund status to pending for financier approval
     updateMilestoneState(projectId, prev => ({
       ...prev,
       fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'pending' },
@@ -215,10 +280,70 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     return projects;
   }, [projects]);
 
+  // Ticket actions
+  const createTicket = useCallback((ticket: Omit<SharedTicket, 'id'>) => {
+    const newId = `SS-${String(tickets.length + 1).padStart(3, '0')}`;
+    setTickets(prev => [{ ...ticket, id: newId }, ...prev]);
+  }, [tickets.length]);
+
+  const addTicketMessage = useCallback((ticketId: string, message: { sender: string; role: string; text: string; time: string }) => {
+    setTickets(prev => prev.map(t =>
+      t.id === ticketId ? { ...t, messages: [...t.messages, message] } : t
+    ));
+  }, []);
+
+  const resolveTicket = useCallback((ticketId: string) => {
+    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status: 'resolved' } : t));
+  }, []);
+
+  const getTicketsForProject = useCallback((projectId: string) => {
+    return tickets.filter(t => t.projectId === projectId);
+  }, [tickets]);
+
+  // Financier actions
+  const addFinancierUpdate = useCallback((projectId: string, text: string, author: string) => {
+    const update: FinancierUpdate = {
+      id: `FU-${Date.now()}`,
+      projectId,
+      text,
+      author,
+      timestamp: new Date().toLocaleString(),
+    };
+    setFinancierUpdates(prev => ({
+      ...prev,
+      [projectId]: [...(prev[projectId] || []), update],
+    }));
+  }, []);
+
+  const addFinancierUpload = useCallback((projectId: string, fileName: string, type: 'document' | 'photo', uploadedBy: string) => {
+    const upload: FinancierUpload = {
+      projectId,
+      fileName,
+      type,
+      uploadedAt: new Date().toLocaleString(),
+      uploadedBy,
+    };
+    setFinancierUploads(prev => ({
+      ...prev,
+      [projectId]: [...(prev[projectId] || []), upload],
+    }));
+  }, []);
+
+  const addProjectMessage = useCallback((projectId: string, message: ProjectMessage) => {
+    setProjectMessages(prev => ({
+      ...prev,
+      [projectId]: [...(prev[projectId] || []), message],
+    }));
+  }, []);
+
   const value: ProjectStoreContextType = {
     projects,
     qcQueue,
     milestoneStates,
+    tickets,
+    financierUpdates,
+    financierUploads,
+    projectMessages,
     acceptDeal,
     toggleChecklist,
     uploadFile,
@@ -233,6 +358,13 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     getProjectsForInstaller,
     getProjectsForRep,
     getAllActiveProjects,
+    createTicket,
+    addTicketMessage,
+    resolveTicket,
+    getTicketsForProject,
+    addFinancierUpdate,
+    addFinancierUpload,
+    addProjectMessage,
   };
 
   return (
