@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import ConfirmDataDialog from './ConfirmDataDialog';
+import { Zap, User, Sun, Camera, Home, FileText, CheckCircle, Lock, ExternalLink, AlertTriangle, XCircle } from 'lucide-react';
 
 interface DealReviewDialogProps {
   open: boolean;
@@ -51,20 +52,20 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
     return (
       <button
         onClick={() => !done && setConfirmSection(section)}
-        className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all active:scale-95 ${
+        className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all active:scale-95 flex items-center gap-1 ${
           done
             ? 'bg-asp-green/15 text-asp-green border border-asp-green/30 cursor-default'
             : 'bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20'
         }`}
       >
-        {done ? '✅ Confirmed' : '🔒 Confirm Data'}
+        {done ? <><CheckCircle className="w-3 h-3" /> Confirmed</> : <><Lock className="w-3 h-3" /> Confirm Data</>}
       </button>
     );
   };
 
   const getConfirmData = (): {
     title: string;
-    icon: string;
+    icon: React.ReactNode;
     data: { label: string; value: string }[];
     message: string;
   } | null => {
@@ -72,7 +73,7 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
       case 'lead':
         return {
           title: 'Lead Name & Contact',
-          icon: '👤',
+          icon: <User className="w-5 h-5 text-primary" />,
           data: [
             { label: 'First Name', value: nameParts[0] },
             { label: 'Last Name', value: nameParts.slice(1).join(' ') },
@@ -86,7 +87,7 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
       case 'smartMeter':
         return {
           title: 'Texas Smart Meter Data',
-          icon: '⚡',
+          icon: <Zap className="w-5 h-5 text-primary" />,
           data: [
             { label: 'Annual Usage', value: `${parsedUsage.toLocaleString()} kWh` },
             { label: 'Monthly Average', value: `${Math.round(parsedUsage / 12).toLocaleString()} kWh` },
@@ -98,7 +99,7 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
       case 'systemDesign':
         return {
           title: 'System Design',
-          icon: '☀️',
+          icon: <Sun className="w-5 h-5 text-primary" />,
           data: [
             { label: 'System Size', value: project.systemSize },
             { label: 'Battery', value: project.battery || 'None' },
@@ -111,7 +112,7 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
       case 'siteSurvey':
         return {
           title: 'Site Survey Photos',
-          icon: '📸',
+          icon: <Camera className="w-5 h-5 text-primary" />,
           data: [
             { label: 'Roof Overview', value: 'Photo uploaded ✓' },
             { label: 'Electrical Panel', value: 'Photo uploaded ✓' },
@@ -124,7 +125,7 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
       case 'roofInspection':
         return {
           title: 'Roof Inspection',
-          icon: '🏠',
+          icon: <Home className="w-5 h-5 text-primary" />,
           data: [
             { label: 'Condition', value: project.roofCondition.replace('_', ' ').toUpperCase() },
             ...(project.roofIssues.length > 0
@@ -141,7 +142,7 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
           const isSigned = idx < project.documentsSignedCount;
           return {
             title: docName,
-            icon: '📄',
+            icon: <FileText className="w-5 h-5 text-primary" />,
             data: [
               { label: 'Document', value: docName },
               { label: 'Status', value: isSigned ? 'Signed ✓' : 'Pending Signature' },
@@ -177,7 +178,7 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
         <DialogContent className="bg-bg2 border-border max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white text-xl font-black flex items-center gap-2">
-              ⚡ Action ASAP — {project.customerName}
+              <Zap className="w-5 h-5 text-primary" /> Action ASAP — {project.customerName}
             </DialogTitle>
             <p className="text-[10px] text-muted-foreground">{project.id} · {project.address}</p>
           </DialogHeader>
@@ -199,7 +200,9 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
             {/* Lead Name & Contact */}
             <div className="bg-bg3 border border-border rounded-xl p-4">
               <div className="flex justify-between items-center mb-3">
-                <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase">👤 Lead Name & Contact</h4>
+                <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5" /> Lead Name & Contact
+                </h4>
                 <ConfirmButton section="lead" />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -233,7 +236,9 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-bg3 border border-border rounded-xl p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase">⚡ TX Smart Meter</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5" /> TX Smart Meter
+                  </h4>
                   <ConfirmButton section="smartMeter" />
                 </div>
                 <div className="space-y-2">
@@ -247,12 +252,14 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
                   </div>
                 </div>
                 <a href="https://www.smartmetertexas.com" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
-                  🔗 Open Smart Meter Texas →
+                  <ExternalLink className="w-3 h-3" /> Open Smart Meter Texas →
                 </a>
               </div>
               <div className="bg-bg3 border border-border rounded-xl p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase">☀️ System Design</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase flex items-center gap-1.5">
+                    <Sun className="w-3.5 h-3.5" /> System Design
+                  </h4>
                   <ConfirmButton section="systemDesign" />
                 </div>
                 <div className="space-y-2">
@@ -266,7 +273,7 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
                   </div>
                 </div>
                 <a href="https://aurorasolar.com" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
-                  🔗 Open Aurora Design →
+                  <ExternalLink className="w-3 h-3" /> Open Aurora Design →
                 </a>
               </div>
             </div>
@@ -274,13 +281,15 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
             {/* Site Survey Photos */}
             <div className="bg-bg3 border border-border rounded-xl p-4">
               <div className="flex justify-between items-center mb-3">
-                <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase">📸 Site Survey Photos</h4>
+                <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase flex items-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5" /> Site Survey Photos
+                </h4>
                 <ConfirmButton section="siteSurvey" />
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {['Roof Overview', 'Electrical Panel', 'Meter', 'Attic'].map((label) => (
                   <div key={label} className="bg-bg2 border border-border rounded-lg h-24 flex flex-col items-center justify-center gap-1.5">
-                    <span className="text-xl">📷</span>
+                    <Camera className="w-5 h-5 text-muted-foreground" />
                     <span className="text-[10px] text-muted-foreground">{label}</span>
                   </div>
                 ))}
@@ -290,7 +299,9 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
             {/* Roof Inspection */}
             <div className="bg-bg3 border border-border rounded-xl p-4">
               <div className="flex justify-between items-center mb-3">
-                <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase">🏠 Roof Inspection</h4>
+                <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase flex items-center gap-1.5">
+                  <Home className="w-3.5 h-3.5" /> Roof Inspection
+                </h4>
                 <ConfirmButton section="roofInspection" />
               </div>
               <div className="flex items-center gap-3 mb-2">
@@ -310,23 +321,25 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
                 <div className="space-y-1.5">
                   {project.roofIssues.map((issue, i) => (
                     <div key={i} className="flex items-center gap-2 px-3 py-2 bg-asp-red/5 border border-asp-red/15 rounded-md text-xs text-asp-red">
-                      ⚠️ {issue}
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {issue}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="px-3 py-2 bg-asp-green/5 border border-asp-green/15 rounded-md text-xs text-asp-green">
-                  ✅ No structural damage or water damage detected
+                <div className="px-3 py-2 bg-asp-green/5 border border-asp-green/15 rounded-md text-xs text-asp-green flex items-center gap-2">
+                  <CheckCircle className="w-3.5 h-3.5 shrink-0" /> No structural damage or water damage detected
                 </div>
               )}
               <a href="#" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
-                🔗 View Roof Photos →
+                <ExternalLink className="w-3 h-3" /> View Roof Photos →
               </a>
             </div>
 
             {/* Document Management */}
             <div className="bg-bg3 border border-border rounded-xl p-4">
-              <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">📄 Document Management</h4>
+              <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3 flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5" /> Document Management
+              </h4>
               <div className="space-y-2">
                 {DOCUMENTS.map((doc, i) => {
                   const signed = i < project.documentsSignedCount;
@@ -336,7 +349,7 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
                       <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${signed ? 'bg-asp-green' : 'bg-border'}`} />
                         <span className="text-xs text-foreground">{doc}</span>
-                        {signed && <span className="text-[10px] text-asp-green font-bold ml-1">Signed ✓</span>}
+                        {signed && <span className="text-[10px] text-asp-green font-bold ml-1">Signed</span>}
                       </div>
                       <ConfirmButton section={sectionKey as ConfirmSection} />
                     </div>
@@ -350,12 +363,12 @@ const DealReviewDialog = ({ open, onOpenChange, project, onAcceptDeal }: DealRev
               <button
                 disabled={!allConfirmed}
                 onClick={handleAcceptDeal}
-                className="px-5 py-2.5 bg-asp-green/15 text-asp-green border border-asp-green/30 rounded-lg text-xs font-bold hover:bg-asp-green/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+                className="px-5 py-2.5 bg-asp-green/15 text-asp-green border border-asp-green/30 rounded-lg text-xs font-bold hover:bg-asp-green/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5"
               >
-                ✅ Accept Deal
+                <CheckCircle className="w-3.5 h-3.5" /> Accept Deal
               </button>
-              <button className="px-5 py-2.5 bg-asp-red/15 text-asp-red border border-asp-red/30 rounded-lg text-xs font-bold hover:bg-asp-red/25 transition-all active:scale-95">
-                ❌ Reject Deal
+              <button className="px-5 py-2.5 bg-asp-red/15 text-asp-red border border-asp-red/30 rounded-lg text-xs font-bold hover:bg-asp-red/25 transition-all active:scale-95 flex items-center gap-1.5">
+                <XCircle className="w-3.5 h-3.5" /> Reject Deal
               </button>
             </div>
           </div>
