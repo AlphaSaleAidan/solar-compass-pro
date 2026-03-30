@@ -59,7 +59,7 @@ const MilestoneVerification = ({ acceptedDeals = [] }: MilestoneVerificationProp
         </h2>
         <div className="flex items-center gap-3">
           <div className="px-3 py-1.5 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary">
-            {PROJECTS.filter(p => p.currentMilestone < 7).length} Active Projects
+            {allProjects.filter(p => p.currentMilestone < 7).length} Active Projects
           </div>
           <div className="px-3 py-1.5 bg-[hsl(var(--red))]/10 border border-[hsl(var(--red))]/25 rounded-lg text-xs font-bold text-[hsl(var(--red))]">
             {flagReports.length} Flagged
