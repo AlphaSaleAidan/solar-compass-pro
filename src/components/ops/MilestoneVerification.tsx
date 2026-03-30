@@ -172,8 +172,8 @@ const MilestoneVerification = () => {
                               </div>
                               <div>
                                 <div className="text-sm font-bold text-foreground">{sop.name}</div>
-                                <div className="text-[10px] text-muted-foreground">
-                                  {isPassed ? '✅ Completed' : isCurrent ? '🔄 In Progress' : '⏳ Pending'} · {sop.fundPercent}% fund release
+                                <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  {isPassed ? <><CheckCircle className="w-3 h-3 text-[hsl(var(--green))]" /> Completed</> : isCurrent ? <><Clock className="w-3 h-3 text-[hsl(var(--yellow))]" /> In Progress</> : <><Clock className="w-3 h-3" /> Pending</>} · {sop.fundPercent}% fund release
                                 </div>
                               </div>
                             </div>
