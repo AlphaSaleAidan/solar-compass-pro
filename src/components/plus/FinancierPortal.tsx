@@ -71,15 +71,15 @@ const FinancierPortal = () => {
     const p = selectedProjectData;
     const ms = store.getMilestoneState(p.id);
     const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+    const offset = Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100);
 
-    // Get installer review and SOW report from M4 if available
     const installerReview = ms.textEntries['m4-installer-review'];
     const sowReport = ms.textEntries['m4-sow-report'];
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setSelectedProject(null)}>
-        <div className="bg-card border border-border rounded-2xl w-full max-w-xl max-h-[65vh] overflow-y-auto m-4 shadow-2xl" onClick={e => e.stopPropagation()}>
-          <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSelectedProject(null)}>
+        <div className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto m-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="px-6 py-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
             <div>
               <h2 className="text-lg font-black text-card-foreground">{p.customerName}</h2>
               <div className="text-xs text-muted-foreground">{p.id} · {p.stage}</div>
@@ -87,11 +87,13 @@ const FinancierPortal = () => {
             <button onClick={() => setSelectedProject(null)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80"><X className="w-4 h-4 text-muted-foreground" /></button>
           </div>
           <div className="p-6 space-y-5">
-            <div className="grid grid-cols-3 gap-3">
+            {/* Financial Summary */}
+            <div className="grid grid-cols-4 gap-3">
               {[
                 { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}`, color: 'text-primary' },
                 { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
                 { label: 'Capital Released', value: `$${funded.toLocaleString()}`, color: 'text-[hsl(var(--green))]' },
+                { label: 'Margin', value: `${Math.round(((p.contractValue - p.projectCost) / p.contractValue) * 100)}%`, color: 'text-[hsl(var(--yellow))]' },
               ].map((item, i) => (
                 <div key={i} className="bg-muted rounded-xl p-3">
                   <div className="text-[10px] text-muted-foreground">{item.label}</div>
@@ -99,36 +101,122 @@ const FinancierPortal = () => {
                 </div>
               ))}
             </div>
+
+            {/* System & Project Details */}
+            <div className="bg-muted/50 border border-border rounded-xl p-4">
+              <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3">System & Project Details</h3>
+              <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-xs">
+                <div className="flex justify-between"><span className="text-muted-foreground">System Size</span><span className="font-bold text-card-foreground">{p.systemSize}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Battery</span><span className="font-bold text-card-foreground">{p.battery}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Sold PPW</span><span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Annual Usage</span><span className="font-bold text-card-foreground">{p.annualUsage.toLocaleString()} kWh</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Offset</span><span className={`font-bold ${offset >= 80 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--red))]'}`}>{offset}%</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Roof</span><span className={`font-bold ${p.roofCondition === 'good' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>{p.roofCondition.replace('_', ' ')}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Installer</span><span className="font-bold text-card-foreground">{p.installerName}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Rep</span><span className="font-bold text-card-foreground">{p.repName}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Financier</span><span className="font-bold text-card-foreground">ASP Capital</span></div>
+              </div>
+            </div>
+
+            {/* Contact */}
+            <div className="flex items-center gap-6 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {p.email}</span>
+              <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {p.phone}</span>
+              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {p.address}</span>
+            </div>
+
+            {/* Adders */}
+            {p.adders.length > 0 && (
+              <div>
+                <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2">Adders</h3>
+                <div className="flex flex-wrap gap-2">
+                  {p.adders.map((a, i) => (
+                    <span key={i} className="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold">
+                      {a.name} · ${a.cost.toLocaleString()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Milestones */}
             <div className="grid grid-cols-7 gap-1.5">
               {MILESTONE_SOPS.map((sop, i) => {
                 const isPassed = i < p.currentMilestone;
+                const isCurrent = i === p.currentMilestone;
                 const fundSt = ms.fundStatus[i] || 'none';
+                const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
                 return (
-                  <div key={i} className={`rounded-xl p-2 text-center border ${
-                    isPassed ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20' : 'bg-muted border-border'
+                  <div key={i} className={`rounded-xl p-2.5 text-center border ${
+                    isPassed ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20'
+                    : isCurrent ? 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
+                    : 'bg-muted border-border'
                   }`}>
-                    <div className={`text-[10px] font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
+                    <div className={`text-[10px] font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
                     <div className="text-[8px] text-muted-foreground mt-0.5">{sop.shortName}</div>
-                    <div className="text-[8px] text-muted-foreground">{sop.fundPercent}%</div>
+                    <div className={`text-[9px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
                     {isPassed && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-0.5" />}
+                    {isCurrent && <Clock className="w-3 h-3 text-[hsl(var(--yellow))] mx-auto mt-0.5" />}
                   </div>
                 );
               })}
             </div>
-            {/* Installer Review from Backend Ops */}
+
+            {/* Capital progress */}
+            <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs text-muted-foreground">Capital Released</span>
+                <span className="text-sm font-black text-[hsl(var(--green))]">${funded.toLocaleString()} / ${p.projectCost.toLocaleString()}</span>
+              </div>
+              <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-primary to-[hsl(var(--green))] rounded-full" style={{ width: `${(funded / Math.max(p.projectCost, 1)) * 100}%` }} />
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="bg-muted/50 border border-border rounded-xl p-4">
+              <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3">Project Timeline</h3>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex justify-between"><span className="text-muted-foreground">Submitted</span><span className="font-bold text-card-foreground">{p.dates.submitted}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Site Survey</span><span className="font-bold text-card-foreground">{p.dates.siteSurvey || 'Pending'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">SOW Confirmed</span><span className="font-bold text-card-foreground">{p.dates.sowConfirmed || 'Pending'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Permit</span><span className="font-bold text-card-foreground">{p.dates.permitSubmitted || 'Pending'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Last HO Contact</span><span className="font-bold text-card-foreground">{p.dates.lastHOContact}</span></div>
+              </div>
+            </div>
+
             {installerReview && (
               <div>
-                <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-2">Installer Performance Review (from Backend Ops)</h3>
+                <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-2">Installer Performance Review</h3>
                 <div className="bg-primary/5 border border-primary/15 rounded-xl p-3 text-xs text-card-foreground">{installerReview}</div>
               </div>
             )}
-            {/* SOW Report */}
             {sowReport && (
               <div>
                 <h3 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-2">SOW vs Real Cost Report</h3>
                 <div className="bg-[hsl(var(--yellow))]/5 border border-[hsl(var(--yellow))]/15 rounded-xl p-3 text-xs text-card-foreground">{sowReport}</div>
               </div>
             )}
+
+            {/* Flag button */}
+            <div className="flex justify-end">
+              {!flaggedProjects.has(p.id) ? (
+                <button
+                  onClick={() => {
+                    const note = prompt('Enter reason for flagging this project:');
+                    if (note?.trim()) {
+                      setFlaggedProjects(prev => new Set(prev).add(p.id));
+                      setFlagNotes(prev => ({ ...prev, [p.id]: note.trim() }));
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-[hsl(var(--red))]/10 border border-[hsl(var(--red))]/25 rounded-lg text-xs text-[hsl(var(--red))] font-bold hover:bg-[hsl(var(--red))]/20 transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <Flag className="w-3.5 h-3.5" /> Flag for Review
+                </button>
+              ) : (
+                <span className="text-[10px] text-[hsl(var(--red))] font-bold flex items-center gap-1"><Flag className="w-3 h-3" /> Flagged: {flagNotes[p.id]}</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
