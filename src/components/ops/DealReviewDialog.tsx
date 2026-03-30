@@ -69,8 +69,8 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
           title: 'Lead Name & Contact',
           icon: '👤',
           data: [
-            { label: 'First Name', value: project.customerName.split(' ')[0] },
-            { label: 'Last Name', value: project.customerName.split(' ').slice(1).join(' ') },
+            { label: 'First Name', value: nameParts[0] },
+            { label: 'Last Name', value: nameParts.slice(1).join(' ') },
             { label: 'Email', value: project.email },
             { label: 'Phone', value: project.phone },
             { label: 'Address', value: project.address },
