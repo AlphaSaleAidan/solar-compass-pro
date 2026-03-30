@@ -186,7 +186,7 @@ const MilestoneVerification = () => {
                                   fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))]' :
                                   'bg-[hsl(var(--bg3))] text-muted-foreground'
                                 }`}>
-                                  {fundSt === 'released' ? '💰 Released' : fundSt === 'approved' ? '✅ Approved' : fundSt === 'pending' ? '⏳ Pending Release' : 'Not Queued'}
+                                  {fundSt === 'released' ? 'Released' : fundSt === 'approved' ? 'Approved' : fundSt === 'pending' ? 'Pending Release' : 'Not Queued'}
                                 </span>
                               )}
                               {isExpandedM ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
