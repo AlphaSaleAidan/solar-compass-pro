@@ -65,22 +65,6 @@ const FinancierPortal = () => {
       .filter(item => item.fundStatus === 'pending' || item.fundStatus === 'approved');
   });
 
-  const renderMilestoneTooltip = (project: typeof projects[0], idx: number) => {
-    const milestone = project.milestoneDetails[idx];
-    if (!milestone) return null;
-    const isPassed = idx < project.currentMilestone;
-    return (
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-card border border-border rounded-xl p-3 shadow-lg z-50 pointer-events-none">
-        <div className="text-xs font-extrabold text-card-foreground mb-1">{milestone.name}</div>
-        {isPassed ? (
-          <div className="text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Completed</div>
-        ) : (
-          <div className="text-[10px] text-[hsl(var(--yellow))] font-bold">Pending</div>
-        )}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-card border-r border-b border-border rotate-45 -mt-1" />
-      </div>
-    );
-  };
 
   const renderProjectDetail = () => {
     if (!selectedProjectData) return null;
