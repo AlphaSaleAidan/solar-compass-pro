@@ -1,22 +1,15 @@
 import { useState } from 'react';
-import { QC_QUEUE } from '@/data/mockData';
+import { useProjectStore } from '@/contexts/ProjectStore';
 import type { Project } from '@/data/mockData';
 import DealReviewDialog from './DealReviewDialog';
 
-interface QCReviewProps {
-  onAcceptDeal?: (project: Project) => void;
-}
-
-const QCReview = ({ onAcceptDeal }: QCReviewProps) => {
+const QCReview = () => {
+  const { qcQueue, acceptDeal } = useProjectStore();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [acceptedIds, setAcceptedIds] = useState<Set<string>>(new Set());
-
-  const visibleQueue = QC_QUEUE.filter(p => !acceptedIds.has(p.id));
 
   const handleAcceptDeal = (project: Project) => {
-    setAcceptedIds(prev => new Set(prev).add(project.id));
+    acceptDeal(project.id, project.annualUsage);
     setSelectedProject(null);
-    onAcceptDeal?.(project);
   };
 
   return (
@@ -27,7 +20,7 @@ const QCReview = ({ onAcceptDeal }: QCReviewProps) => {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {visibleQueue.map((p) => (
+        {qcQueue.map((p) => (
           <div
             key={p.id}
             onClick={() => setSelectedProject(p)}
@@ -54,6 +47,10 @@ const QCReview = ({ onAcceptDeal }: QCReviewProps) => {
                 <span className="text-foreground font-medium">{p.systemSize}</span>
               </div>
               <div className="flex justify-between">
+                <span>Rep</span>
+                <span className="text-foreground font-medium">{p.repName}</span>
+              </div>
+              <div className="flex justify-between">
                 <span>Roof</span>
                 <span className={`font-bold ${
                   p.roofCondition === 'good' ? 'text-asp-green' :
@@ -69,7 +66,7 @@ const QCReview = ({ onAcceptDeal }: QCReviewProps) => {
           </div>
         ))}
 
-        {visibleQueue.length === 0 && (
+        {qcQueue.length === 0 && (
           <div className="col-span-full bg-bg2 border border-border rounded-xl p-12 text-center">
             <span className="text-4xl">✅</span>
             <p className="text-muted-foreground mt-3">No incoming deals — you're all caught up!</p>
