@@ -86,6 +86,12 @@ interface ProjectStoreActions {
   addFinancierUpdate: (projectId: string, text: string, author: string) => void;
   addFinancierUpload: (projectId: string, fileName: string, type: 'document' | 'photo', uploadedBy: string) => void;
   addProjectMessage: (projectId: string, message: ProjectMessage) => void;
+  // Sell project actions
+  updateSellProject: (project: SellProject) => void;
+  markSellProjectClean: (projectId: string) => void;
+  markSellProjectDirty: (projectId: string, notes: string) => void;
+  getSellProjectsPendingApproval: () => SellProject[];
+  getSellProjectsClean: () => SellProject[];
 }
 
 type ProjectStoreContextType = ProjectStoreState & ProjectStoreActions;
