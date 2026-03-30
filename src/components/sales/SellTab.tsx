@@ -11,7 +11,7 @@ interface SellTabProps {
 }
 
 const SellTab = ({ initialProjectData }: SellTabProps) => {
-  const { sellProjects, updateSellProject } = useProjectStore();
+  const { sellProjects, updateSellProject, addSellProject } = useProjectStore();
   const [activeSubTab, setActiveSubTab] = useState<'create' | 'projects'>('create');
   const [projectFilter, setProjectFilter] = useState<CreditStatus | 'all'>('all');
   const [address, setAddress] = useState('');
