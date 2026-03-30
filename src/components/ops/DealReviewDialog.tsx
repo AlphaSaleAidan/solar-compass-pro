@@ -298,6 +298,7 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
               <a href="#" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
                 🔗 View Roof Photos →
               </a>
+            </div>
 
             {/* Document Management */}
             <div className="bg-bg3 border border-border rounded-xl p-4">
