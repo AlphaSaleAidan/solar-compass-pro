@@ -119,11 +119,21 @@ const FinancierPortal = () => {
               </div>
             </div>
 
-            {/* Contact */}
-            <div className="flex items-center gap-6 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {p.email}</span>
-              <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {p.phone}</span>
-              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {p.address}</span>
+            {/* Contact & Actions */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {p.email}</span>
+                <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {p.phone}</span>
+                <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {p.address}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="View Documents"><FileText className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="Download Report"><Download className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="View Photos"><Camera className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="Messages"><MessageSquare className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="Activity Log"><Eye className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="Open Full Details"><ExternalLink className="w-3.5 h-3.5 text-muted-foreground" /></button>
+              </div>
             </div>
 
             {/* Adders */}
