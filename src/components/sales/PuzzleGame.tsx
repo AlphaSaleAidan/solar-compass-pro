@@ -66,16 +66,16 @@ const PuzzleGame = () => {
         <svg viewBox="-10 -10 120 120" className="w-40 h-40">
           <defs>
             <linearGradient id="piece-filled" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.15" />
+              <stop offset="0%" stopColor="hsl(217 91% 60%)" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="hsl(217 91% 60%)" stopOpacity="0.15" />
             </linearGradient>
           </defs>
           {piecePaths.map((path, i) => (
             <g key={i} transform={`translate(${positions[i].x}, ${positions[i].y})`}>
               <path
                 d={path}
-                fill={pieces[i] ? 'url(#piece-filled)' : 'hsl(var(--muted) / 0.15)'}
-                stroke={pieces[i] ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
+                 fill={pieces[i] ? 'url(#piece-filled)' : 'hsl(217 91% 60% / 0.08)'}
+                 stroke={pieces[i] ? 'hsl(217 91% 60%)' : 'hsl(217 91% 60% / 0.25)'}
                 strokeWidth="1.5"
                 className="transition-all duration-700"
               />
@@ -83,7 +83,7 @@ const PuzzleGame = () => {
                 <svg x="17" y="17" width="16" height="16" viewBox="0 0 24 24">
                   <path
                     d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"
-                    fill="hsl(var(--primary))"
+                    fill="hsl(217 91% 60%)"
                   />
                 </svg>
               ) : (
