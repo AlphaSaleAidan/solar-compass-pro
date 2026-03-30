@@ -241,6 +241,9 @@ const DealReviewDialog = ({ open, onOpenChange, project }: DealReviewDialogProps
                     <span className="font-bold text-foreground">{project.battery || 'None'}</span>
                   </div>
                 </div>
+                <a href="https://aurorasolar.com" target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center gap-1.5 text-[10px] text-primary font-bold hover:underline">
+                  🔗 Open Aurora Design →
+                </a>
               </div>
             </div>
 
