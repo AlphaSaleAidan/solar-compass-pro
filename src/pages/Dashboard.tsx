@@ -12,7 +12,7 @@ import SellTab from '@/components/sales/SellTab';
 import QCReview from '@/components/ops/QCReview';
 import Communication from '@/components/ops/Communication';
 import MilestoneVerification from '@/components/ops/MilestoneVerification';
-import ProjectEditor from '@/components/ops/ProjectEditor';
+import OpsProjectsTab from '@/components/ops/OpsProjectsTab';
 import SuperSupport from '@/components/ops/SuperSupport';
 import PlusPortal from '@/components/plus/PlusPortal';
 
@@ -70,9 +70,7 @@ const Dashboard = () => {
       case 'Milestones':
         return <MilestoneVerification />;
       case 'Projects':
-        return <Pipeline />;
-      case 'Editor':
-        return <ProjectEditor />;
+        return <OpsProjectsTab />;
       case 'Communication':
         return <Communication />;
       case 'Super Support':
