@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth, UserRole, PortalMode } from '@/contexts/AuthContext';
+import { Target, Settings, Wrench, DollarSign, Zap } from 'lucide-react';
 
 const Login = () => {
   const { login } = useAuth();
@@ -9,14 +10,14 @@ const Login = () => {
   const [mode, setMode] = useState<PortalMode>('asp');
   const [error, setError] = useState('');
 
-  const aspRoles: { value: UserRole; icon: string; label: string; sub: string }[] = [
-    { value: 'sales_rep', icon: '🎯', label: 'Sales Rep', sub: 'Deals & Pipeline' },
-    { value: 'backend_ops', icon: '⚙️', label: 'Backend Ops', sub: 'QC & Operations' },
+  const aspRoles: { value: UserRole; icon: React.ReactNode; label: string; sub: string }[] = [
+    { value: 'sales_rep', icon: <Target className="w-7 h-7 text-primary" />, label: 'Sales Rep', sub: 'Deals & Pipeline' },
+    { value: 'backend_ops', icon: <Settings className="w-7 h-7 text-primary" />, label: 'Backend Ops', sub: 'QC & Operations' },
   ];
 
-  const aspPlusRoles: { value: UserRole; icon: string; label: string; sub: string }[] = [
-    { value: 'installer', icon: '🔧', label: 'Installer', sub: 'Project Tracking' },
-    { value: 'financier', icon: '💰', label: 'Financier', sub: 'Funding & Escrow' },
+  const aspPlusRoles: { value: UserRole; icon: React.ReactNode; label: string; sub: string }[] = [
+    { value: 'installer', icon: <Wrench className="w-7 h-7 text-primary" />, label: 'Installer', sub: 'Project Tracking' },
+    { value: 'financier', icon: <DollarSign className="w-7 h-7 text-primary" />, label: 'Financier', sub: 'Funding & Escrow' },
   ];
 
   const roles = mode === 'asp' ? aspRoles : aspPlusRoles;
@@ -64,8 +65,8 @@ const Login = () => {
           {/* Logo */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-lg font-black text-primary-foreground">
-                ⚡
+              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
+                <Zap className="w-5 h-5" />
               </div>
               <span className={`text-[22px] font-black tracking-wider ${mode === 'asp' ? 'text-white' : 'text-gray-900'}`}>
                 ALPHA SALE PRO {mode === 'asp_plus' && <span className="text-primary">+</span>}
@@ -113,7 +114,7 @@ const Login = () => {
                 {role === r.value && (
                   <span className="absolute top-2 right-2.5 text-primary text-xs font-black">✓</span>
                 )}
-                <div className="text-[28px] mb-1.5">{r.icon}</div>
+                <div className="mb-1.5 flex justify-center">{r.icon}</div>
                 <div className={`text-[13px] font-extrabold tracking-wide ${mode === 'asp' ? 'text-white' : 'text-gray-900'}`}>{r.label}</div>
                 <div className={`text-[11px] mt-0.5 ${mode === 'asp' ? 'text-gray-500' : 'text-gray-400'}`}>{r.sub}</div>
               </button>
