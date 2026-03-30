@@ -27,11 +27,11 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
             <BarChart3 className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-black text-foreground">Pipeline Overview</h2>
           </div>
-          <span className="text-xs text-muted-foreground">{PROJECTS.length} active projects</span>
+          <span className="text-xs text-muted-foreground">{allProjects.length} active projects</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {PROJECTS.map((p) => {
+          {allProjects.map((p) => {
             // Get commission for this project
             const comm = COMMISSIONS.find(c => c.projectId === p.id);
             const yourComm = comm ? comm.yourCommission : 0;

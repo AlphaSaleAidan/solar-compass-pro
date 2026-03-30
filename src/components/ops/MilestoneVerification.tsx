@@ -289,7 +289,7 @@ const MilestoneVerification = ({ acceptedDeals = [] }: MilestoneVerificationProp
                 onChange={e => setNotifyInstaller(e.target.checked)}
                 className="w-4 h-4 rounded border-border accent-primary"
               />
-              <span className="text-xs text-foreground font-bold">Auto-notify installer ({PROJECTS.find(p => p.id === flagModal.projectId)?.installerName})</span>
+              <span className="text-xs text-foreground font-bold">Auto-notify installer ({allProjects.find(p => p.id === flagModal.projectId)?.installerName})</span>
             </label>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setFlagModal(null)} className="px-4 py-2 bg-[hsl(var(--bg3))] border border-border rounded-lg text-xs font-bold text-muted-foreground hover:text-foreground transition-all">
