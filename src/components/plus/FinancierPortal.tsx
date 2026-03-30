@@ -230,17 +230,20 @@ const FinancierPortal = () => {
           <div className="space-y-5">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Portfolio Value', value: `$${Math.round(totalPortfolioContract / 1000)}k`, icon: DollarSign, color: 'text-primary', sub: `${projects.length} projects` },
-                { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k of $${Math.round(totalSystemCost / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / Math.max(totalSystemCost, 1)) * 100)}% deployed` },
-                { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / Math.max(totalPortfolioContract, 1)) * 100)}% margin` },
-                { label: 'Pending Releases', value: pendingReleases.length.toString(), icon: Clock, color: pendingReleases.length > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]', sub: pendingReleases.length > 0 ? 'Action required' : 'All clear' },
+                { label: 'Portfolio Value', value: `$${Math.round(totalPortfolioContract / 1000)}k`, valueSuffix: '', icon: DollarSign, color: 'text-primary', sub: `${projects.length} projects` },
+                { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k`, valueSuffix: `of $${Math.round(totalSystemCost / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / Math.max(totalSystemCost, 1)) * 100)}% deployed` },
+                { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, valueSuffix: '', icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / Math.max(totalPortfolioContract, 1)) * 100)}% margin` },
+                { label: 'Pending Releases', value: pendingReleases.length.toString(), valueSuffix: '', icon: Clock, color: pendingReleases.length > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]', sub: pendingReleases.length > 0 ? 'Action required' : 'All clear' },
               ].map((s, i) => (
                 <div key={i} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-2 mb-2">
                     <s.icon className={`w-4 h-4 ${s.color}`} />
                     <span className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">{s.label}</span>
                   </div>
-                  <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className={`text-2xl font-black ${s.color}`}>{s.value}</span>
+                    {s.valueSuffix && <span className="text-xs text-muted-foreground font-medium">{s.valueSuffix}</span>}
+                  </div>
                   <div className="text-[10px] text-muted-foreground mt-1">{s.sub}</div>
                 </div>
               ))}
