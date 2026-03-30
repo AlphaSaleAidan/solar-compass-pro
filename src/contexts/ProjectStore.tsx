@@ -166,6 +166,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const [financierUpdates, setFinancierUpdates] = useState<Record<string, FinancierUpdate[]>>({});
   const [financierUploads, setFinancierUploads] = useState<Record<string, FinancierUpload[]>>({});
   const [projectMessages, setProjectMessages] = useState<Record<string, ProjectMessage[]>>(INITIAL_PROJECT_MESSAGES);
+  const [sellProjects, setSellProjects] = useState<SellProject[]>([...SELL_PROJECTS]);
 
   const getMilestoneState = useCallback((projectId: string): ProjectMilestoneState => {
     return milestoneStates[projectId] || createDefaultMilestoneState();
