@@ -63,7 +63,7 @@ const PuzzleGame = () => {
 
       {/* Interlocking puzzle */}
       <div className="flex justify-center mb-3">
-        <svg viewBox="-2 -2 108 108" className="w-40 h-40">
+        <svg viewBox="-10 -10 120 120" className="w-40 h-40">
           <defs>
             <linearGradient id="piece-filled" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.35" />
