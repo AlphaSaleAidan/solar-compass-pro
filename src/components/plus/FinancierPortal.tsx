@@ -296,17 +296,34 @@ const FinancierPortal = () => {
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
               <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
                 <h3 className="text-sm font-extrabold text-card-foreground flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> Portfolio Projects</h3>
-                <button onClick={() => setActiveSection('portfolio')} className="text-xs text-primary font-bold hover:underline">View All</button>
+                <button onClick={() => setActiveSection('portfolio')} className="text-xs text-primary font-bold hover:underline">View All →</button>
               </div>
               {projects.filter(p => p.status !== 'completed').slice(0, 5).map(p => {
                 const ms = store.getMilestoneState(p.id);
+                const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+                const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
                 return (
-                  <div key={p.id} className="px-5 py-3.5 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedProject(p.id)}>
-                    <div>
-                      <div className="text-sm font-bold text-card-foreground">{p.customerName}</div>
-                      <div className="text-[10px] text-muted-foreground">{p.id} · ${(p.contractValue / 1000).toFixed(1)}K</div>
+                  <div key={p.id} className="px-5 py-4 border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedProject(p.id)}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <div className="text-sm font-bold text-card-foreground">{p.customerName}</div>
+                        <div className="text-[10px] text-muted-foreground">{p.id} · {p.systemSize} · {p.battery} · ${p.soldPPW.toFixed(2)}/W</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                          p.stage === 'Install Complete' || p.stage === 'PTO Granted' ? 'bg-[hsl(var(--green))]/10 text-[hsl(var(--green))]' :
+                          p.stage === 'Permit Submitted' || p.stage === 'Install Scheduled' ? 'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))]' :
+                          'bg-primary/10 text-primary'
+                        }`}>{p.stage}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
+                        <span><span className="font-bold text-card-foreground">${(p.contractValue / 1000).toFixed(1)}K</span> contract</span>
+                        <span><span className={`font-bold ${fundedPct >= 50 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>{fundedPct}%</span> funded</span>
+                        <span>{p.installerName}</span>
+                      </div>
                       <div className="flex gap-0.5">
                         {MILESTONE_SOPS.map((_, i) => {
                           const fundSt = ms.fundStatus[i] || 'none';
@@ -321,7 +338,6 @@ const FinancierPortal = () => {
                           );
                         })}
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                     </div>
                   </div>
                 );
