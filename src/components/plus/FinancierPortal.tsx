@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Zap } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ESCROW_MILESTONES = [
   { name: 'SOW Confirmed', percent: 15 },
@@ -77,8 +78,8 @@ const FinancierPortal = () => {
     const sowReport = ms.textEntries['m4-sow-report'];
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSelectedProject(null)}>
-        <div className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto m-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 z-50 flex items-end justify-center pb-6 sm:items-center sm:pb-0" onClick={() => setSelectedProject(null)}>
+        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-2xl max-h-[55vh] overflow-y-auto m-4 shadow-lg" onClick={e => e.stopPropagation()}>
           <div className="px-6 py-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
             <div>
               <h2 className="text-lg font-black text-card-foreground">{p.customerName}</h2>
@@ -118,11 +119,21 @@ const FinancierPortal = () => {
               </div>
             </div>
 
-            {/* Contact */}
-            <div className="flex items-center gap-6 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {p.email}</span>
-              <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {p.phone}</span>
-              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {p.address}</span>
+            {/* Contact & Actions */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {p.email}</span>
+                <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {p.phone}</span>
+                <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {p.address}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="View Documents"><FileText className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="Download Report"><Download className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="View Photos"><Camera className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="Messages"><MessageSquare className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="Activity Log"><Eye className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                <button className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center hover:bg-primary/10 transition-colors" title="Open Full Details"><ExternalLink className="w-3.5 h-3.5 text-muted-foreground" /></button>
+              </div>
             </div>
 
             {/* Adders */}
@@ -140,6 +151,7 @@ const FinancierPortal = () => {
             )}
 
             {/* Milestones */}
+            <TooltipProvider delayDuration={200}>
             <div className="grid grid-cols-7 gap-1.5">
               {MILESTONE_SOPS.map((sop, i) => {
                 const isPassed = i < p.currentMilestone;
@@ -147,20 +159,33 @@ const FinancierPortal = () => {
                 const fundSt = ms.fundStatus[i] || 'none';
                 const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
                 return (
-                  <div key={i} className={`rounded-xl p-2.5 text-center border ${
-                    isPassed ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20'
-                    : isCurrent ? 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
-                    : 'bg-muted border-border'
-                  }`}>
-                    <div className={`text-[10px] font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
-                    <div className="text-[8px] text-muted-foreground mt-0.5">{sop.shortName}</div>
-                    <div className={`text-[9px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
-                    {isPassed && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-0.5" />}
-                    {isCurrent && <Clock className="w-3 h-3 text-[hsl(var(--yellow))] mx-auto mt-0.5" />}
-                  </div>
+                  <Tooltip key={i}>
+                    <TooltipTrigger asChild>
+                      <div className={`rounded-xl p-2 text-center border cursor-pointer transition-all hover:scale-105 ${
+                        isPassed ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' : 'bg-primary/5 border-primary/20'
+                        : isCurrent ? 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
+                        : 'bg-muted border-border'
+                      }`}>
+                        <div className={`text-[10px] font-extrabold ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>M{i + 1}</div>
+                        <div className="text-[8px] text-muted-foreground mt-0.5 truncate">{sop.shortName}</div>
+                        <div className={`text-[9px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : 'text-muted-foreground'}`}>${(amount / 1000).toFixed(1)}K</div>
+                        {isPassed && <CheckCircle className="w-3 h-3 text-[hsl(var(--green))] mx-auto mt-0.5" />}
+                        {isCurrent && <Clock className="w-3 h-3 text-[hsl(var(--yellow))] mx-auto mt-0.5" />}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[220px] bg-card border border-border text-card-foreground p-3 rounded-xl shadow-lg">
+                      <div className="text-xs font-bold mb-1">M{i + 1}: {sop.name}</div>
+                      <div className="text-[10px] text-muted-foreground mb-1.5">{sop.description}</div>
+                      <div className="text-[10px] font-bold text-primary">Fund Release: {sop.fundPercent}% · ${(amount / 1000).toFixed(1)}K</div>
+                      <div className={`text-[10px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>
+                        {isPassed ? (fundSt === 'released' ? '✓ Funds Released' : '✓ Approved') : isCurrent ? '⏳ In Progress' : '○ Pending'}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })}
             </div>
+            </TooltipProvider>
 
             {/* Capital progress */}
             <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
