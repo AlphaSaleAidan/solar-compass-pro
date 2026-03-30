@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { INSTALLED_HOMES, SELL_PROJECTS, SellProject, CreditStatus } from '@/data/mockData';
+import { INSTALLED_HOMES, type SellProject, type CreditStatus } from '@/data/mockData';
+import { useProjectStore } from '@/contexts/ProjectStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
@@ -10,9 +11,9 @@ interface SellTabProps {
 }
 
 const SellTab = ({ initialProjectData }: SellTabProps) => {
+  const { sellProjects, updateSellProject, addSellProject } = useProjectStore();
   const [activeSubTab, setActiveSubTab] = useState<'create' | 'projects'>('create');
   const [projectFilter, setProjectFilter] = useState<CreditStatus | 'all'>('all');
-  const [projects, setProjects] = useState<SellProject[]>(SELL_PROJECTS);
   const [address, setAddress] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -84,7 +85,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   const handleCreateProject = () => {
     if (!newProject.firstName.trim() || !address.trim()) return;
     const newP: SellProject = {
-      id: `SP-${String(projects.length + 1).padStart(3, '0')}`,
+      id: `SP-${String(sellProjects.length + 1).padStart(3, '0')}`,
       firstName: newProject.firstName,
       lastName: newProject.lastName,
       email: newProject.email,
@@ -104,7 +105,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
       ],
       surveyPhotos: [],
     };
-    setProjects(prev => [newP, ...prev]);
+    addSellProject(newP);
     setShowNewProjectForm(false);
     setAddress('');
     setNewProject({ firstName: '', lastName: '', email: '', phone: '', highBill: '', lowBill: '', allElectric: true });
@@ -113,18 +114,18 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   };
 
   const filteredProjects = projectFilter === 'all'
-    ? projects
-    : projects.filter(p => p.creditStatus === projectFilter);
+    ? sellProjects
+    : sellProjects.filter(p => p.creditStatus === projectFilter);
 
   const statusCounts = {
-    all: projects.length,
-    new: projects.filter(p => p.creditStatus === 'new').length,
-    credit_passed: projects.filter(p => p.creditStatus === 'credit_passed').length,
-    credit_fail: projects.filter(p => p.creditStatus === 'credit_fail').length,
+    all: sellProjects.length,
+    new: sellProjects.filter(p => p.creditStatus === 'new').length,
+    credit_passed: sellProjects.filter(p => p.creditStatus === 'credit_passed').length,
+    credit_fail: sellProjects.filter(p => p.creditStatus === 'credit_fail').length,
   };
 
   // Sold deals data (simulated from credit_passed projects)
-  const soldDeals = projects.filter(p => p.creditStatus === 'credit_passed').map(p => ({
+  const soldDeals = sellProjects.filter(p => p.creditStatus === 'credit_passed').map(p => ({
     ...p,
     systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
     ppw: (4.0 + Math.random() * 0.5).toFixed(2),
@@ -198,7 +199,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                 : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
             }`}
           >
-            <FolderOpen className="w-3.5 h-3.5" /> Projects ({projects.length})
+            <FolderOpen className="w-3.5 h-3.5" /> Projects ({sellProjects.length})
           </button>
         </div>
       </div>
@@ -370,7 +371,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                     key={p.id}
                     project={p}
                     onStartCamera={startCamera}
-                    onUpdateProject={(updated) => setProjects(prev => prev.map(pr => pr.id === updated.id ? updated : pr))}
+                    onUpdateProject={(updated) => updateSellProject(updated)}
                   />
                 ))
               )}

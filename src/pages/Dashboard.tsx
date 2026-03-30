@@ -14,10 +14,13 @@ import Communication from '@/components/ops/Communication';
 import MilestoneVerification from '@/components/ops/MilestoneVerification';
 import OpsProjectsTab from '@/components/ops/OpsProjectsTab';
 import SuperSupport from '@/components/ops/SuperSupport';
+import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
 import PlusPortal from '@/components/plus/PlusPortal';
+import { useProjectStore } from '@/contexts/ProjectStore';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { sellProjects, markSellProjectClean, markSellProjectDirty } = useProjectStore();
   const isPlus = user?.portalMode === 'asp_plus';
   const isSalesRep = user?.role === 'sales_rep';
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';
@@ -67,6 +70,14 @@ const Dashboard = () => {
     switch (activeTab) {
       case 'QC Review':
         return <QCReview />;
+      case 'Final Approval':
+        return (
+          <FinalApprovalQueue
+            projects={sellProjects.filter(p => p.submittedForApproval)}
+            onMarkClean={markSellProjectClean}
+            onMarkDirty={markSellProjectDirty}
+          />
+        );
       case 'Milestones':
         return <MilestoneVerification />;
       case 'Projects':

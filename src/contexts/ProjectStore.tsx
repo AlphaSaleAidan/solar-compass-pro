@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { PROJECTS, QC_QUEUE, type Project } from '@/data/mockData';
+import { PROJECTS, QC_QUEUE, SELL_PROJECTS, type Project, type SellProject } from '@/data/mockData';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 
 // Per-project milestone tracking state
@@ -59,6 +59,7 @@ interface ProjectStoreState {
   financierUpdates: Record<string, FinancierUpdate[]>;
   financierUploads: Record<string, FinancierUpload[]>;
   projectMessages: Record<string, ProjectMessage[]>;
+  sellProjects: SellProject[];
 }
 
 interface ProjectStoreActions {
@@ -85,6 +86,13 @@ interface ProjectStoreActions {
   addFinancierUpdate: (projectId: string, text: string, author: string) => void;
   addFinancierUpload: (projectId: string, fileName: string, type: 'document' | 'photo', uploadedBy: string) => void;
   addProjectMessage: (projectId: string, message: ProjectMessage) => void;
+  // Sell project actions
+  addSellProject: (project: SellProject) => void;
+  updateSellProject: (project: SellProject) => void;
+  markSellProjectClean: (projectId: string) => void;
+  markSellProjectDirty: (projectId: string, notes: string) => void;
+  getSellProjectsPendingApproval: () => SellProject[];
+  getSellProjectsClean: () => SellProject[];
 }
 
 type ProjectStoreContextType = ProjectStoreState & ProjectStoreActions;
@@ -159,6 +167,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const [financierUpdates, setFinancierUpdates] = useState<Record<string, FinancierUpdate[]>>({});
   const [financierUploads, setFinancierUploads] = useState<Record<string, FinancierUpload[]>>({});
   const [projectMessages, setProjectMessages] = useState<Record<string, ProjectMessage[]>>(INITIAL_PROJECT_MESSAGES);
+  const [sellProjects, setSellProjects] = useState<SellProject[]>([...SELL_PROJECTS]);
 
   const getMilestoneState = useCallback((projectId: string): ProjectMilestoneState => {
     return milestoneStates[projectId] || createDefaultMilestoneState();
@@ -336,6 +345,83 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, []);
 
+  // Sell project actions
+  const addSellProject = useCallback((project: SellProject) => {
+    setSellProjects(prev => [project, ...prev]);
+  }, []);
+
+  const updateSellProject = useCallback((project: SellProject) => {
+    setSellProjects(prev => prev.map(p => p.id === project.id ? project : p));
+  }, []);
+
+  const markSellProjectClean = useCallback((projectId: string) => {
+    setSellProjects(prev => prev.map(p => {
+      if (p.id !== projectId) return p;
+      return { ...p, approvalStatus: 'clean' as const };
+    }));
+    // Add to main projects pipeline (installer/financier visible)
+    const sp = sellProjects.find(p => p.id === projectId);
+    if (sp && sp.auroraData) {
+      const newProject: Project = {
+        id: `ASP-${2060 + projects.length}`,
+        customerName: `${sp.firstName} ${sp.lastName}`,
+        address: sp.address,
+        email: sp.email,
+        phone: sp.phone,
+        status: 'active',
+        currentMilestone: 0,
+        totalMilestones: 7,
+        systemSize: sp.auroraData.systemSize,
+        battery: sp.auroraData.battery,
+        soldPPW: 4.25,
+        contractValue: 0,
+        projectCost: 0,
+        interestRate: 2.99,
+        loanTerms: '25 year @ 2.99%',
+        repName: 'Jordan Mills',
+        installerName: 'SunTech Installations',
+        addedDate: new Date().toISOString().split('T')[0],
+        stage: 'Contract Signed',
+        adders: sp.auroraData.adders.map(a => ({ name: a.split(' (')[0], cost: parseInt(a.match(/\$(\d+)/)?.[1] || '0') * 100 })),
+        siteSurveyPhotos: [],
+        permitStatus: 'pending',
+        roofCondition: 'good',
+        roofIssues: [],
+        annualUsage: sp.highBill * 12,
+        documentsSignedCount: 3,
+        totalDocuments: 6,
+        dates: {
+          submitted: new Date().toISOString().split('T')[0],
+          siteSurvey: null,
+          sowConfirmed: null,
+          permitSubmitted: null,
+          lastHOContact: new Date().toISOString().split('T')[0],
+        },
+        milestoneDetails: [],
+        checklist: { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false },
+      };
+      setProjects(prev => [...prev, newProject]);
+      setMilestoneStates(prev => ({
+        ...prev,
+        [newProject.id]: createDefaultMilestoneState(),
+      }));
+    }
+  }, [sellProjects, projects.length]);
+
+  const markSellProjectDirty = useCallback((projectId: string, notes: string) => {
+    setSellProjects(prev => prev.map(p =>
+      p.id === projectId ? { ...p, approvalStatus: 'dirty' as const, approvalNotes: notes } : p
+    ));
+  }, []);
+
+  const getSellProjectsPendingApproval = useCallback(() => {
+    return sellProjects.filter(p => p.approvalStatus === 'pending');
+  }, [sellProjects]);
+
+  const getSellProjectsClean = useCallback(() => {
+    return sellProjects.filter(p => p.approvalStatus === 'clean');
+  }, [sellProjects]);
+
   const value: ProjectStoreContextType = {
     projects,
     qcQueue,
@@ -344,6 +430,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     financierUpdates,
     financierUploads,
     projectMessages,
+    sellProjects,
     acceptDeal,
     toggleChecklist,
     uploadFile,
@@ -365,6 +452,12 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     addFinancierUpdate,
     addFinancierUpload,
     addProjectMessage,
+    addSellProject,
+    updateSellProject,
+    markSellProjectClean,
+    markSellProjectDirty,
+    getSellProjectsPendingApproval,
+    getSellProjectsClean,
   };
 
   return (
