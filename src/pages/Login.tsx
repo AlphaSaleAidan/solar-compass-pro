@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useAuth, UserRole, PortalMode } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Crosshair, Settings, Wrench, Landmark, Zap } from 'lucide-react';
 
 const Login = () => {
-  const { login } = useAuth();
-  const [username, setUsername] = useState('');
+  const { login, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('sales_rep');
   const [mode, setMode] = useState<PortalMode>('asp');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const aspRoles: { value: UserRole; icon: React.ReactNode; label: string; sub: string }[] = [
     { value: 'sales_rep', icon: <Crosshair className="w-7 h-7 text-primary" />, label: 'Sales Rep', sub: 'Deals & Pipeline' },
@@ -22,11 +25,20 @@ const Login = () => {
 
   const roles = mode === 'asp' ? aspRoles : aspPlusRoles;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!login(username, password, role, mode)) {
-      setError('Invalid credentials. Try Test001 / ASP26!');
+    setIsLoading(true);
+
+    try {
+      const success = await login(email, password, role, mode);
+      if (!success) {
+        setError('Invalid credentials. Check your email and password.');
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -125,18 +137,19 @@ const Login = () => {
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label className={`block text-[11px] font-bold tracking-[1.5px] uppercase mb-1.5 ${mode === 'asp' ? 'text-gray-400' : 'text-gray-500'}`}>
-                Username
+                Email
               </label>
               <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-md text-sm transition-colors duration-200 outline-none"
                 style={{
                   background: mode === 'asp' ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 96%)',
                   border: `1.5px solid ${mode === 'asp' ? 'hsl(222, 30%, 18%)' : 'hsl(214, 32%, 91%)'}`,
                   color: mode === 'asp' ? 'hsl(214, 32%, 91%)' : 'hsl(222, 47%, 11%)',
                 }}
-                placeholder="Enter username"
+                placeholder="Enter email"
               />
             </div>
             <div className="mb-4">
@@ -158,10 +171,11 @@ const Login = () => {
             </div>
             <button
               type="submit"
-              className="w-full py-3.5 mt-2 bg-primary text-primary-foreground text-sm font-black tracking-wider uppercase rounded-md transition-all duration-200 hover:-translate-y-px active:translate-y-0"
+              disabled={isLoading}
+              className="w-full py-3.5 mt-2 bg-primary text-primary-foreground text-sm font-black tracking-wider uppercase rounded-md transition-all duration-200 hover:-translate-y-px active:translate-y-0 disabled:opacity-50"
               style={{ boxShadow: '0 8px 24px rgba(0,212,200,0.2)' }}
             >
-              Sign In →
+              {isLoading ? 'Signing In...' : 'Sign In →'}
             </button>
           </form>
 
@@ -174,6 +188,12 @@ const Login = () => {
               {error}
             </div>
           )}
+
+          <div className="mt-4 text-center">
+            <a href="/register" className={`text-xs ${mode === 'asp' ? 'text-gray-500 hover:text-primary' : 'text-gray-400 hover:text-primary'} transition-colors`}>
+              Request Access →
+            </a>
+          </div>
         </div>
       </div>
     </div>
