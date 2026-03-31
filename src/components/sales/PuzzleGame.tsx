@@ -43,17 +43,7 @@ const PuzzleGame = () => {
   ];
 
   return (
-    <div className="relative border border-border rounded-xl p-5 animate-fade-in-up overflow-hidden">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover opacity-30"
-        src="/videos/crown-bg.mp4"
-      />
-      <div className="absolute inset-0 bg-background/60" />
-      <div className="relative z-10">
+    <div className="bg-bg2 border border-border rounded-xl p-5 animate-fade-in-up">
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="flex items-center gap-2">
@@ -117,7 +107,6 @@ const PuzzleGame = () => {
           <Gift className="w-4 h-4 text-asp-yellow" />
           <span className="text-xs font-bold text-asp-yellow">{currentGift}</span>
         </div>
-      </div>
       </div>
     </div>
   );
