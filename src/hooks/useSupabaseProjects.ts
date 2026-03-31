@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { generateMockAuroraData, getNextStatus, type ProjectStatus } from '@/lib/sopEngine';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { generateMockAuroraData, type ProjectStatus } from '@/lib/sopEngine';
+import type { Tables, TablesInsert, TablesUpdate, Json } from '@/integrations/supabase/types';
 
 type DBProject = Tables<'projects'>;
 type DBProjectInsert = TablesInsert<'projects'>;
 type DBProjectUpdate = TablesUpdate<'projects'>;
-type DBMilestone = Tables<'project_milestones'>;
-type DBChecklistItem = Tables<'project_checklist_items'>;
 
 export function useSupabaseProjects() {
   const [projects, setProjects] = useState<DBProject[]>([]);
