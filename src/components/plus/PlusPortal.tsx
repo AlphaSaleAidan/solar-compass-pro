@@ -4,7 +4,7 @@ import FinancierPortal from './FinancierPortal';
 
 const PlusPortal = () => {
   const { user } = useAuth();
-  const isFinancier = user?.role === 'financier';
+  const isFinancier = user?.activeRole === 'financier';
 
   return isFinancier ? <FinancierPortal /> : <InstallerPortal />;
 };

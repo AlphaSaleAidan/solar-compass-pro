@@ -22,7 +22,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { sellProjects, markSellProjectClean, markSellProjectDirty } = useProjectStore();
   const isPlus = user?.portalMode === 'asp_plus';
-  const isSalesRep = user?.role === 'sales_rep';
+  const isSalesRep = user?.activeRole === 'sales_rep';
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [convertedProjectData, setConvertedProjectData] = useState<{ name: string; email: string; phone: string; address: string } | null>(null);
