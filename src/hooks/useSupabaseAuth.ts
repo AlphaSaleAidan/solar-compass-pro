@@ -84,7 +84,7 @@ export function useSupabaseAuth() {
     return data;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, fullName: string, phone?: string) => {
+  const signUp = useCallback(async (email: string, password: string, fullName: string, _phone?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,

@@ -237,7 +237,7 @@ export function useSupabaseProjects() {
     }
 
     return data;
-  }, []);
+  }, [createMilestones]);
 
   // Mark Dirty (SOP 2.2) — Backend Ops
   const markDirty = useCallback(async (projectId: string, notes: string) => {
