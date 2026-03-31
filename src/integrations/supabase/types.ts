@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          address: string
+          all_electric: boolean | null
+          appointment_date: string
+          appointment_time: string
+          closer: string | null
+          closer_notes: string | null
+          created_at: string
+          customer_name: string
+          email: string | null
+          high_bill: number | null
+          id: string
+          low_bill: number | null
+          outcome: string | null
+          phone: string | null
+          rep_id: string | null
+          setter: string | null
+          stars: number | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          all_electric?: boolean | null
+          appointment_date: string
+          appointment_time: string
+          closer?: string | null
+          closer_notes?: string | null
+          created_at?: string
+          customer_name: string
+          email?: string | null
+          high_bill?: number | null
+          id?: string
+          low_bill?: number | null
+          outcome?: string | null
+          phone?: string | null
+          rep_id?: string | null
+          setter?: string | null
+          stars?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          all_electric?: boolean | null
+          appointment_date?: string
+          appointment_time?: string
+          closer?: string | null
+          closer_notes?: string | null
+          created_at?: string
+          customer_name?: string
+          email?: string | null
+          high_bill?: number | null
+          id?: string
+          low_bill?: number | null
+          outcome?: string | null
+          phone?: string | null
+          rep_id?: string | null
+          setter?: string | null
+          stars?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -51,6 +117,53 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      milestone_states: {
+        Row: {
+          checklist_done: Json | null
+          date_entries: Json | null
+          fund_status: string | null
+          id: string
+          milestone_index: number
+          ops_notes: string | null
+          project_id: string
+          text_entries: Json | null
+          updated_at: string
+          uploads: Json | null
+        }
+        Insert: {
+          checklist_done?: Json | null
+          date_entries?: Json | null
+          fund_status?: string | null
+          id?: string
+          milestone_index: number
+          ops_notes?: string | null
+          project_id: string
+          text_entries?: Json | null
+          updated_at?: string
+          uploads?: Json | null
+        }
+        Update: {
+          checklist_done?: Json | null
+          date_entries?: Json | null
+          fund_status?: string | null
+          id?: string
+          milestone_index?: number
+          ops_notes?: string | null
+          project_id?: string
+          text_entries?: Json | null
+          updated_at?: string
+          uploads?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestone_states_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -95,12 +208,14 @@ export type Database = {
           bank_account_type: string | null
           bank_name: string | null
           bank_routing_number: string | null
+          company_name: string | null
           created_at: string
           email: string
           full_name: string
           id: string
           organization_id: string | null
           phone: string | null
+          platform_access: string[] | null
           updated_at: string
           user_id: string
         }
@@ -110,12 +225,14 @@ export type Database = {
           bank_account_type?: string | null
           bank_name?: string | null
           bank_routing_number?: string | null
+          company_name?: string | null
           created_at?: string
           email: string
           full_name: string
           id?: string
           organization_id?: string | null
           phone?: string | null
+          platform_access?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -125,12 +242,14 @@ export type Database = {
           bank_account_type?: string | null
           bank_name?: string | null
           bank_routing_number?: string | null
+          company_name?: string | null
           created_at?: string
           email?: string
           full_name?: string
           id?: string
           organization_id?: string | null
           phone?: string | null
+          platform_access?: string[] | null
           updated_at?: string
           user_id?: string
         }
@@ -225,6 +344,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          project_id: string
+          sender_id: string | null
+          sender_name: string
+          sender_role: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          project_id: string
+          sender_id?: string | null
+          sender_name: string
+          sender_role: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          project_id?: string
+          sender_id?: string | null
+          sender_name?: string
+          sender_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_messages_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
