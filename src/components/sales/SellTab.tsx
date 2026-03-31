@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { INSTALLED_HOMES, type SellProject, type CreditStatus } from '@/data/mockData';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
 import { Crown, Map, Camera, Plus, FolderOpen, Sun, Battery, Phone, Mail, User, DollarSign, FileText } from 'lucide-react';
-import { useGooglePlacesAutocomplete, type AddressComponents } from '@/hooks/useGooglePlacesAutocomplete';
 
 interface SellTabProps {
   initialProjectData?: { name: string; email: string; phone: string; address: string } | null;
@@ -16,9 +15,6 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   const [activeSubTab, setActiveSubTab] = useState<'create' | 'projects'>('create');
   const [projectFilter, setProjectFilter] = useState<CreditStatus | 'all'>('all');
   const [address, setAddress] = useState('');
-  const [addressCity, setAddressCity] = useState('');
-  const [addressState, setAddressState] = useState('');
-  const [addressZip, setAddressZip] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -28,15 +24,6 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
     highBill: '', lowBill: '', allElectric: true,
   });
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
-
-  const handleAddressSelect = useCallback((components: AddressComponents) => {
-    setAddress(components.fullAddress);
-    setAddressCity(components.city);
-    setAddressState(components.state);
-    setAddressZip(components.zip);
-  }, []);
-
-  const addressInputRef = useGooglePlacesAutocomplete({ onSelect: handleAddressSelect });
 
   // Handle incoming project data from calendar conversion
   useEffect(() => {
@@ -121,9 +108,6 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
     addSellProject(newP);
     setShowNewProjectForm(false);
     setAddress('');
-    setAddressCity('');
-    setAddressState('');
-    setAddressZip('');
     setNewProject({ firstName: '', lastName: '', email: '', phone: '', highBill: '', lowBill: '', allElectric: true });
     setActiveSubTab('projects');
     setProjectFilter('new');
@@ -258,20 +242,12 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                 </h1>
                 <div className="max-w-lg mx-auto">
                   <input
-                    ref={addressInputRef}
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Start typing an address..."
+                    placeholder="Enter Site Address here..."
                     className="w-full px-6 py-4 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-white placeholder:text-white/30 text-center text-lg font-semibold outline-none focus:border-primary focus:bg-white/10 transition-all duration-200"
                   />
-                  {(addressCity || addressState || addressZip) && (
-                    <div className="mt-2 flex items-center justify-center gap-3 text-xs text-white/50">
-                      {addressCity && <span>{addressCity}</span>}
-                      {addressState && <span>{addressState}</span>}
-                      {addressZip && <span>{addressZip}</span>}
-                    </div>
-                  )}
                 </div>
                 <button
                   onClick={() => { if (address.trim()) setShowNewProjectForm(true); }}
@@ -289,10 +265,9 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                   </h2>
                   <button onClick={() => setShowNewProjectForm(false)} className="text-white/40 hover:text-white text-sm">✕</button>
                 </div>
-                <div className="bg-white/[0.04] rounded-lg p-3 text-xs text-white/60 flex items-center gap-2 flex-wrap">
+                <div className="bg-white/[0.04] rounded-lg p-3 text-xs text-white/60 flex items-center gap-2">
                   <Map className="w-3.5 h-3.5 text-primary" />
                   <strong className="text-primary">Address:</strong> {address}
-                  {addressCity && <span>| {addressCity}, {addressState} {addressZip}</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
