@@ -121,6 +121,9 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
     addSellProject(newP);
     setShowNewProjectForm(false);
     setAddress('');
+    setAddressCity('');
+    setAddressState('');
+    setAddressZip('');
     setNewProject({ firstName: '', lastName: '', email: '', phone: '', highBill: '', lowBill: '', allElectric: true });
     setActiveSubTab('projects');
     setProjectFilter('new');
