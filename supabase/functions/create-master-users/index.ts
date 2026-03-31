@@ -14,52 +14,56 @@ Deno.serve(async (req) => {
     );
 
     const masterUsers = [
-      { email: "aidan@alphasalepro.com", password: "ASP26!", fullName: "Aidan Pierce", username: "AidanPierce" },
-      { email: "michael@alphasalepro.com", password: "ASP26!", fullName: "Michael Pierce", username: "MichaelPierce" },
+      { email: "apierce@alphasale.co", password: "ASP26!", fullName: "Aidan Pierce", username: "AidanPierce", oldEmail: "aidan@alphasalepro.com" },
+      { email: "mpierce@alphasale.co", password: "ASP26!", fullName: "Michael Pierce", username: "MichaelPierce", oldEmail: "michael@alphasalepro.com" },
     ];
 
-    // Create ASP Core organization first
-    const { data: orgData, error: orgError } = await supabaseAdmin
+    // Create ASP Core organization
+    const { data: existingOrg } = await supabaseAdmin
       .from("organizations")
-      .upsert({ name: "Alpha Sale Pro", type: "asp_core", contact_email: "admin@alphasalepro.com" }, { onConflict: "name" })
-      .select()
+      .select("id")
+      .eq("name", "Alpha Sale Pro")
       .single();
 
-    // If upsert fails due to no unique constraint on name, try insert then select
     let orgId: string;
-    if (orgError) {
-      const { data: existingOrg } = await supabaseAdmin
-        .from("organizations")
-        .select("id")
-        .eq("name", "Alpha Sale Pro")
-        .single();
-      
-      if (existingOrg) {
-        orgId = existingOrg.id;
-      } else {
-        const { data: newOrg, error: insertErr } = await supabaseAdmin
-          .from("organizations")
-          .insert({ name: "Alpha Sale Pro", type: "asp_core", contact_email: "admin@alphasalepro.com" })
-          .select()
-          .single();
-        if (insertErr) throw insertErr;
-        orgId = newOrg.id;
-      }
+    if (existingOrg) {
+      orgId = existingOrg.id;
     } else {
-      orgId = orgData.id;
+      const { data: newOrg, error: insertErr } = await supabaseAdmin
+        .from("organizations")
+        .insert({ name: "Alpha Sale Pro", type: "asp_core", contact_email: "admin@alphasale.co" })
+        .select()
+        .single();
+      if (insertErr) throw insertErr;
+      orgId = newOrg.id;
     }
 
     const results = [];
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
 
     for (const user of masterUsers) {
-      // Check if user already exists
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const existing = existingUsers?.users?.find(u => u.email === user.email);
+      // Check for existing user with old or new email
+      const existingOld = existingUsers?.users?.find(u => u.email === user.oldEmail);
+      const existingNew = existingUsers?.users?.find(u => u.email === user.email);
 
       let userId: string;
 
-      if (existing) {
-        userId = existing.id;
+      if (existingOld) {
+        // Update old email to new email
+        const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(existingOld.id, {
+          email: user.email,
+          email_confirm: true,
+        });
+        if (updateErr) {
+          results.push({ email: user.email, status: "email update error", error: updateErr.message });
+          continue;
+        }
+        userId = existingOld.id;
+        // Update profile email too
+        await supabaseAdmin.from("profiles").update({ email: user.email }).eq("user_id", userId);
+        results.push({ email: user.email, status: "email updated from " + user.oldEmail, userId });
+      } else if (existingNew) {
+        userId = existingNew.id;
         results.push({ email: user.email, status: "already exists", userId });
       } else {
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -68,7 +72,6 @@ Deno.serve(async (req) => {
           email_confirm: true,
           user_metadata: { full_name: user.fullName, username: user.username },
         });
-
         if (authError) {
           results.push({ email: user.email, status: "error", error: authError.message });
           continue;
@@ -78,12 +81,9 @@ Deno.serve(async (req) => {
       }
 
       // Update profile with org
-      await supabaseAdmin
-        .from("profiles")
-        .update({ organization_id: orgId })
-        .eq("user_id", userId);
+      await supabaseAdmin.from("profiles").update({ organization_id: orgId }).eq("user_id", userId);
 
-      // Add master role (and all other roles for full access)
+      // Add all roles for master users
       const roles = ["master", "sales_rep", "backend_ops", "installer", "financier"];
       for (const role of roles) {
         await supabaseAdmin
