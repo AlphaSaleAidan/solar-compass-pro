@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { PROJECTS, QC_QUEUE, SELL_PROJECTS, type Project, type SellProject } from '@/data/mockData';
+import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 
 // Per-project milestone tracking state
