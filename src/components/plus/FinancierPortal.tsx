@@ -43,7 +43,7 @@ const RISK_FLAGS = [
 ];
 
 const FinancierPortal = () => {
-  const store = useProjectStore();
+  const store = useDataSource();
   const { projects } = store;
   const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk' | 'pending'>('overview');
   const [expandedProject, setExpandedProject] = useState<string | null>(null);

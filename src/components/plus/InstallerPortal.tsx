@@ -29,7 +29,7 @@ const PAYMENT_DETAILS = [
 ];
 
 const InstallerPortal = () => {
-  const store = useProjectStore();
+  const store = useDataSource();
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones'>('overview');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
