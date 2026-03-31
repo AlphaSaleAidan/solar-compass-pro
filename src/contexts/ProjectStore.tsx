@@ -251,13 +251,35 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const [financierUploads, setFinancierUploads] = useState<Record<string, FinancierUpload[]>>({});
   const [projectMessages, setProjectMessages] = useState<Record<string, ProjectMessage[]>>({});
 
-  // ── Fetch real data from Supabase ──
+  const isDemo = user?.email === DEMO_EMAIL;
+
+  // ── Fetch real data from Supabase (or load mock for demo) ──
   useEffect(() => {
     if (!user) {
       setProjects([]);
       setQcQueue([]);
       setSellProjects([]);
       setMilestoneStates({});
+      setLoading(false);
+      return;
+    }
+
+    // Demo user gets mock data
+    if (isDemo) {
+      setProjects(PROJECTS);
+      setQcQueue(QC_QUEUE);
+      setSellProjects(SELL_PROJECTS);
+      const demoStates: Record<string, ProjectMilestoneState> = {};
+      PROJECTS.forEach(p => {
+        const state = createDefaultMilestoneState();
+        for (let i = 0; i < p.currentMilestone; i++) {
+          state.fundStatus[i] = 'released';
+          const sop = MILESTONE_SOPS[i];
+          if (sop) sop.checklist.forEach(item => { state.checklistDone[item.id] = true; });
+        }
+        demoStates[p.id] = state;
+      });
+      setMilestoneStates(demoStates);
       setLoading(false);
       return;
     }
@@ -284,7 +306,6 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
         if (PIPELINE_STATUSES.includes(row.status)) {
           const proj = mapDbToProject(row);
           dbPipelineProjects.push(proj);
-          // Build milestone state from current_milestone
           const state = createDefaultMilestoneState();
           for (let i = 0; i < (row.current_milestone || 0); i++) {
             state.fundStatus[i] = 'released';
@@ -305,7 +326,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     };
 
     fetchProjects();
-  }, [user]);
+  }, [user, isDemo]);
 
   const getMilestoneState = useCallback((projectId: string): ProjectMilestoneState => {
     return milestoneStates[projectId] || createDefaultMilestoneState();
