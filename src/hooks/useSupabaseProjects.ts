@@ -205,6 +205,25 @@ export function useSupabaseProjects() {
     return data;
   }, []);
 
+  // Create M1-M7 milestones for a newly approved project
+  const createMilestones = useCallback(async (projectId: string, contractValue: number) => {
+    const milestones = [
+      { milestone_number: 1, milestone_name: 'SOW Confirmed', fund_amount: Math.round(contractValue * 0.15) },
+      { milestone_number: 2, milestone_name: 'Permit + Materials Ordered', fund_amount: Math.round(contractValue * 0.20) },
+      { milestone_number: 3, milestone_name: 'Install Scheduled', fund_amount: Math.round(contractValue * 0.15) },
+      { milestone_number: 4, milestone_name: 'Install Complete', fund_amount: Math.round(contractValue * 0.20) },
+      { milestone_number: 5, milestone_name: 'Utility Inspection Passed', fund_amount: Math.round(contractValue * 0.20) },
+      { milestone_number: 6, milestone_name: 'PTO Granted', fund_amount: Math.round(contractValue * 0.10) },
+      { milestone_number: 7, milestone_name: 'Speed Bonus (35-Day PTO)', fund_amount: Math.round(contractValue * 0.05) },
+    ];
+
+    const { error } = await supabase
+      .from('project_milestones')
+      .insert(milestones.map(m => ({ ...m, project_id: projectId })));
+
+    if (error) console.error('Error creating milestones:', error);
+  }, []);
+
   // Mark Clean (SOP 2.2) — Backend Ops
   const markClean = useCallback(async (projectId: string, installerOrgId?: string, financierOrgId?: string) => {
     const { data: userData } = await supabase.auth.getUser();
@@ -272,25 +291,6 @@ export function useSupabaseProjects() {
 
     if (error) throw error;
     return data;
-  }, []);
-
-  // Create M1-M7 milestones for a newly approved project
-  const createMilestones = useCallback(async (projectId: string, contractValue: number) => {
-    const milestones = [
-      { milestone_number: 1, milestone_name: 'SOW Confirmed', fund_amount: Math.round(contractValue * 0.15) },
-      { milestone_number: 2, milestone_name: 'Permit + Materials Ordered', fund_amount: Math.round(contractValue * 0.20) },
-      { milestone_number: 3, milestone_name: 'Install Scheduled', fund_amount: Math.round(contractValue * 0.15) },
-      { milestone_number: 4, milestone_name: 'Install Complete', fund_amount: Math.round(contractValue * 0.20) },
-      { milestone_number: 5, milestone_name: 'Utility Inspection Passed', fund_amount: Math.round(contractValue * 0.20) },
-      { milestone_number: 6, milestone_name: 'PTO Granted', fund_amount: Math.round(contractValue * 0.10) },
-      { milestone_number: 7, milestone_name: 'Speed Bonus (35-Day PTO)', fund_amount: Math.round(contractValue * 0.05) },
-    ];
-
-    const { error } = await supabase
-      .from('project_milestones')
-      .insert(milestones.map(m => ({ ...m, project_id: projectId })));
-
-    if (error) console.error('Error creating milestones:', error);
   }, []);
 
   // Update project fields
