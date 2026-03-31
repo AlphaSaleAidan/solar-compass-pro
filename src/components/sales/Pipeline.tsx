@@ -1,13 +1,24 @@
 import { useState } from 'react';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { MILESTONE_NAMES, COMMISSIONS } from '@/data/mockData';
+import { UPFRONT_MILESTONES } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Zap, Battery, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, Calendar, Mail, Phone, ChevronDown, ChevronUp, BarChart3, Camera, Shield } from 'lucide-react';
 
 interface PipelineProps {
   acceptedDeals?: Project[];
+}
+
+// Compute commission for a project
+function computeCommission(p: Project) {
+  const redline = 2.35;
+  const watts = parseFloat(p.systemSize) * 1000;
+  const adderCost = p.adders.reduce((s, a) => s + a.cost, 0);
+  const systemCost = watts * redline;
+  const soldTotal = watts * p.soldPPW;
+  const commission = soldTotal - systemCost - adderCost;
+  return Math.max(0, commission * 0.6);
 }
 
 const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
@@ -22,6 +33,22 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
     completed: 'bg-primary/15 text-primary border-primary/30',
   };
 
+  if (allProjects.length === 0) {
+    return (
+      <div className="space-y-4 animate-fade-in-up">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-primary" />
+          <h2 className="text-lg font-black text-foreground">Pipeline Overview</h2>
+        </div>
+        <div className="bg-bg2 border border-border rounded-xl p-12 text-center">
+          <BarChart3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-muted-foreground text-sm font-bold">No projects in pipeline yet</p>
+          <p className="text-muted-foreground/60 text-xs mt-1">Projects will appear here once they're approved and move to the pipeline stage.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-4 animate-fade-in-up">
@@ -35,8 +62,7 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {allProjects.map((p) => {
-            const comm = COMMISSIONS.find(c => c.projectId === p.id);
-            const yourComm = comm ? comm.yourCommission : 0;
+            const yourComm = computeCommission(p);
             const ms = store.getMilestoneState(p.id);
 
             return (
@@ -55,7 +81,7 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <div className="text-base font-extrabold text-foreground">{p.customerName}</div>
-                      <div className="text-[10px] text-muted-foreground font-bold tracking-wider">{p.id}</div>
+                      <div className="text-[10px] text-muted-foreground font-bold tracking-wider">{p.id.substring(0, 8)}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-black text-asp-green">${yourComm.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
@@ -69,7 +95,7 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                   <div className="grid grid-cols-2 gap-1.5 mb-3 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1"><Zap className="w-3 h-3 text-primary" /> <strong className="text-foreground">{p.systemSize}</strong></div>
                     <div className="flex items-center gap-1"><Battery className="w-3 h-3 text-asp-green" /> <strong className="text-foreground">{p.battery}</strong></div>
-                    <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-muted-foreground" /> <strong className="text-foreground">{p.address.split(',')[1]?.trim()}</strong></div>
+                    <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-muted-foreground" /> <strong className="text-foreground">{p.address.split(',')[1]?.trim() || p.address}</strong></div>
                     <div className="flex items-center gap-1"><DollarSign className="w-3 h-3 text-asp-yellow" /> <strong className="text-foreground">${p.soldPPW}/W</strong></div>
                   </div>
 
@@ -156,9 +182,9 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                   </div>
 
                   <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
-                    <div className="text-[11px] text-muted-foreground"><strong className="text-foreground">{p.repName}</strong> · Rep</div>
+                    <div className="text-[11px] text-muted-foreground"><strong className="text-foreground">{p.repName || 'Unassigned'}</strong> · Rep</div>
                     <div className="flex items-center gap-2">
-                      <div className="text-[11px] text-muted-foreground text-right"><strong className="text-foreground">{p.installerName}</strong></div>
+                      <div className="text-[11px] text-muted-foreground text-right"><strong className="text-foreground">{p.installerName || 'TBD'}</strong></div>
                       {expandedProject === p.id ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                     </div>
                   </div>
