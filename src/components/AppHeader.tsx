@@ -17,7 +17,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
     return tab;
   };
 
-  const aspTabs = user.role === 'sales_rep'
+  const aspTabs = user.activeRole === 'sales_rep'
     ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', '🦁']
     : ['QC Review', 'Final Approval', 'Milestones', 'Projects', 'Communication', 'Super Support'];
 
