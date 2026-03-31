@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useProjectStore } from '@/contexts/ProjectStore';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import type { Project } from '@/data/mockData';
 import DealReviewDialog from './DealReviewDialog';
 import { Zap, CheckCircle } from 'lucide-react';
