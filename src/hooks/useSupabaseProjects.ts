@@ -93,7 +93,7 @@ export function useSupabaseProjects() {
 
     const update: DBProjectUpdate = {
       aurora_synced_at: new Date().toISOString(),
-      aurora_data: auroraData as unknown as Record<string, unknown>,
+      aurora_data: auroraData as unknown as Json,
       system_size: auroraData.system_size,
       panel_count: auroraData.panel_count,
       battery: auroraData.battery,
