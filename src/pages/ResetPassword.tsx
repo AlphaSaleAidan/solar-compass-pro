@@ -8,7 +8,7 @@ const ResetPassword = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
+  const [_isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
     const hash = window.location.hash;
