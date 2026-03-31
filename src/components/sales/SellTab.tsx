@@ -286,9 +286,10 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                   </h2>
                   <button onClick={() => setShowNewProjectForm(false)} className="text-white/40 hover:text-white text-sm">✕</button>
                 </div>
-                <div className="bg-white/[0.04] rounded-lg p-3 text-xs text-white/60 flex items-center gap-2">
+                <div className="bg-white/[0.04] rounded-lg p-3 text-xs text-white/60 flex items-center gap-2 flex-wrap">
                   <Map className="w-3.5 h-3.5 text-primary" />
                   <strong className="text-primary">Address:</strong> {address}
+                  {addressCity && <span>| {addressCity}, {addressState} {addressZip}</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
