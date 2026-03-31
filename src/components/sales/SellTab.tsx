@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { INSTALLED_HOMES, type SellProject, type CreditStatus } from '@/data/mockData';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
