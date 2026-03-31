@@ -85,7 +85,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   const handleCreateProject = () => {
     if (!newProject.firstName.trim() || !address.trim()) return;
     const newP: SellProject = {
-      id: `SP-${String(sellProjects.length + 1).padStart(3, '0')}`,
+      id: crypto.randomUUID(),
       firstName: newProject.firstName,
       lastName: newProject.lastName,
       email: newProject.email,
