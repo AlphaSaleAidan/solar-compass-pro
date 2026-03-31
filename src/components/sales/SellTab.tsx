@@ -255,12 +255,20 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                 </h1>
                 <div className="max-w-lg mx-auto">
                   <input
+                    ref={addressInputRef}
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Enter Site Address here..."
+                    placeholder="Start typing an address..."
                     className="w-full px-6 py-4 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-white placeholder:text-white/30 text-center text-lg font-semibold outline-none focus:border-primary focus:bg-white/10 transition-all duration-200"
                   />
+                  {(addressCity || addressState || addressZip) && (
+                    <div className="mt-2 flex items-center justify-center gap-3 text-xs text-white/50">
+                      {addressCity && <span>{addressCity}</span>}
+                      {addressState && <span>{addressState}</span>}
+                      {addressZip && <span>{addressZip}</span>}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => { if (address.trim()) setShowNewProjectForm(true); }}
