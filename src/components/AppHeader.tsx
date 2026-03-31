@@ -1,5 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Zap, LogOut, User, Crown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Zap, LogOut, User, Crown, ArrowLeftRight } from 'lucide-react';
+import type { UserRole } from '@/contexts/AuthContext';
 
 interface AppHeaderProps {
   activeTab: string;
@@ -7,10 +9,12 @@ interface AppHeaderProps {
 }
 
 const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
-  const { user, logout } = useAuth();
+  const { user, logout, switchRole } = useAuth();
+  const navigate = useNavigate();
   if (!user) return null;
 
   const isPlus = user.portalMode === 'asp_plus';
+  const isMaster = user.roles?.includes('master') || user.isDemo;
 
   const getTabDisplay = (tab: string) => {
     if (tab === '🦁') return <Crown className="w-4 h-4" />;
@@ -33,9 +37,23 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
       backend_ops: { text: 'Backend Ops', cls: 'bg-asp-blue/10 text-asp-blue border-asp-blue/25' },
       installer: { text: 'Installer', cls: 'bg-primary/10 text-primary border-primary/25' },
       financier: { text: 'Financier', cls: 'bg-asp-yellow/10 text-asp-yellow border-asp-yellow/25' },
+      master: { text: 'Master', cls: 'bg-purple-500/10 text-purple-400 border-purple-400/25' },
     };
-    const r = labels[user.role];
+    const r = labels[user.role] || labels.sales_rep;
     return <span className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold tracking-wide uppercase border ${r.cls}`}>{r.text}</span>;
+  };
+
+  const handleRoleSwitch = (role: UserRole) => {
+    switchRole(role);
+    // Reset to default tab for the new role
+    const defaultTab = ['installer', 'financier'].includes(role) ? 'Portal' :
+      role === 'sales_rep' ? 'Dashboard' : 'QC Review';
+    onTabChange(defaultTab);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
   return (
@@ -66,13 +84,33 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
       </nav>
 
       <div className="flex items-center gap-3 ml-auto">
+        {/* Master role switcher */}
+        {isMaster && (
+          <div className="flex items-center gap-1">
+            <ArrowLeftRight className="w-3 h-3 text-gray-500" />
+            {(['sales_rep', 'backend_ops', 'installer', 'financier'] as UserRole[]).map(r => (
+              <button key={r} onClick={() => handleRoleSwitch(r)}
+                className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${
+                  user.role === r
+                    ? 'bg-primary/10 text-primary'
+                    : isPlus ? 'text-gray-400 hover:text-gray-700' : 'text-gray-500 hover:text-gray-300'
+                }`}>
+                {r === 'sales_rep' ? 'SR' : r === 'backend_ops' ? 'OPS' : r === 'installer' ? 'INS' : 'FIN'}
+              </button>
+            ))}
+          </div>
+        )}
+
         {roleBadge()}
+        {user.isDemo && (
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-400/25">DEMO</span>
+        )}
         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm border ${isPlus ? 'bg-gray-100 border-gray-200' : 'bg-bg4 border-border2'}`}>
           <User className="w-4 h-4" />
         </div>
         <span className={`text-xs font-bold ${isPlus ? 'text-gray-700' : 'text-gray-300'}`}>{user.name}</span>
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-all duration-150 flex items-center gap-1.5 ${
             isPlus ? 'bg-gray-50 border-gray-200 text-gray-500 hover:border-red-300 hover:text-red-500' : 'bg-bg3 border-border text-muted-foreground hover:border-asp-red hover:text-asp-red'
           }`}
