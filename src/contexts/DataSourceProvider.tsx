@@ -1,33 +1,45 @@
-import React, { ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProjectStoreProvider, useProjectStore } from '@/contexts/ProjectStore';
 import { SupabaseProjectStoreProvider, useSupabaseProjectStore } from '@/contexts/SupabaseProjectStore';
 
-// This component wraps children in the appropriate data source based on the user's mode.
-// Demo users (test001) get the in-memory ProjectStore.
-// Production users get the Supabase-backed SupabaseProjectStore.
+// Wrapper that provides the correct store based on user mode.
+// Demo users get in-memory ProjectStore. Production users get Supabase-backed store.
 
-const DataSourceInner = ({ children }: { children: ReactNode }) => {
-  return <>{children}</>;
+// We use a bridge component pattern: the inner component reads from the correct context
+// and provides it through a unified context.
+
+type StoreType = ReturnType<typeof useProjectStore>;
+const UnifiedStoreContext = createContext<StoreType | null>(null);
+
+// Bridge: reads from demo store and provides to unified context
+const DemoBridge = ({ children }: { children: ReactNode }) => {
+  const store = useProjectStore();
+  return (
+    <UnifiedStoreContext.Provider value={store}>
+      {children}
+    </UnifiedStoreContext.Provider>
+  );
+};
+
+// Bridge: reads from Supabase store and provides to unified context
+const SupabaseBridge = ({ children }: { children: ReactNode }) => {
+  const store = useSupabaseProjectStore();
+  return (
+    <UnifiedStoreContext.Provider value={store}>
+      {children}
+    </UnifiedStoreContext.Provider>
+  );
 };
 
 export const DataSourceProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
 
-  // Before login or during loading, wrap in demo store (safe default)
-  if (!user) {
+  // Demo mode or no user: use in-memory ProjectStore
+  if (!user || user.isDemo) {
     return (
       <ProjectStoreProvider>
-        {children}
-      </ProjectStoreProvider>
-    );
-  }
-
-  // Demo mode: use in-memory ProjectStore
-  if (user.isDemo) {
-    return (
-      <ProjectStoreProvider>
-        {children}
+        <DemoBridge>{children}</DemoBridge>
       </ProjectStoreProvider>
     );
   }
@@ -35,31 +47,14 @@ export const DataSourceProvider = ({ children }: { children: ReactNode }) => {
   // Production mode: use Supabase-backed store
   return (
     <SupabaseProjectStoreProvider>
-      {children}
+      <SupabaseBridge>{children}</SupabaseBridge>
     </SupabaseProjectStoreProvider>
   );
 };
 
-// Unified hook that returns the correct store based on user mode
-export const useDataSource = () => {
-  const { user } = useAuth();
-
-  // We need to call both hooks but only one will be active
-  // The trick: both contexts exist, but only one is provided
-  // So we try the Supabase one first, fall back to demo
-  try {
-    if (user && !user.isDemo) {
-      return useSupabaseProjectStore();
-    }
-  } catch {
-    // Not in SupabaseProjectStoreProvider
-  }
-
-  try {
-    return useProjectStore();
-  } catch {
-    // Not in ProjectStoreProvider
-  }
-
-  throw new Error('useDataSource must be used within DataSourceProvider');
+// Unified hook - always reads from UnifiedStoreContext
+export const useDataSource = (): StoreType => {
+  const ctx = useContext(UnifiedStoreContext);
+  if (!ctx) throw new Error('useDataSource must be used within DataSourceProvider');
+  return ctx;
 };
