@@ -1,9 +1,13 @@
 import { Trophy, Medal, Award, Ticket, Users } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { RANKINGS } from '@/data/mockData';
+
+const DEMO_EMAIL = 'test001@alphasale.co';
 
 const RankingsTab = () => {
-  // Rankings will be populated from real platform data
-  // For now, show empty state until real sales reps are onboarded
-  const rankings: { rank: number; name: string; deals: number; installs: number; revenue: number; ticketBonus: string }[] = [];
+  const { user } = useAuth();
+  const isDemo = user?.email === DEMO_EMAIL;
+  const rankings = isDemo ? RANKINGS : [];
 
   return (
     <div className="space-y-5 animate-fade-in-up">

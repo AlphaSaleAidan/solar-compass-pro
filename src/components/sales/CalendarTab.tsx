@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, MessageSquare, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { APPOINTMENTS } from '@/data/mockData';
+
+const DEMO_EMAIL = 'test001@alphasale.co';
 
 interface Appointment {
   id: number;
@@ -33,10 +37,12 @@ interface CalendarTabProps {
 }
 
 const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
+  const { user } = useAuth();
+  const isDemo = user?.email === DEMO_EMAIL;
   const [showNewAppt, setShowNewAppt] = useState(false);
   const [expandedAppt, setExpandedAppt] = useState<number | null>(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>(isDemo ? APPOINTMENTS : []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
