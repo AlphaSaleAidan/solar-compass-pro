@@ -40,13 +40,13 @@ const AppContent = () => (
 const App = () => (
   <BrowserRouter>
     <AuthProvider>
-      <ProjectStoreProvider>
+      <DataSourceProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
           <AppContent />
         </TooltipProvider>
-      </ProjectStoreProvider>
+      </DataSourceProvider>
     </AuthProvider>
   </BrowserRouter>
 );
