@@ -91,6 +91,10 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bank_account_number: string | null
+          bank_account_type: string | null
+          bank_name: string | null
+          bank_routing_number: string | null
           created_at: string
           email: string
           full_name: string
@@ -102,6 +106,10 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
           created_at?: string
           email: string
           full_name: string
@@ -113,6 +121,10 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
           created_at?: string
           email?: string
           full_name?: string
@@ -425,6 +437,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      registration_requests: {
+        Row: {
+          created_at: string
+          email: string
+          entity_name: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          entity_name?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          entity_name?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string
+          requested_role?: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: []
       }
       ticket_messages: {
         Row: {
