@@ -34,7 +34,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
       installer: { text: 'Installer', cls: 'bg-primary/10 text-primary border-primary/25' },
       financier: { text: 'Financier', cls: 'bg-asp-yellow/10 text-asp-yellow border-asp-yellow/25' },
     };
-    const r = labels[user.role];
+    const r = labels[user.activeRole];
     return <span className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold tracking-wide uppercase border ${r.cls}`}>{r.text}</span>;
   };
 
