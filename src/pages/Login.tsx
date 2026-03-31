@@ -1,13 +1,21 @@
 import { useState } from 'react';
-import { useAuth, PortalMode } from '@/contexts/AuthContext';
+import { useAuth, PortalMode, UserRole } from '@/contexts/AuthContext';
 import { Zap, Loader2, Crosshair, Settings, HardHat, Landmark } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const ROLE_MAP: Record<string, UserRole> = {
+  'Sales Rep': 'sales_rep',
+  'Backend Ops': 'backend_ops',
+  'Installer': 'installer',
+  'Financier': 'financier',
+};
+
 const Login = () => {
-  const { login } = useAuth();
+  const { login, setActiveRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<PortalMode>('asp');
+  const [selectedRole, setSelectedRole] = useState<string>('Sales Rep');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,13 +26,29 @@ const Login = () => {
     const result = await login(email, password);
     if (!result.success) {
       setError(result.error || 'Invalid credentials');
+    } else {
+      // Set the role the user selected on the login screen
+      const role = ROLE_MAP[selectedRole];
+      if (role) {
+        setTimeout(() => setActiveRole(role), 100);
+      }
     }
     setIsLoading(false);
   };
 
   const handleModeToggle = () => {
-    setMode(mode === 'asp' ? 'asp_plus' : 'asp');
+    const newMode = mode === 'asp' ? 'asp_plus' : 'asp';
+    setMode(newMode);
+    setSelectedRole(newMode === 'asp' ? 'Sales Rep' : 'Installer');
   };
+
+  const handleRoleClick = (label: string) => {
+    setSelectedRole(label);
+  };
+
+  const roles = mode === 'asp'
+    ? [{ icon: Crosshair, label: 'Sales Rep' }, { icon: Settings, label: 'Backend Ops' }]
+    : [{ icon: HardHat, label: 'Installer' }, { icon: Landmark, label: 'Financier' }];
 
   return (
     <div className={mode === 'asp_plus' ? 'asp-plus' : ''}>
@@ -90,30 +114,41 @@ const Login = () => {
             <span className={`text-xs font-bold ${mode === 'asp_plus' ? 'text-primary' : 'text-muted-foreground'}`}>ASP+</span>
           </div>
 
-          {/* Role Icons */}
+          {/* Role Icons - Clickable */}
           <div className="flex items-center justify-center gap-4 mb-6">
-            {(mode === 'asp' ? [
-              { icon: Crosshair, label: 'Sales Rep' },
-              { icon: Settings, label: 'Backend Ops' },
-            ] : [
-              { icon: HardHat, label: 'Installer' },
-              { icon: Landmark, label: 'Financier' },
-            ]).map(({ icon: Icon, label }) => (
-              <div key={label} className="flex flex-col items-center gap-1.5">
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105"
-                  style={{
-                    background: mode === 'asp' ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 96%)',
-                    border: `1.5px solid ${mode === 'asp' ? 'hsl(222, 30%, 22%)' : 'hsl(214, 32%, 85%)'}`,
-                  }}
+            {roles.map(({ icon: Icon, label }) => {
+              const isSelected = selectedRole === label;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => handleRoleClick(label)}
+                  className="flex flex-col items-center gap-1.5 cursor-pointer group"
                 >
-                  <Icon className="w-5 h-5 text-primary" />
-                </div>
-                <span className={`text-[9px] font-bold tracking-wider uppercase ${mode === 'asp' ? 'text-gray-500' : 'text-gray-400'}`}>
-                  {label}
-                </span>
-              </div>
-            ))}
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    style={{
+                      background: isSelected
+                        ? 'hsla(177, 100%, 41%, 0.15)'
+                        : mode === 'asp' ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 96%)',
+                      border: `2px solid ${isSelected
+                        ? 'hsl(177, 100%, 41%)'
+                        : mode === 'asp' ? 'hsl(222, 30%, 22%)' : 'hsl(214, 32%, 85%)'}`,
+                      boxShadow: isSelected ? '0 0 16px rgba(0,212,200,0.3)' : 'none',
+                    }}
+                  >
+                    <Icon className={`w-5 h-5 transition-colors ${isSelected ? 'text-primary' : mode === 'asp' ? 'text-gray-500' : 'text-gray-400'}`} />
+                  </div>
+                  <span
+                    className={`text-[9px] font-bold tracking-wider uppercase transition-colors ${
+                      isSelected ? 'text-primary' : mode === 'asp' ? 'text-gray-500' : 'text-gray-400'
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -147,7 +182,7 @@ const Login = () => {
             <button type="submit" disabled={isLoading}
               className="w-full py-3.5 bg-primary text-primary-foreground text-sm font-black tracking-wider uppercase rounded-md transition-all duration-200 hover:-translate-y-px active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               style={{ boxShadow: '0 8px 24px rgba(0,212,200,0.2)' }}>
-              {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing In...</> : 'Sign In →'}
+              {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing In...</> : `Sign In as ${selectedRole} →`}
             </button>
           </form>
 
