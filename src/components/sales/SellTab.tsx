@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import type { SellProject, CreditStatus } from '@/data/mockData';
+import { INSTALLED_HOMES, type SellProject, type CreditStatus } from '@/data/mockData';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
 import { Crown, Map, Camera, Plus, FolderOpen, Sun, Battery, Phone, Mail, User, DollarSign, FileText } from 'lucide-react';
-import AddressAutocomplete from '@/components/sales/AddressAutocomplete';
 
 interface SellTabProps {
   initialProjectData?: { name: string; email: string; phone: string; address: string } | null;
@@ -86,7 +85,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   const handleCreateProject = () => {
     if (!newProject.firstName.trim() || !address.trim()) return;
     const newP: SellProject = {
-      id: crypto.randomUUID(),
+      id: `SP-${String(sellProjects.length + 1).padStart(3, '0')}`,
       firstName: newProject.firstName,
       lastName: newProject.lastName,
       email: newProject.email,
@@ -171,7 +170,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
             <DialogHeader>
               <DialogTitle className="text-white font-black flex items-center gap-2"><Map className="w-4 h-4" /> Installed Homes Map</DialogTitle>
             </DialogHeader>
-            {showMap && <InstalledHomesMap homes={[]} />}
+            {showMap && <InstalledHomesMap homes={INSTALLED_HOMES} />}
           </DialogContent>
         </Dialog>
         <button
@@ -241,14 +240,15 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                 <h1 className="text-4xl font-black text-white drop-shadow-lg" style={{ textShadow: '0 2px 30px hsla(195, 70%, 50%, 0.4)' }}>
                   Create New Project
                 </h1>
-                  <div className="max-w-lg mx-auto">
-                    <AddressAutocomplete
-                      value={address}
-                      onChange={setAddress}
-                      placeholder="Enter Site Address here..."
-                      className="w-full px-6 py-4 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-white placeholder:text-white/30 text-center text-lg font-semibold outline-none focus:border-primary focus:bg-white/10 transition-all duration-200"
-                    />
-                  </div>
+                <div className="max-w-lg mx-auto">
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Enter Site Address here..."
+                    className="w-full px-6 py-4 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-white placeholder:text-white/30 text-center text-lg font-semibold outline-none focus:border-primary focus:bg-white/10 transition-all duration-200"
+                  />
+                </div>
                 <button
                   onClick={() => { if (address.trim()) setShowNewProjectForm(true); }}
                   disabled={!address.trim()}

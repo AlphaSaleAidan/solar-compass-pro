@@ -1,52 +1,20 @@
 import { useState } from 'react';
-import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, MessageSquare, ArrowRight } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { APPOINTMENTS } from '@/data/mockData';
-
-const DEMO_EMAIL = 'test001@alphasale.co';
-
-interface Appointment {
-  id: number;
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  date: string;
-  time: string;
-  highBill: number;
-  lowBill: number;
-  allElectric: boolean;
-  stars: number;
-  setter: string;
-  closer: string | null;
-  status: string;
-  gotBill: boolean;
-  gotContact: boolean;
-  bothHomeowners: boolean;
-  meterPhoto: boolean;
-  billOver250: boolean;
-  outcome: string | null;
-  closerNotes: string;
-  billPhoto: string | null;
-  meterPhotoUrl: string | null;
-  surveyPhotos: string[];
-}
+import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, MessageSquare, ArrowRight } from 'lucide-react';
 
 interface CalendarTabProps {
   onConvertToProject?: (data: { name: string; email: string; phone: string; address: string }) => void;
 }
 
 const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
-  const { user } = useAuth();
-  const isDemo = user?.email === DEMO_EMAIL;
   const [showNewAppt, setShowNewAppt] = useState(false);
   const [expandedAppt, setExpandedAppt] = useState<number | null>(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
-  const [appointments, setAppointments] = useState<Appointment[]>(isDemo ? APPOINTMENTS : []);
+  const [appointments, setAppointments] = useState(APPOINTMENTS);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newAppt: Appointment = {
+    const newAppt = {
       id: Date.now(),
       name: form.name,
       address: form.address,
@@ -59,25 +27,25 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
       allElectric: form.allElectric === 'yes',
       stars: 0,
       setter: 'You',
-      closer: null,
+      closer: null as string | null,
       status: 'open',
       gotBill: false,
       gotContact: !!(form.phone && form.email),
       bothHomeowners: false,
       meterPhoto: false,
       billOver250: Number(form.highBill) > 250,
-      outcome: null,
+      outcome: null as string | null,
       closerNotes: '',
-      billPhoto: null,
-      meterPhotoUrl: null,
-      surveyPhotos: [],
+      billPhoto: null as string | null,
+      meterPhotoUrl: null as string | null,
+      surveyPhotos: [] as string[],
     };
     setAppointments(prev => [newAppt, ...prev]);
     setShowNewAppt(false);
     setForm({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
   };
 
-  const getStarCount = (appt: Appointment) => {
+  const getStarCount = (appt: typeof APPOINTMENTS[0]) => {
     return [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250].filter(Boolean).length;
   };
 
@@ -99,10 +67,10 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
     no_sit: 'No Sit',
   };
 
-  // Full month calendar
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  // Full month calendar - get all dates for March 2026
+  const currentMonth = new Date(2026, 2, 1); // March 2026
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
   const monthDays = Array.from({ length: daysInMonth }, (_, i) => {
@@ -111,9 +79,7 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
     return { day, dateStr, appts: appointments.filter(a => a.date === dateStr) };
   });
 
-  const today = now.toISOString().split('T')[0];
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <div className="space-y-5 animate-fade-in-up">
@@ -178,154 +144,184 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
       )}
 
       {/* Appointment Cards */}
-      {appointments.length === 0 ? (
-        <div className="bg-bg2 border border-border rounded-xl p-12 text-center">
-          <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm font-bold">No appointments scheduled</p>
-          <p className="text-muted-foreground/60 text-xs mt-1">Click "New Appointment" to schedule your first appointment.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {appointments.map((a) => {
-            const starCount = getStarCount(a);
-            const isExpanded = expandedAppt === a.id;
-            return (
-              <div key={a.id} className="bg-bg2 border border-border rounded-xl overflow-hidden">
-                <div
-                  className="p-4 cursor-pointer hover:bg-bg3/30 transition-colors"
-                  onClick={() => setExpandedAppt(isExpanded ? null : a.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-primary/10 border border-primary/25 rounded-lg px-3 py-2 text-center min-w-[70px]">
-                        <div className="text-[10px] text-primary font-bold uppercase">{new Date(a.date + 'T12:00').toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                        <div className="text-lg font-black text-primary">{new Date(a.date + 'T12:00').getDate()}</div>
-                        <div className="text-[10px] text-primary font-bold">{a.time}</div>
+      <div className="space-y-3">
+        {appointments.map((a) => {
+          const starCount = getStarCount(a);
+          const isExpanded = expandedAppt === a.id;
+          return (
+            <div key={a.id} className="bg-bg2 border border-border rounded-xl overflow-hidden">
+              <div
+                className="p-4 cursor-pointer hover:bg-bg3/30 transition-colors"
+                onClick={() => setExpandedAppt(isExpanded ? null : a.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-primary/10 border border-primary/25 rounded-lg px-3 py-2 text-center min-w-[70px]">
+                      <div className="text-[10px] text-primary font-bold uppercase">{new Date(a.date + 'T12:00').toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                      <div className="text-lg font-black text-primary">{new Date(a.date + 'T12:00').getDate()}</div>
+                      <div className="text-[10px] text-primary font-bold">{a.time}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-foreground">{a.name}</div>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                        <MapPin className="w-3 h-3" /> {a.address}
                       </div>
-                      <div>
-                        <div className="text-sm font-bold text-foreground">{a.name}</div>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
-                          <MapPin className="w-3 h-3" /> {a.address}
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Phone className="w-3 h-3" /> {a.phone}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <Phone className="w-3 h-3" /> {a.phone}
-                          </div>
-                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <Mail className="w-3 h-3" /> {a.email}
-                          </div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Mail className="w-3 h-3" /> {a.email}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="text-xs">
-                            <span className="text-asp-red font-bold">${a.highBill}</span>
-                            <span className="text-muted-foreground"> / </span>
-                            <span className="text-asp-green font-bold">${a.lowBill}</span>
-                          </div>
-                          <span className="text-[9px] text-muted-foreground px-1.5 py-0.5 bg-bg3 rounded">{a.allElectric ? 'All Electric' : 'Gas + Electric'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="text-xs">
+                          <span className="text-asp-red font-bold">${a.highBill}</span>
+                          <span className="text-muted-foreground"> / </span>
+                          <span className="text-asp-green font-bold">${a.lowBill}</span>
                         </div>
+                        <span className="text-[9px] text-muted-foreground px-1.5 py-0.5 bg-bg3 rounded">{a.allElectric ? 'All Electric' : 'Gas + Electric'}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} className={`w-4 h-4 ${i < starCount ? 'text-asp-yellow fill-asp-yellow' : 'text-muted-foreground/20'}`} />
-                        ))}
-                      </div>
-                      {a.outcome ? (
-                        <span className={`px-2.5 py-1 rounded text-[10px] font-extrabold uppercase border ${outcomeColors[a.outcome]}`}>
-                          {outcomeLabels[a.outcome]}
-                        </span>
-                      ) : (
-                        <span className={`px-2.5 py-1 rounded text-[10px] font-extrabold uppercase border ${
-                          a.status === 'assigned' ? 'bg-asp-green/15 text-asp-green border-asp-green/30' : 'bg-asp-yellow/15 text-asp-yellow border-asp-yellow/30'
-                        }`}>
-                          {a.status}
-                        </span>
-                      )}
-                      {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`w-4 h-4 ${i < starCount ? 'text-asp-yellow fill-asp-yellow' : 'text-muted-foreground/20'}`} />
+                      ))}
                     </div>
+                    {a.outcome ? (
+                      <span className={`px-2.5 py-1 rounded text-[10px] font-extrabold uppercase border ${outcomeColors[a.outcome]}`}>
+                        {outcomeLabels[a.outcome]}
+                      </span>
+                    ) : (
+                      <span className={`px-2.5 py-1 rounded text-[10px] font-extrabold uppercase border ${
+                        a.status === 'assigned' ? 'bg-asp-green/15 text-asp-green border-asp-green/30' : 'bg-asp-yellow/15 text-asp-yellow border-asp-yellow/30'
+                      }`}>
+                        {a.status}
+                      </span>
+                    )}
+                    <div className="text-xs text-muted-foreground">
+                      <div>Set: <span className="text-foreground font-bold">{a.setter}</span></div>
+                      <div>Close: <span className="text-foreground font-bold">{a.closer || '—'}</span></div>
+                    </div>
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                   </div>
                 </div>
+              </div>
 
-                {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-border pt-3 animate-fade-in-up space-y-3">
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-bg3 rounded-lg p-3">
-                        <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Attachments</div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Camera className="w-3.5 h-3.5" />
-                            <span>Bill Photo: {a.billPhoto ? <span className="text-asp-green">Uploaded</span> : <span className="text-asp-red">Missing</span>}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Camera className="w-3.5 h-3.5" />
-                            <span>Meter Photo: {a.meterPhoto ? <span className="text-asp-green">Captured</span> : <span className="text-asp-red">Missing</span>}</span>
-                          </div>
+              {/* Expanded Details */}
+              {isExpanded && (
+                <div className="px-4 pb-4 border-t border-border pt-3 animate-fade-in-up space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Photos Section */}
+                    <div className="bg-bg3 rounded-lg p-3">
+                      <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Attachments</div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Bill Photo: {a.billPhoto ? <span className="text-asp-green">Uploaded</span> : <span className="text-asp-red">Missing</span>}</span>
                         </div>
-                      </div>
-                      <div className="bg-bg3 rounded-lg p-3">
-                        <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Disposition</div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {['closed', 'no_close', 'credit_fail', 'no_sit'].map(o => (
-                            <button
-                              key={o}
-                              onClick={(e) => { e.stopPropagation(); setOutcome(a.id, o); }}
-                              className={`px-2 py-1 rounded text-[10px] font-bold border transition-all ${
-                                a.outcome === o ? outcomeColors[o] : 'bg-bg4 border-border text-muted-foreground hover:border-border2'
-                              }`}
-                            >
-                              {outcomeLabels[o]}
-                            </button>
-                          ))}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Meter Photo: {a.meterPhoto ? <span className="text-asp-green">Captured</span> : <span className="text-asp-red">Missing</span>}</span>
                         </div>
-                      </div>
-                      <div className="bg-bg3 rounded-lg p-3">
-                        <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Notes</div>
-                        <textarea
-                          placeholder="Add notes..."
-                          className="w-full px-2 py-1.5 bg-bg4 border border-border rounded-md text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/50 resize-none h-12"
-                        />
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Survey Photos: {a.surveyPhotos.length > 0 ? <span className="text-asp-green">{a.surveyPhotos.length} uploaded</span> : <span className="text-muted-foreground">None</span>}</span>
+                        </div>
                       </div>
                     </div>
-                    {!a.outcome && onConvertToProject && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onConvertToProject({ name: a.name, email: a.email, phone: a.phone, address: a.address });
-                        }}
-                        className="w-full py-2.5 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center justify-center gap-2"
-                      >
-                        <ArrowRight className="w-3.5 h-3.5" /> Convert to Project
-                      </button>
-                    )}
+
+                    {/* Disposition */}
+                    <div className="bg-bg3 rounded-lg p-3">
+                      <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Disposition</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['closed', 'no_close', 'credit_fail', 'no_sit'].map(o => (
+                          <button
+                            key={o}
+                            onClick={(e) => { e.stopPropagation(); setOutcome(a.id, o); }}
+                            className={`px-2 py-1 rounded text-[10px] font-bold border transition-all ${
+                              a.outcome === o ? outcomeColors[o] : 'bg-bg4 border-border text-muted-foreground hover:border-border2'
+                            }`}
+                          >
+                            {outcomeLabels[o]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Assign Closer */}
+                    <div className="bg-bg3 rounded-lg p-3">
+                      <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Assign Closer</div>
+                      <select className="w-full px-2 py-1.5 bg-bg4 border border-border rounded-md text-xs text-foreground outline-none focus:border-primary">
+                        <option value="">Select closer...</option>
+                        <option value="jordan">Jordan Mills</option>
+                        <option value="sam">Samantha Cole</option>
+                        <option value="caitlin">Caitlin Fox</option>
+                      </select>
+                    </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+
+                  {/* Notes */}
+                  {a.closerNotes && (
+                    <div className="bg-bg3 rounded-lg p-3">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                        <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase">Closer Notes</div>
+                      </div>
+                      <p className="text-xs text-foreground">{a.closerNotes}</p>
+                    </div>
+                  )}
+
+                  {/* Notes input */}
+                  <textarea
+                    placeholder="Add notes about this appointment..."
+                    className="w-full px-3 py-2 bg-bg3 border border-border rounded-md text-xs text-foreground outline-none focus:border-primary placeholder:text-muted-foreground/50 resize-none h-16"
+                  />
+
+                  {/* Convert to Project button */}
+                  {!a.outcome && onConvertToProject && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onConvertToProject({ name: a.name, email: a.email, phone: a.phone, address: a.address });
+                      }}
+                      className="w-full py-2.5 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5" /> Convert to Project
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* Full Month Calendar View */}
       <div className="bg-bg2 border border-border rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <Calendar className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-black text-foreground">{monthName} Calendar</h3>
+          <h3 className="text-sm font-black text-foreground">March 2026 Calendar</h3>
         </div>
         
+        {/* Week headers */}
         <div className="grid grid-cols-7 gap-1 mb-1">
           {weekDays.map(d => (
             <div key={d} className="text-[10px] text-muted-foreground font-bold text-center py-1">{d}</div>
           ))}
         </div>
 
+        {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-1">
+          {/* Empty cells for days before month starts */}
           {Array.from({ length: firstDayOfWeek }).map((_, i) => (
             <div key={`empty-${i}`} className="h-20 bg-bg3/30 rounded-md" />
           ))}
           
           {monthDays.map(({ day, dateStr, appts: dayAppts }) => {
-            const isToday = dateStr === today;
+            const isToday = dateStr === '2026-03-28';
             return (
               <div
                 key={day}
@@ -335,23 +331,57 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
               >
                 <div className={`text-[10px] font-bold mb-0.5 ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>{day}</div>
                 <div className="space-y-0.5">
-                  {dayAppts.slice(0, 2).map(a => (
-                    <div
-                      key={a.id}
-                      className="flex items-center gap-1 cursor-pointer hover:opacity-70"
-                      onClick={() => setExpandedAppt(expandedAppt === a.id ? null : a.id)}
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                      <span className="text-[8px] text-foreground truncate font-bold">{a.name}</span>
-                    </div>
-                  ))}
+                  {dayAppts.slice(0, 2).map(a => {
+                    const dotColor = a.outcome === 'closed' ? 'bg-asp-green'
+                      : a.outcome === 'no_close' ? 'bg-asp-blue'
+                      : a.outcome === 'credit_fail' || a.outcome === 'no_sit' ? 'bg-asp-red'
+                      : 'bg-muted-foreground';
+                    return (
+                      <div
+                        key={a.id}
+                        className="flex items-center gap-1 cursor-pointer hover:opacity-70"
+                        onClick={() => setExpandedAppt(expandedAppt === a.id ? null : a.id)}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+                        <span className="text-[8px] text-foreground truncate font-bold">{a.time}</span>
+                      </div>
+                    );
+                  })}
                   {dayAppts.length > 2 && (
-                    <div className="text-[8px] text-muted-foreground text-center">+{dayAppts.length - 2} more</div>
+                    <div className="text-[7px] text-muted-foreground font-bold">+{dayAppts.length - 2} more</div>
                   )}
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+          {[
+            { color: 'bg-asp-green', label: 'Closed' },
+            { color: 'bg-asp-blue', label: 'No Close' },
+            { color: 'bg-asp-red', label: 'Credit Fail / No Sit' },
+            { color: 'bg-muted-foreground', label: 'Open' },
+          ].map(l => (
+            <div key={l.label} className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full ${l.color}`} />
+              <span className="text-[9px] text-muted-foreground font-bold">{l.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Auto-Rating Criteria */}
+      <div className="bg-bg2 border border-border rounded-xl p-4">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Star className="w-4 h-4 text-asp-yellow" />
+          <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase">Auto-Rating Criteria (5 Star Set)</h4>
+        </div>
+        <div className="grid grid-cols-5 gap-2">
+          {['1. Got the bill', '2. All contact info', '3. Both homeowners', '4. Meter photo', '5. Bill over $250'].map((c) => (
+            <div key={c} className="bg-bg3 rounded-md px-3 py-2 text-[11px] text-muted-foreground">{c}</div>
+          ))}
         </div>
       </div>
     </div>

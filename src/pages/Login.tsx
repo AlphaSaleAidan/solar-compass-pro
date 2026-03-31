@@ -1,239 +1,178 @@
 import { useState } from 'react';
-import { useAuth, PortalMode, UserRole } from '@/contexts/AuthContext';
-import { Zap, Loader2, Crosshair, Settings, HardHat, Landmark, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-type LoginPortal = {
-  role: UserRole;
-  label: string;
-  subtitle: string;
-  icon: typeof Crosshair;
-  mode: PortalMode;
-  gradient: string;
-  borderColor: string;
-};
-
-const PORTALS: LoginPortal[] = [
-  {
-    role: 'sales_rep',
-    label: 'Sales Rep',
-    subtitle: 'Close deals & manage pipeline',
-    icon: Crosshair,
-    mode: 'asp',
-    gradient: 'linear-gradient(135deg, hsla(177, 100%, 41%, 0.12), hsla(177, 100%, 41%, 0.03))',
-    borderColor: 'hsla(177, 100%, 41%, 0.3)',
-  },
-  {
-    role: 'backend_ops',
-    label: 'Backend Ops',
-    subtitle: 'QC, approvals & milestones',
-    icon: Settings,
-    mode: 'asp',
-    gradient: 'linear-gradient(135deg, hsla(217, 91%, 60%, 0.12), hsla(217, 91%, 60%, 0.03))',
-    borderColor: 'hsla(217, 91%, 60%, 0.3)',
-  },
-  {
-    role: 'installer',
-    label: 'Installer',
-    subtitle: 'Projects, milestones & payments',
-    icon: HardHat,
-    mode: 'asp_plus',
-    gradient: 'linear-gradient(135deg, hsla(177, 100%, 36%, 0.12), hsla(177, 100%, 36%, 0.03))',
-    borderColor: 'hsla(177, 100%, 36%, 0.3)',
-  },
-  {
-    role: 'financier',
-    label: 'Financier',
-    subtitle: 'Portfolio, escrow & fund releases',
-    icon: Landmark,
-    mode: 'asp_plus',
-    gradient: 'linear-gradient(135deg, hsla(45, 93%, 47%, 0.12), hsla(45, 93%, 47%, 0.03))',
-    borderColor: 'hsla(45, 93%, 47%, 0.3)',
-  },
-];
+import { useAuth, UserRole, PortalMode } from '@/contexts/AuthContext';
+import { Crosshair, Settings, Wrench, Landmark, Zap } from 'lucide-react';
 
 const Login = () => {
-  const { login, setActiveRole } = useAuth();
-  const [selectedPortal, setSelectedPortal] = useState<LoginPortal | null>(null);
-  const [email, setEmail] = useState('');
+  const { login } = useAuth();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<UserRole>('sales_rep');
+  const [mode, setMode] = useState<PortalMode>('asp');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const aspRoles: { value: UserRole; icon: React.ReactNode; label: string; sub: string }[] = [
+    { value: 'sales_rep', icon: <Crosshair className="w-7 h-7 text-primary" />, label: 'Sales Rep', sub: 'Deals & Pipeline' },
+    { value: 'backend_ops', icon: <Settings className="w-7 h-7 text-primary" />, label: 'Backend Ops', sub: 'QC & Operations' },
+  ];
+
+  const aspPlusRoles: { value: UserRole; icon: React.ReactNode; label: string; sub: string }[] = [
+    { value: 'installer', icon: <Wrench className="w-7 h-7 text-primary" />, label: 'Installer', sub: 'Project Tracking' },
+    { value: 'financier', icon: <Landmark className="w-7 h-7 text-primary" />, label: 'Financier', sub: 'Funding & Escrow' },
+  ];
+
+  const roles = mode === 'asp' ? aspRoles : aspPlusRoles;
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPortal) return;
     setError('');
-    setIsLoading(true);
-    const result = await login(email, password);
-    if (!result.success) {
-      setError(result.error || 'Invalid credentials');
-    } else {
-      setTimeout(() => setActiveRole(selectedPortal.role), 100);
+    if (!login(username, password, role, mode)) {
+      setError('Invalid credentials. Try Test001 / ASP26!');
     }
-    setIsLoading(false);
   };
 
-  const isPlus = selectedPortal?.mode === 'asp_plus';
-  const isDark = !selectedPortal || !isPlus;
+  const handleModeToggle = () => {
+    const newMode = mode === 'asp' ? 'asp_plus' : 'asp';
+    setMode(newMode);
+    setRole(newMode === 'asp' ? 'sales_rep' : 'installer');
+  };
 
   return (
-    <div className={isPlus ? 'asp-plus' : ''}>
+    <div className={mode === 'asp_plus' ? 'asp-plus' : ''}>
       <div
         className="min-h-screen flex items-center justify-center relative overflow-hidden"
         style={{
-          background: isDark
+          background: mode === 'asp'
             ? 'radial-gradient(ellipse at 30% 20%, rgba(0,212,200,0.06) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(59,130,246,0.04) 0%, transparent 60%), hsl(220, 30%, 4%)'
             : 'radial-gradient(ellipse at 30% 20%, rgba(0,184,173,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(59,130,246,0.05) 0%, transparent 60%), hsl(210, 20%, 98%)',
-          transition: 'background 0.4s ease',
         }}
       >
-        {/* Register Button */}
-        <Link
-          to="/register"
-          className="fixed top-5 right-5 z-50 px-5 py-2.5 text-xs font-black tracking-wider uppercase rounded-lg transition-all hover:-translate-y-px"
-          style={{
-            background: isDark ? 'hsl(220, 22%, 11%)' : 'white',
-            border: `1.5px solid ${isDark ? 'hsl(177, 100%, 41%)' : 'hsl(177, 100%, 36%)'}`,
-            color: isDark ? 'hsl(177, 100%, 41%)' : 'hsl(177, 100%, 36%)',
-            boxShadow: '0 4px 16px rgba(0,212,200,0.15)',
-          }}
-        >
-          Register →
-        </Link>
-
         <div
-          className="w-[520px] max-w-[95vw] rounded-2xl p-10 relative animate-scale-in"
+          className="w-[480px] max-w-[95vw] rounded-2xl p-12 relative animate-scale-in"
           style={{
-            background: isDark ? 'hsl(222, 25%, 7%)' : 'white',
-            border: `1px solid ${isDark ? 'hsl(222, 30%, 18%)' : 'hsl(214, 32%, 91%)'}`,
-            boxShadow: isDark
+            background: mode === 'asp' ? 'hsl(222, 25%, 7%)' : 'white',
+            border: `1px solid ${mode === 'asp' ? 'hsl(222, 30%, 18%)' : 'hsl(214, 32%, 91%)'}`,
+            boxShadow: mode === 'asp'
               ? '0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px hsl(222, 30%, 18%)'
               : '0 24px 80px rgba(0,0,0,0.08), 0 0 0 1px hsl(214, 32%, 91%)',
-            transition: 'all 0.4s ease',
           }}
         >
-          <div className="absolute top-0 left-[10%] right-[10%] h-px" style={{ background: 'linear-gradient(90deg, transparent, hsl(177, 100%, 41%), transparent)' }} />
+          {/* Teal line accent */}
+          <div
+            className="absolute top-0 left-[10%] right-[10%] h-px"
+            style={{ background: 'linear-gradient(90deg, transparent, hsl(177, 100%, 41%), transparent)' }}
+          />
 
           {/* Logo */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2.5">
               <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
                 <Zap className="w-5 h-5" />
               </div>
-              <span className={`text-[22px] font-black tracking-wider ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                ALPHA SALE PRO {isPlus && <span className="text-primary">+</span>}
+              <span className={`text-[22px] font-black tracking-wider ${mode === 'asp' ? 'text-white' : 'text-gray-900'}`}>
+                ALPHA SALE PRO {mode === 'asp_plus' && <span className="text-primary">+</span>}
               </span>
             </div>
-            <div className={`text-[11px] tracking-[3px] uppercase mt-1.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              {selectedPortal
-                ? selectedPortal.mode === 'asp' ? 'SOLAR OPERATIONS PLATFORM' : 'INSTALLER & FINANCIER PORTAL'
-                : 'SELECT YOUR PORTAL'}
+            <div className={`text-[11px] tracking-[3px] uppercase mt-1.5 ${mode === 'asp' ? 'text-gray-500' : 'text-gray-400'}`}>
+              {mode === 'asp' ? 'SOLAR OPERATIONS PLATFORM' : 'INSTALLER & FINANCIER PORTAL'}
             </div>
           </div>
 
-          {/* Portal Selection or Login Form */}
-          {!selectedPortal ? (
-            <>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {PORTALS.map((portal) => {
-                  const Icon = portal.icon;
-                  return (
-                    <button
-                      key={portal.role}
-                      onClick={() => setSelectedPortal(portal)}
-                      className="group relative flex flex-col items-center gap-2.5 p-5 rounded-xl cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
-                      style={{
-                        background: portal.gradient,
-                        border: `1.5px solid ${portal.borderColor}`,
-                      }}
-                    >
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-110"
-                        style={{
-                          background: isDark ? 'hsl(220, 22%, 11%)' : 'white',
-                          border: `2px solid ${portal.borderColor}`,
-                        }}
-                      >
-                        <Icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="text-center">
-                        <div className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{portal.label}</div>
-                        <div className={`text-[10px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{portal.subtitle}</div>
-                      </div>
-                      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ boxShadow: `0 0 20px ${portal.borderColor}` }} />
-                    </button>
-                  );
-                })}
-              </div>
-              <div className={`text-center text-[10px] ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
-                Select a portal to sign in
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Back button */}
+          {/* Portal Toggle */}
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <span className={`text-xs font-bold ${mode === 'asp' ? 'text-primary' : 'text-muted-foreground'}`}>ASP</span>
+            <button
+              onClick={handleModeToggle}
+              className="relative w-14 h-7 rounded-full transition-colors duration-300"
+              style={{
+                background: mode === 'asp' ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 93%)',
+                border: `2px solid ${mode === 'asp' ? 'hsl(177, 100%, 41%)' : 'hsl(177, 100%, 36%)'}`,
+              }}
+            >
+              <div
+                className="absolute top-0.5 w-5 h-5 rounded-full bg-primary transition-transform duration-300"
+                style={{ transform: mode === 'asp_plus' ? 'translateX(28px)' : 'translateX(2px)' }}
+              />
+            </button>
+            <span className={`text-xs font-bold ${mode === 'asp_plus' ? 'text-primary' : 'text-muted-foreground'}`}>ASP+</span>
+          </div>
+
+          {/* Role Selection */}
+          <div className="flex gap-3 mb-7">
+            {roles.map((r) => (
               <button
-                onClick={() => { setSelectedPortal(null); setError(''); }}
-                className={`flex items-center gap-1.5 mb-5 text-xs font-bold transition-colors ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
+                key={r.value}
+                onClick={() => setRole(r.value)}
+                className="flex-1 p-4 rounded-xl text-center transition-all duration-200 relative"
+                style={{
+                  background: role === r.value
+                    ? 'rgba(0,212,200,0.1)'
+                    : mode === 'asp' ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 96%)',
+                  border: `2px solid ${role === r.value ? 'hsl(177, 100%, 41%)' : mode === 'asp' ? 'hsl(222, 30%, 18%)' : 'hsl(214, 32%, 91%)'}`,
+                  boxShadow: role === r.value ? '0 0 20px rgba(0,212,200,0.15)' : 'none',
+                }}
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to portals
+                {role === r.value && (
+                  <span className="absolute top-2 right-2.5 text-primary text-xs font-black">✓</span>
+                )}
+                <div className="mb-1.5 flex justify-center">{r.icon}</div>
+                <div className={`text-[13px] font-extrabold tracking-wide ${mode === 'asp' ? 'text-white' : 'text-gray-900'}`}>{r.label}</div>
+                <div className={`text-[11px] mt-0.5 ${mode === 'asp' ? 'text-gray-500' : 'text-gray-400'}`}>{r.sub}</div>
               </button>
+            ))}
+          </div>
 
-              {/* Selected portal indicator */}
-              <div className="flex items-center justify-center gap-3 mb-6 p-3 rounded-xl" style={{ background: selectedPortal.gradient, border: `1.5px solid ${selectedPortal.borderColor}` }}>
-                <selectedPortal.icon className="w-5 h-5 text-primary" />
-                <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  Signing in as {selectedPortal.label}
-                </span>
-              </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className={`block text-[11px] font-bold tracking-[1.5px] uppercase mb-1.5 ${mode === 'asp' ? 'text-gray-400' : 'text-gray-500'}`}>
+                Username
+              </label>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 rounded-md text-sm transition-colors duration-200 outline-none"
+                style={{
+                  background: mode === 'asp' ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 96%)',
+                  border: `1.5px solid ${mode === 'asp' ? 'hsl(222, 30%, 18%)' : 'hsl(214, 32%, 91%)'}`,
+                  color: mode === 'asp' ? 'hsl(214, 32%, 91%)' : 'hsl(222, 47%, 11%)',
+                }}
+                placeholder="Enter username"
+              />
+            </div>
+            <div className="mb-4">
+              <label className={`block text-[11px] font-bold tracking-[1.5px] uppercase mb-1.5 ${mode === 'asp' ? 'text-gray-400' : 'text-gray-500'}`}>
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-md text-sm transition-colors duration-200 outline-none"
+                style={{
+                  background: mode === 'asp' ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 96%)',
+                  border: `1.5px solid ${mode === 'asp' ? 'hsl(222, 30%, 18%)' : 'hsl(214, 32%, 91%)'}`,
+                  color: mode === 'asp' ? 'hsl(214, 32%, 91%)' : 'hsl(222, 47%, 11%)',
+                }}
+                placeholder="Enter password"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full py-3.5 mt-2 bg-primary text-primary-foreground text-sm font-black tracking-wider uppercase rounded-md transition-all duration-200 hover:-translate-y-px active:translate-y-0"
+              style={{ boxShadow: '0 8px 24px rgba(0,212,200,0.2)' }}
+            >
+              Sign In →
+            </button>
+          </form>
 
-              <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                  <label className={`block text-[11px] font-bold tracking-[1.5px] uppercase mb-1.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Email</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-md text-sm transition-colors duration-200 outline-none"
-                    style={{
-                      background: isDark ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 96%)',
-                      border: `1.5px solid ${isDark ? 'hsl(222, 30%, 18%)' : 'hsl(214, 32%, 91%)'}`,
-                      color: isDark ? 'hsl(214, 32%, 91%)' : 'hsl(222, 47%, 11%)',
-                    }}
-                    placeholder="Enter email" required />
-                </div>
-                <div className="mb-2">
-                  <label className={`block text-[11px] font-bold tracking-[1.5px] uppercase mb-1.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Password</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-md text-sm transition-colors duration-200 outline-none"
-                    style={{
-                      background: isDark ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 96%)',
-                      border: `1.5px solid ${isDark ? 'hsl(222, 30%, 18%)' : 'hsl(214, 32%, 91%)'}`,
-                      color: isDark ? 'hsl(214, 32%, 91%)' : 'hsl(222, 47%, 11%)',
-                    }}
-                    placeholder="Enter password" required />
-                </div>
-                <div className="text-right mb-4">
-                  <Link to="/forgot-password" className="text-[11px] font-bold text-primary hover:underline">
-                    Forgot Password?
-                  </Link>
-                </div>
-                <button type="submit" disabled={isLoading}
-                  className="w-full py-3.5 bg-primary text-primary-foreground text-sm font-black tracking-wider uppercase rounded-md transition-all duration-200 hover:-translate-y-px active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  style={{ boxShadow: '0 8px 24px rgba(0,212,200,0.2)' }}>
-                  {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing In...</> : `Sign In →`}
-                </button>
-              </form>
-
-              {error && (
-                <div className="mt-3 text-xs text-center p-2 rounded-md" style={{
-                  color: 'hsl(0, 100%, 65%)',
-                  background: 'rgba(255,77,77,0.08)',
-                  border: '1px solid rgba(255,77,77,0.2)',
-                }}>
-                  {error}
-                </div>
-              )}
-            </>
+          {error && (
+            <div className="mt-3 text-xs text-center p-2 rounded-md" style={{
+              color: 'hsl(0, 100%, 65%)',
+              background: 'rgba(255,77,77,0.08)',
+              border: '1px solid rgba(255,77,77,0.2)',
+            }}>
+              {error}
+            </div>
           )}
         </div>
       </div>
