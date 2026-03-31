@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import type { Project, SellProject, CustomerChecklist } from '@/data/mockData';
+import { PROJECTS, SELL_PROJECTS, QC_QUEUE, COMMISSIONS, APPOINTMENTS, RANKINGS, REP_STATS, INSTALLED_HOMES } from '@/data/mockData';
+
+const DEMO_EMAIL = 'test001@alphasale.co';
 
 // Per-project milestone tracking state
 export interface ProjectMilestoneState {
