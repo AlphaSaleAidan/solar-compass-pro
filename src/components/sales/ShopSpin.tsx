@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { Dices, Ticket, Sparkles, Package, DollarSign, QrCode, Palmtree, ShoppingBag, Trash2, Star } from 'lucide-react';
 import { SPIN_PRIZES, SPIN_TIERS, TICKET_EARNING_RULES } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+
+const DEMO_EMAIL = 'test001@alphasale.co';
 
 interface InventoryItem {
   name: string;
@@ -11,8 +14,9 @@ interface InventoryItem {
 }
 
 const ShopSpin = () => {
-  // Start with 0 tickets - earned through real activity
-  const [tickets, setTickets] = useState(0);
+  const { user } = useAuth();
+  const isDemo = user?.email === DEMO_EMAIL;
+  const [tickets, setTickets] = useState(isDemo ? 12 : 0);
   const [selectedTier, setSelectedTier] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [wonPrize, setWonPrize] = useState<typeof SPIN_PRIZES[0] | null>(null);
