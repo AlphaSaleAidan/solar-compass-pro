@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth, AuthProvider } from '@/contexts/AuthContext';
-import { ProjectStoreProvider } from '@/contexts/ProjectStore';
+import { DataSourceProvider } from '@/contexts/DataSourceProvider';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
