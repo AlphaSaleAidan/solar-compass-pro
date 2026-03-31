@@ -16,7 +16,7 @@ interface OpsProjectsTabProps {
 }
 
 const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
-  const store = useProjectStore();
+  const store = useDataSource();
   const allProjects = [...store.projects, ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id))];
 
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
