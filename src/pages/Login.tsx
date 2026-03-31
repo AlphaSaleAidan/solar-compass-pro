@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { useAuth, UserRole, PortalMode } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { Crosshair, Settings, Wrench, Landmark, Zap } from 'lucide-react';
 
 const Login = () => {
-  const { login, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('sales_rep');
