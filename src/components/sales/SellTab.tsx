@@ -241,15 +241,14 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                 <h1 className="text-4xl font-black text-white drop-shadow-lg" style={{ textShadow: '0 2px 30px hsla(195, 70%, 50%, 0.4)' }}>
                   Create New Project
                 </h1>
-                <div className="max-w-lg mx-auto">
-                  <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Enter Site Address here..."
-                    className="w-full px-6 py-4 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-white placeholder:text-white/30 text-center text-lg font-semibold outline-none focus:border-primary focus:bg-white/10 transition-all duration-200"
-                  />
-                </div>
+                  <div className="max-w-lg mx-auto">
+                    <AddressAutocomplete
+                      value={address}
+                      onChange={setAddress}
+                      placeholder="Enter Site Address here..."
+                      className="w-full px-6 py-4 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-white placeholder:text-white/30 text-center text-lg font-semibold outline-none focus:border-primary focus:bg-white/10 transition-all duration-200"
+                    />
+                  </div>
                 <button
                   onClick={() => { if (address.trim()) setShowNewProjectForm(true); }}
                   disabled={!address.trim()}
