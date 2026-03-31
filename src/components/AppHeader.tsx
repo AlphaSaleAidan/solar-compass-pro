@@ -21,7 +21,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
     ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', '🦁']
     : ['QC Review', 'Final Approval', 'Milestones', 'Projects', 'Communication', 'Super Support'];
 
-  const aspPlusTabs = user.role === 'financier'
+  const aspPlusTabs = user.activeRole === 'financier'
     ? ['Portal']
     : ['Portal'];
 
