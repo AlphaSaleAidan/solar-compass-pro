@@ -144,7 +144,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
-          ref={undefined}
+          ref={(el) => { if (el) el.playbackRate = 0.35; }}
           src="/videos/crown-bg.mp4"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
