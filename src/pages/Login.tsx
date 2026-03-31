@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAuth, UserRole, PortalMode } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { Crosshair, Settings, Wrench, Landmark, Zap } from 'lucide-react';
 
 const Login = () => {
