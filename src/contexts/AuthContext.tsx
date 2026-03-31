@@ -49,28 +49,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen for Supabase auth state changes
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      if (session?.user) {
-        // Don't set user if demo user is active
-        if (user?.isDemo) return;
-        await loadProductionUser(session.user);
-      } else if (!user?.isDemo) {
-        setUser(null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      setSession(newSession);
+      if (newSession?.user) {
+        // Use functional update to check demo status without adding to deps
+        setUser(prev => {
+          if (prev?.isDemo) return prev;
+          // Load production user asynchronously
+          loadProductionUser(newSession.user);
+          return prev;
+        });
+      } else {
+        setUser(prev => prev?.isDemo ? prev : null);
       }
       setLoading(false);
     });
 
     // Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user && !user?.isDemo) {
-        loadProductionUser(session.user);
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      if (existingSession?.user) {
+        loadProductionUser(existingSession.user);
       }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadProductionUser = async (supabaseUser: SupabaseUser) => {
