@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
 import { Crown, Map, Camera, Plus, FolderOpen, Sun, Battery, Phone, Mail, User, DollarSign, FileText } from 'lucide-react';
+import AddressAutocomplete from '@/components/sales/AddressAutocomplete';
 
 interface SellTabProps {
   initialProjectData?: { name: string; email: string; phone: string; address: string } | null;
