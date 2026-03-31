@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useProjectStore } from '@/contexts/ProjectStore';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { COMMISSIONS } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
@@ -16,7 +16,7 @@ interface OpsProjectsTabProps {
 }
 
 const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
-  const store = useProjectStore();
+  const store = useDataSource();
   const allProjects = [...store.projects, ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id))];
 
   const [expandedProject, setExpandedProject] = useState<string | null>(null);

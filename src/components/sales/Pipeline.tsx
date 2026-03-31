@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useProjectStore } from '@/contexts/ProjectStore';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { MILESTONE_NAMES, COMMISSIONS } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
@@ -11,7 +11,7 @@ interface PipelineProps {
 }
 
 const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
-  const store = useProjectStore();
+  const store = useDataSource();
   const allProjects = [...store.projects, ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id))];
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 

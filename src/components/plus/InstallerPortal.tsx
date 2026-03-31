@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useProjectStore } from '@/contexts/ProjectStore';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,7 +29,7 @@ const PAYMENT_DETAILS = [
 ];
 
 const InstallerPortal = () => {
-  const store = useProjectStore();
+  const store = useDataSource();
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones'>('overview');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);

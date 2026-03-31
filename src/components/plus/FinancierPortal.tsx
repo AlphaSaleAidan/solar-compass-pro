@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useProjectStore } from '@/contexts/ProjectStore';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Zap, Send, Upload, Plus, History } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -43,7 +43,7 @@ const RISK_FLAGS = [
 ];
 
 const FinancierPortal = () => {
-  const store = useProjectStore();
+  const store = useDataSource();
   const { projects } = store;
   const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk' | 'pending'>('overview');
   const [expandedProject, setExpandedProject] = useState<string | null>(null);

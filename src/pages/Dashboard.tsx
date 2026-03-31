@@ -16,11 +16,11 @@ import OpsProjectsTab from '@/components/ops/OpsProjectsTab';
 import SuperSupport from '@/components/ops/SuperSupport';
 import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
 import PlusPortal from '@/components/plus/PlusPortal';
-import { useProjectStore } from '@/contexts/ProjectStore';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { sellProjects, markSellProjectClean, markSellProjectDirty } = useProjectStore();
+  const { sellProjects, markSellProjectClean, markSellProjectDirty } = useDataSource();
   const isPlus = user?.portalMode === 'asp_plus';
   const isSalesRep = user?.role === 'sales_rep';
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';

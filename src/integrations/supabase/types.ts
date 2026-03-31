@@ -80,6 +80,79 @@ export type Database = {
         }
         Relationships: []
       }
+      financier_updates: {
+        Row: {
+          created_at: string | null
+          id: string
+          project_id: string
+          role: string
+          sender_name: string
+          text: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          project_id: string
+          role: string
+          sender_name: string
+          text: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          role?: string
+          sender_name?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financier_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fund_releases: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          id: string
+          milestone: string
+          percent: number
+          project_id: string
+          released_at: string | null
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          id?: string
+          milestone: string
+          percent: number
+          project_id: string
+          released_at?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          id?: string
+          milestone?: string
+          percent?: number
+          project_id?: string
+          released_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fund_releases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -123,8 +196,11 @@ export type Database = {
       }
       milestone_states: {
         Row: {
+          approved_by: string | null
           checklist_done: Json | null
+          completed_at: string | null
           date_entries: Json | null
+          fund_released_at: string | null
           fund_status: string | null
           id: string
           milestone_index: number
@@ -135,8 +211,11 @@ export type Database = {
           uploads: Json | null
         }
         Insert: {
+          approved_by?: string | null
           checklist_done?: Json | null
+          completed_at?: string | null
           date_entries?: Json | null
+          fund_released_at?: string | null
           fund_status?: string | null
           id?: string
           milestone_index: number
@@ -147,8 +226,11 @@ export type Database = {
           uploads?: Json | null
         }
         Update: {
+          approved_by?: string | null
           checklist_done?: Json | null
+          completed_at?: string | null
           date_entries?: Json | null
+          fund_released_at?: string | null
           fund_status?: string | null
           id?: string
           milestone_index?: number
@@ -216,6 +298,7 @@ export type Database = {
           organization_id: string | null
           phone: string | null
           platform_access: string[] | null
+          tier: string | null
           updated_at: string
           user_id: string
         }
@@ -233,6 +316,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           platform_access?: string[] | null
+          tier?: string | null
           updated_at?: string
           user_id: string
         }
@@ -250,6 +334,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           platform_access?: string[] | null
+          tier?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -458,6 +543,9 @@ export type Database = {
           aurora_synced_at: string | null
           battery: string | null
           city: string | null
+          closer: string | null
+          closer_clawback: boolean | null
+          closer_pay: number | null
           contract_value: number | null
           created_at: string
           credit_status: Database["public"]["Enums"]["credit_status"]
@@ -469,16 +557,27 @@ export type Database = {
           documents_sent: boolean | null
           escalation_rate: number | null
           financier: string | null
+          financier_funded: number | null
           financier_org_id: string | null
           id: string
+          installer_company: string | null
+          installer_contact: string | null
           installer_org_id: string | null
+          inverter_type: string | null
           monthly_payment: number | null
+          organization_id: string | null
           panel_count: number | null
+          panel_type: string | null
           price_per_watt: number | null
+          project_code: string | null
+          project_cost: number | null
           rep_name: string | null
           roof_condition: string | null
           roof_type: string | null
           sales_rep_id: string | null
+          sell_project_id: string | null
+          setter: string | null
+          setter_pay: number | null
           site_survey_completed: boolean | null
           site_survey_data: Json | null
           state: string | null
@@ -502,6 +601,9 @@ export type Database = {
           aurora_synced_at?: string | null
           battery?: string | null
           city?: string | null
+          closer?: string | null
+          closer_clawback?: boolean | null
+          closer_pay?: number | null
           contract_value?: number | null
           created_at?: string
           credit_status?: Database["public"]["Enums"]["credit_status"]
@@ -513,16 +615,27 @@ export type Database = {
           documents_sent?: boolean | null
           escalation_rate?: number | null
           financier?: string | null
+          financier_funded?: number | null
           financier_org_id?: string | null
           id?: string
+          installer_company?: string | null
+          installer_contact?: string | null
           installer_org_id?: string | null
+          inverter_type?: string | null
           monthly_payment?: number | null
+          organization_id?: string | null
           panel_count?: number | null
+          panel_type?: string | null
           price_per_watt?: number | null
+          project_code?: string | null
+          project_cost?: number | null
           rep_name?: string | null
           roof_condition?: string | null
           roof_type?: string | null
           sales_rep_id?: string | null
+          sell_project_id?: string | null
+          setter?: string | null
+          setter_pay?: number | null
           site_survey_completed?: boolean | null
           site_survey_data?: Json | null
           state?: string | null
@@ -546,6 +659,9 @@ export type Database = {
           aurora_synced_at?: string | null
           battery?: string | null
           city?: string | null
+          closer?: string | null
+          closer_clawback?: boolean | null
+          closer_pay?: number | null
           contract_value?: number | null
           created_at?: string
           credit_status?: Database["public"]["Enums"]["credit_status"]
@@ -557,16 +673,27 @@ export type Database = {
           documents_sent?: boolean | null
           escalation_rate?: number | null
           financier?: string | null
+          financier_funded?: number | null
           financier_org_id?: string | null
           id?: string
+          installer_company?: string | null
+          installer_contact?: string | null
           installer_org_id?: string | null
+          inverter_type?: string | null
           monthly_payment?: number | null
+          organization_id?: string | null
           panel_count?: number | null
+          panel_type?: string | null
           price_per_watt?: number | null
+          project_code?: string | null
+          project_cost?: number | null
           rep_name?: string | null
           roof_condition?: string | null
           roof_type?: string | null
           sales_rep_id?: string | null
+          sell_project_id?: string | null
+          setter?: string | null
+          setter_pay?: number | null
           site_survey_completed?: boolean | null
           site_survey_data?: Json | null
           state?: string | null
@@ -637,12 +764,148 @@ export type Database = {
         }
         Relationships: []
       }
+      rewards: {
+        Row: {
+          earned_at: string | null
+          id: string
+          project_id: string | null
+          reward_name: string
+          reward_type: string
+          reward_value: number | null
+          user_id: string
+        }
+        Insert: {
+          earned_at?: string | null
+          id?: string
+          project_id?: string | null
+          reward_name: string
+          reward_type: string
+          reward_value?: number | null
+          user_id: string
+        }
+        Update: {
+          earned_at?: string | null
+          id?: string
+          project_id?: string | null
+          reward_name?: string
+          reward_type?: string
+          reward_value?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sell_projects: {
+        Row: {
+          address: string | null
+          all_electric: boolean | null
+          approval_status: string | null
+          aurora_data: Json | null
+          aurora_synced: boolean | null
+          closer: string | null
+          closer_notes: string | null
+          converted_to_sale: boolean | null
+          created_at: string | null
+          created_by: string
+          credit_status: string | null
+          documents_sent: boolean | null
+          email: string | null
+          first_name: string
+          high_bill: number | null
+          id: string
+          last_name: string
+          low_bill: number | null
+          organization_id: string | null
+          phone: string | null
+          project_code: string | null
+          rejection_reason: string | null
+          setter: string | null
+          site_survey_complete: boolean | null
+          site_survey_photos: Json | null
+          submitted_for_approval: boolean | null
+          updated_at: string | null
+          welcome_call_answers: Json | null
+          welcome_call_complete: boolean | null
+        }
+        Insert: {
+          address?: string | null
+          all_electric?: boolean | null
+          approval_status?: string | null
+          aurora_data?: Json | null
+          aurora_synced?: boolean | null
+          closer?: string | null
+          closer_notes?: string | null
+          converted_to_sale?: boolean | null
+          created_at?: string | null
+          created_by: string
+          credit_status?: string | null
+          documents_sent?: boolean | null
+          email?: string | null
+          first_name: string
+          high_bill?: number | null
+          id?: string
+          last_name: string
+          low_bill?: number | null
+          organization_id?: string | null
+          phone?: string | null
+          project_code?: string | null
+          rejection_reason?: string | null
+          setter?: string | null
+          site_survey_complete?: boolean | null
+          site_survey_photos?: Json | null
+          submitted_for_approval?: boolean | null
+          updated_at?: string | null
+          welcome_call_answers?: Json | null
+          welcome_call_complete?: boolean | null
+        }
+        Update: {
+          address?: string | null
+          all_electric?: boolean | null
+          approval_status?: string | null
+          aurora_data?: Json | null
+          aurora_synced?: boolean | null
+          closer?: string | null
+          closer_notes?: string | null
+          converted_to_sale?: boolean | null
+          created_at?: string | null
+          created_by?: string
+          credit_status?: string | null
+          documents_sent?: boolean | null
+          email?: string | null
+          first_name?: string
+          high_bill?: number | null
+          id?: string
+          last_name?: string
+          low_bill?: number | null
+          organization_id?: string | null
+          phone?: string | null
+          project_code?: string | null
+          rejection_reason?: string | null
+          setter?: string | null
+          site_survey_complete?: boolean | null
+          site_survey_photos?: Json | null
+          submitted_for_approval?: boolean | null
+          updated_at?: string | null
+          welcome_call_answers?: Json | null
+          welcome_call_complete?: boolean | null
+        }
+        Relationships: []
+      }
       ticket_messages: {
         Row: {
           created_at: string
           id: string
           message: string
           sender_id: string
+          sender_name: string | null
+          sender_role: string | null
           ticket_id: string
         }
         Insert: {
@@ -650,6 +913,8 @@ export type Database = {
           id?: string
           message: string
           sender_id: string
+          sender_name?: string | null
+          sender_role?: string | null
           ticket_id: string
         }
         Update: {
@@ -657,6 +922,8 @@ export type Database = {
           id?: string
           message?: string
           sender_id?: string
+          sender_name?: string | null
+          sender_role?: string | null
           ticket_id?: string
         }
         Relationships: [
@@ -674,10 +941,14 @@ export type Database = {
           assigned_to: string | null
           created_at: string
           created_by: string
+          created_by_role: string | null
+          customer_name: string | null
           description: string | null
           id: string
           priority: Database["public"]["Enums"]["ticket_priority"]
+          project_code: string | null
           project_id: string | null
+          resolved_at: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           subject: string
           updated_at: string
@@ -686,10 +957,14 @@ export type Database = {
           assigned_to?: string | null
           created_at?: string
           created_by: string
+          created_by_role?: string | null
+          customer_name?: string | null
           description?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
+          project_code?: string | null
           project_id?: string | null
+          resolved_at?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           subject: string
           updated_at?: string
@@ -698,10 +973,14 @@ export type Database = {
           assigned_to?: string | null
           created_at?: string
           created_by?: string
+          created_by_role?: string | null
+          customer_name?: string | null
           description?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
+          project_code?: string | null
           project_id?: string | null
+          resolved_at?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           subject?: string
           updated_at?: string

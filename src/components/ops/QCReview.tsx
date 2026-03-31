@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useProjectStore } from '@/contexts/ProjectStore';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import type { Project } from '@/data/mockData';
 import DealReviewDialog from './DealReviewDialog';
 import { Zap, CheckCircle } from 'lucide-react';
 
 const QCReview = () => {
-  const { qcQueue, acceptDeal } = useProjectStore();
+  const { qcQueue, acceptDeal } = useDataSource();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const handleAcceptDeal = (project: Project) => {

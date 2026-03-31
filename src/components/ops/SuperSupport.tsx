@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useProjectStore } from '@/contexts/ProjectStore';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { Shield, Send, AlertTriangle, CheckCircle, Clock, ChevronDown, User, Zap } from 'lucide-react';
 
 const SuperSupport = () => {
-  const store = useProjectStore();
+  const store = useDataSource();
   const { tickets, projects } = store;
   const [selectedTicket, setSelectedTicket] = useState<string | null>(tickets[0]?.id || null);
   const [inputVal, setInputVal] = useState('');
