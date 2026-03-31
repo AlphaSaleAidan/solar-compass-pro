@@ -90,6 +90,32 @@ const Login = () => {
             <span className={`text-xs font-bold ${mode === 'asp_plus' ? 'text-primary' : 'text-muted-foreground'}`}>ASP+</span>
           </div>
 
+          {/* Role Icons */}
+          <div className="flex items-center justify-center gap-4 mb-6">
+            {(mode === 'asp' ? [
+              { icon: Crosshair, label: 'Sales Rep' },
+              { icon: Settings, label: 'Backend Ops' },
+            ] : [
+              { icon: HardHat, label: 'Installer' },
+              { icon: Landmark, label: 'Financier' },
+            ]).map(({ icon: Icon, label }) => (
+              <div key={label} className="flex flex-col items-center gap-1.5">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105"
+                  style={{
+                    background: mode === 'asp' ? 'hsl(220, 22%, 11%)' : 'hsl(210, 20%, 96%)',
+                    border: `1.5px solid ${mode === 'asp' ? 'hsl(222, 30%, 22%)' : 'hsl(214, 32%, 85%)'}`,
+                  }}
+                >
+                  <Icon className="w-5 h-5 text-primary" />
+                </div>
+                <span className={`text-[9px] font-bold tracking-wider uppercase ${mode === 'asp' ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label className={`block text-[11px] font-bold tracking-[1.5px] uppercase mb-1.5 ${mode === 'asp' ? 'text-gray-400' : 'text-gray-500'}`}>Email</label>
