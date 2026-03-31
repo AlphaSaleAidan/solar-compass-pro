@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth, PortalMode } from '@/contexts/AuthContext';
-import { Zap, Loader2 } from 'lucide-react';
+import { Zap, Loader2, Crosshair, Settings, HardHat, Landmark } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Login = () => {
