@@ -177,7 +177,7 @@ export function useSupabaseProjects() {
       .from('projects')
       .update({
         site_survey_completed: true,
-        site_survey_data: { photos, completed_at: new Date().toISOString() } as unknown as Record<string, unknown>,
+        site_survey_data: { photos, completed_at: new Date().toISOString() } as unknown as Json,
         status: 'site_survey_done' as ProjectStatus,
       })
       .eq('id', projectId)
