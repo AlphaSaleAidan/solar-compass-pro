@@ -16,6 +16,9 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   const [activeSubTab, setActiveSubTab] = useState<'create' | 'projects'>('create');
   const [projectFilter, setProjectFilter] = useState<CreditStatus | 'all'>('all');
   const [address, setAddress] = useState('');
+  const [addressCity, setAddressCity] = useState('');
+  const [addressState, setAddressState] = useState('');
+  const [addressZip, setAddressZip] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -25,6 +28,15 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
     highBill: '', lowBill: '', allElectric: true,
   });
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
+
+  const handleAddressSelect = useCallback((components: AddressComponents) => {
+    setAddress(components.fullAddress);
+    setAddressCity(components.city);
+    setAddressState(components.state);
+    setAddressZip(components.zip);
+  }, []);
+
+  const addressInputRef = useGooglePlacesAutocomplete({ onSelect: handleAddressSelect });
 
   // Handle incoming project data from calendar conversion
   useEffect(() => {
