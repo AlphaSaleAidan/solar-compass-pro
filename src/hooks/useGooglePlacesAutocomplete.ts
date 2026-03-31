@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-interface AddressComponents {
+export interface AddressComponents {
   streetNumber: string;
   route: string;
   fullAddress: string;
@@ -16,13 +16,14 @@ interface UseGooglePlacesAutocompleteOptions {
 
 export function useGooglePlacesAutocomplete({ onSelect }: UseGooglePlacesAutocompleteOptions) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const autocompleteRef = useRef<any>(null);
 
   const initAutocomplete = useCallback(() => {
     if (!inputRef.current || autocompleteRef.current) return;
-    if (!window.google?.maps?.places) return;
+    const g = (window as any).google;
+    if (!g?.maps?.places) return;
 
-    const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+    const autocomplete = new g.maps.places.Autocomplete(inputRef.current, {
       fields: ['address_components', 'geometry', 'name'],
       types: ['address'],
       componentRestrictions: { country: 'us' },
@@ -33,7 +34,7 @@ export function useGooglePlacesAutocomplete({ onSelect }: UseGooglePlacesAutocom
       if (!place.address_components) return;
 
       const get = (type: string, short = false) => {
-        const comp = place.address_components?.find(c => c.types.includes(type));
+        const comp = place.address_components?.find((c: any) => c.types.includes(type));
         return comp ? (short ? comp.short_name : comp.long_name) : '';
       };
 
@@ -55,11 +56,12 @@ export function useGooglePlacesAutocomplete({ onSelect }: UseGooglePlacesAutocom
   }, [onSelect]);
 
   useEffect(() => {
-    if (window.google?.maps?.places) {
+    const g = (window as any).google;
+    if (g?.maps?.places) {
       initAutocomplete();
     } else {
       const interval = setInterval(() => {
-        if (window.google?.maps?.places) {
+        if ((window as any).google?.maps?.places) {
           clearInterval(interval);
           initAutocomplete();
         }
