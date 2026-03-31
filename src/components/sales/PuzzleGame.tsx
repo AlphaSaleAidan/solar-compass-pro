@@ -118,6 +118,7 @@ const PuzzleGame = () => {
           <span className="text-xs font-bold text-asp-yellow">{currentGift}</span>
         </div>
       </div>
+      </div>
     </div>
   );
 };
