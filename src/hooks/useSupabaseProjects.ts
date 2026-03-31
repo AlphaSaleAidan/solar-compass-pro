@@ -103,7 +103,7 @@ export function useSupabaseProjects() {
       price_per_watt: auroraData.price_per_watt,
       escalation_rate: auroraData.escalation_rate,
       contract_value: auroraData.contract_value,
-      adders: auroraData.adders as unknown as Record<string, unknown>,
+      adders: auroraData.adders as unknown as Json,
       status: 'aurora_synced' as ProjectStatus,
     };
 
