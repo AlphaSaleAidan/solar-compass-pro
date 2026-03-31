@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { INSTALLED_HOMES, type SellProject, type CreditStatus } from '@/data/mockData';
+import type { SellProject, CreditStatus } from '@/data/mockData';
 import { useProjectStore } from '@/contexts/ProjectStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
@@ -170,7 +170,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
             <DialogHeader>
               <DialogTitle className="text-white font-black flex items-center gap-2"><Map className="w-4 h-4" /> Installed Homes Map</DialogTitle>
             </DialogHeader>
-            {showMap && <InstalledHomesMap homes={INSTALLED_HOMES} />}
+            {showMap && <InstalledHomesMap homes={[]} />}
           </DialogContent>
         </Dialog>
         <button

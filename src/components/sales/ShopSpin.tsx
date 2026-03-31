@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { Dices, Ticket, Sparkles, Package, DollarSign, QrCode, Palmtree, ShoppingBag, Trash2, Star } from 'lucide-react';
-import { SPIN_PRIZES, SPIN_TIERS, TICKET_EARNING_RULES, REP_STATS } from '@/data/mockData';
+import { SPIN_PRIZES, SPIN_TIERS, TICKET_EARNING_RULES } from '@/data/mockData';
 
 interface InventoryItem {
   name: string;
@@ -11,21 +11,14 @@ interface InventoryItem {
 }
 
 const ShopSpin = () => {
-  const [tickets, setTickets] = useState(REP_STATS.ticketBalance);
+  // Start with 0 tickets - earned through real activity
+  const [tickets, setTickets] = useState(0);
   const [selectedTier, setSelectedTier] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [wonPrize, setWonPrize] = useState<typeof SPIN_PRIZES[0] | null>(null);
-  const [alphaCash, setAlphaCash] = useState(2450);
-  const [cashBonuses, setCashBonuses] = useState([
-    { id: 1, amount: 85, redeemed: false, label: 'Cash Bonus $85' },
-    { id: 2, amount: 50, redeemed: false, label: 'Cash Bonus $50' },
-  ]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([
-    { name: 'ASP T-Shirt', icon: '👕', value: 40, tier: 'normal', sellValue: 25 },
-    { name: 'ASP Hat', icon: '🧢', value: 25, tier: 'normal', sellValue: 15 },
-    { name: 'AirPods', icon: '🎧', value: 120, tier: 'golden', sellValue: 80 },
-    { name: 'ASP Hoodie', icon: '🧥', value: 65, tier: 'normal', sellValue: 40 },
-  ]);
+  const [alphaCash, setAlphaCash] = useState(0);
+  const [cashBonuses, setCashBonuses] = useState<{ id: number; amount: number; redeemed: boolean; label: string }[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const trackRef = useRef<HTMLDivElement>(null);
   const trackItemsRef = useRef<typeof SPIN_PRIZES>([]);
   const [trackKey, setTrackKey] = useState(0);
@@ -49,7 +42,6 @@ const ShopSpin = () => {
     });
   }, [tier.name, eligiblePrizes]);
 
-  // Build track items and store in ref
   const buildTrackItems = useCallback(() => {
     const items: typeof SPIN_PRIZES = [];
     for (let i = 0; i < 60; i++) {
@@ -71,13 +63,11 @@ const ShopSpin = () => {
     const chosenPrize = weightedPrizes[Math.floor(Math.random() * weightedPrizes.length)];
     const landingIndex = 40;
 
-    // Place the chosen prize at the exact landing slot
     const newTrackItems = [...trackItemsRef.current];
     newTrackItems[landingIndex] = chosenPrize;
     trackItemsRef.current = newTrackItems;
-    setTrackKey(k => k + 1); // force re-render so DOM updates
+    setTrackKey(k => k + 1);
 
-    // Wait for DOM to update, then measure the actual element position
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (!trackRef.current) return;
@@ -90,12 +80,8 @@ const ShopSpin = () => {
 
         const containerWidth = container.clientWidth;
         const pointerX = containerWidth / 2;
-
-        // The target element's left offset relative to the track start
         const targetLeft = targetEl.offsetLeft;
         const targetCenter = targetLeft + targetEl.offsetWidth / 2;
-
-        // Scroll the track so targetCenter aligns with pointerX
         const offset = targetCenter - pointerX;
 
         trackRef.current.style.transition = 'none';
@@ -113,7 +99,6 @@ const ShopSpin = () => {
     setTimeout(() => {
       setSpinning(false);
       setWonPrize(chosenPrize);
-
       setInventory(prev => [...prev, {
         name: chosenPrize.name,
         icon: chosenPrize.icon,
@@ -121,7 +106,6 @@ const ShopSpin = () => {
         tier: chosenPrize.tier,
         sellValue: Math.round(chosenPrize.value * 0.6),
       }]);
-
       if (chosenPrize.name.startsWith('Cash Bonus')) {
         setCashBonuses(prev => [...prev, {
           id: Date.now(),
@@ -304,7 +288,6 @@ const ShopSpin = () => {
                   </div>
                 </div>
               ))}
-              <div className="text-[9px] text-muted-foreground px-1">One-time QR code — manager scans to verify payment</div>
             </div>
           </div>
         )}
@@ -336,7 +319,7 @@ const ShopSpin = () => {
               ))}
             </div>
           ) : (
-            <div className="text-xs text-muted-foreground text-center py-4 bg-bg3 rounded-lg">No items yet — spin to win!</div>
+            <div className="text-xs text-muted-foreground text-center py-4 bg-bg3 rounded-lg">No items yet — earn tickets by closing deals to spin!</div>
           )}
         </div>
 

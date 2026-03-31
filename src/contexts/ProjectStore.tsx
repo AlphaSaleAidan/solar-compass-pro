@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import type { Project, SellProject, CustomerChecklist } from '@/data/mockData';
-import { PROJECTS as MOCK_PROJECTS, QC_QUEUE as MOCK_QC, SELL_PROJECTS as MOCK_SELL } from '@/data/mockData';
 
 // Per-project milestone tracking state
 export interface ProjectMilestoneState {
@@ -63,6 +62,7 @@ interface ProjectStoreState {
   financierUploads: Record<string, FinancierUpload[]>;
   projectMessages: Record<string, ProjectMessage[]>;
   sellProjects: SellProject[];
+  loading: boolean;
 }
 
 interface ProjectStoreActions {
@@ -235,25 +235,13 @@ function sellProjectToDbStatus(sp: SellProject): string {
 export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
 
-  // State - start with mock data as fallback, replace with DB data once loaded
-  const [projects, setProjects] = useState<Project[]>([...MOCK_PROJECTS]);
-  const [qcQueue, setQcQueue] = useState<Project[]>([...MOCK_QC]);
-  const [sellProjects, setSellProjects] = useState<SellProject[]>([...MOCK_SELL]);
-  const [dbLoaded, setDbLoaded] = useState(false);
+  // State - start empty, only real DB data
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [qcQueue, setQcQueue] = useState<Project[]>([]);
+  const [sellProjects, setSellProjects] = useState<SellProject[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [milestoneStates, setMilestoneStates] = useState<Record<string, ProjectMilestoneState>>(() => {
-    const states: Record<string, ProjectMilestoneState> = {};
-    MOCK_PROJECTS.forEach(p => {
-      const state = createDefaultMilestoneState();
-      for (let i = 0; i < p.currentMilestone; i++) {
-        state.fundStatus[i] = 'released';
-        const sop = MILESTONE_SOPS[i];
-        if (sop) sop.checklist.forEach(item => { state.checklistDone[item.id] = true; });
-      }
-      states[p.id] = state;
-    });
-    return states;
-  });
+  const [milestoneStates, setMilestoneStates] = useState<Record<string, ProjectMilestoneState>>({});
 
   const [tickets, setTickets] = useState<SharedTicket[]>([]);
   const [financierUpdates, setFinancierUpdates] = useState<Record<string, FinancierUpdate[]>>({});
@@ -262,9 +250,17 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
 
   // ── Fetch real data from Supabase ──
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setProjects([]);
+      setQcQueue([]);
+      setSellProjects([]);
+      setMilestoneStates({});
+      setLoading(false);
+      return;
+    }
 
     const fetchProjects = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -272,29 +268,37 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Error fetching projects:', error);
+        setLoading(false);
         return;
       }
 
-      if (data && data.length > 0) {
-        const dbSellProjects: SellProject[] = [];
-        const dbPipelineProjects: Project[] = [];
+      const dbSellProjects: SellProject[] = [];
+      const dbPipelineProjects: Project[] = [];
+      const dbQcProjects: Project[] = [];
+      const newMilestoneStates: Record<string, ProjectMilestoneState> = {};
 
-        data.forEach(row => {
-          if (PIPELINE_STATUSES.includes(row.status)) {
-            dbPipelineProjects.push(mapDbToProject(row));
-          } else {
-            dbSellProjects.push(mapDbToSellProject(row));
+      (data || []).forEach(row => {
+        if (PIPELINE_STATUSES.includes(row.status)) {
+          const proj = mapDbToProject(row);
+          dbPipelineProjects.push(proj);
+          // Build milestone state from current_milestone
+          const state = createDefaultMilestoneState();
+          for (let i = 0; i < (row.current_milestone || 0); i++) {
+            state.fundStatus[i] = 'released';
+            const sop = MILESTONE_SOPS[i];
+            if (sop) sop.checklist.forEach(item => { state.checklistDone[item.id] = true; });
           }
-        });
+          newMilestoneStates[proj.id] = state;
+        } else {
+          dbSellProjects.push(mapDbToSellProject(row));
+        }
+      });
 
-        // Merge: DB projects first, then mock data that doesn't conflict
-        const dbSellIds = new Set(dbSellProjects.map(p => p.id));
-        const dbPipelineIds = new Set(dbPipelineProjects.map(p => p.id));
-
-        setSellProjects([...dbSellProjects, ...MOCK_SELL.filter(p => !dbSellIds.has(p.id))]);
-        setProjects([...dbPipelineProjects, ...MOCK_PROJECTS.filter(p => !dbPipelineIds.has(p.id))]);
-        setDbLoaded(true);
-      }
+      setSellProjects(dbSellProjects);
+      setProjects(dbPipelineProjects);
+      setQcQueue(dbQcProjects);
+      setMilestoneStates(newMilestoneStates);
+      setLoading(false);
     };
 
     fetchProjects();
@@ -364,7 +368,6 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     updateMilestoneState(projectId, prev => ({
       ...prev, fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'pending' },
     }));
-    // Update Supabase
     supabase.from('projects').update({ current_milestone: milestoneIndex + 1 }).eq('id', projectId).then();
   }, [updateMilestoneState]);
 
@@ -431,10 +434,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   // ── Sell project actions (Supabase-backed) ──
 
   const addSellProject = useCallback(async (project: SellProject) => {
-    // Optimistic update
     setSellProjects(prev => [project, ...prev]);
-
-    // Insert into Supabase
     const { error } = await supabase.from('projects').insert({
       id: project.id,
       customer_name: `${project.firstName} ${project.lastName}`.trim(),
@@ -443,20 +443,16 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       address: project.address,
       status: 'new' as any,
       credit_status: 'pending' as any,
-      sales_rep_id: null, // Will be set by auth context
-      rep_name: null,
+      sales_rep_id: user?.id || null,
+      rep_name: user?.name || null,
       adders: [] as any,
       escalation_rate: 2.99,
     });
-
     if (error) console.error('Error inserting project:', error);
-  }, []);
+  }, [user]);
 
   const updateSellProject = useCallback(async (project: SellProject) => {
-    // Optimistic update
     setSellProjects(prev => prev.map(p => p.id === project.id ? project : p));
-
-    // Build the update payload
     const dbStatus = sellProjectToDbStatus(project);
     const update: Record<string, any> = {
       status: dbStatus,
@@ -470,7 +466,6 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       approval_status: project.approvalStatus || null,
       dirty_notes: project.approvalNotes || null,
     };
-
     if (project.auroraData) {
       update.aurora_data = project.auroraData;
       update.system_size = parseFloat(project.auroraData.systemSize) || null;
@@ -478,22 +473,18 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       update.financier = project.auroraData.financier || null;
       update.monthly_payment = parseFloat(project.auroraData.monthlyPayment?.replace('$', '') || '') || null;
     }
-
     const { error } = await supabase.from('projects').update(update).eq('id', project.id);
     if (error) console.error('Error updating project:', error);
   }, []);
 
   const markSellProjectClean = useCallback(async (projectId: string) => {
     setSellProjects(prev => prev.map(p => p.id === projectId ? { ...p, approvalStatus: 'clean' as const } : p));
-
-    // Update DB status
     await supabase.from('projects').update({
       status: 'approved_clean' as any,
       approval_status: 'clean',
       approved_at: new Date().toISOString(),
     }).eq('id', projectId);
 
-    // Move to pipeline
     const sp = sellProjects.find(p => p.id === projectId);
     if (sp) {
       const newProject: Project = {
@@ -530,8 +521,6 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       };
       setProjects(prev => [...prev, newProject]);
       setMilestoneStates(prev => ({ ...prev, [newProject.id]: createDefaultMilestoneState() }));
-
-      // Update DB to pipeline status
       await supabase.from('projects').update({ status: 'in_pipeline' as any, current_milestone: 0 }).eq('id', projectId);
     }
   }, [sellProjects]);
@@ -551,7 +540,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const getSellProjectsClean = useCallback(() => sellProjects.filter(p => p.approvalStatus === 'clean'), [sellProjects]);
 
   const value: ProjectStoreContextType = {
-    projects, qcQueue, milestoneStates, tickets, financierUpdates, financierUploads, projectMessages, sellProjects,
+    projects, qcQueue, milestoneStates, tickets, financierUpdates, financierUploads, projectMessages, sellProjects, loading,
     acceptDeal, toggleChecklist, uploadFile, setTextEntry, setDateEntry, approveMilestone, approveFundRelease,
     releaseFund, setOpsNotes, getMilestoneState, isMilestoneReady, getProjectsForInstaller, getProjectsForRep,
     getAllActiveProjects, createTicket, addTicketMessage, resolveTicket, getTicketsForProject,
