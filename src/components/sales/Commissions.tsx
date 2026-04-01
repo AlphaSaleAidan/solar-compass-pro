@@ -16,10 +16,11 @@ const Commissions = () => {
   const [calcPPW, setCalcPPW] = useState('4.25');
   const [calcRedline, setCalcRedline] = useState('2.35');
   const [calcAdders, setCalcAdders] = useState('8500');
-  const [calcSplit, setCalcSplit] = useState('60');
+  const [calcSplit, setCalcSplit] = useState('100');
   const [timePeriod, setTimePeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [showUpfrontExplainer, setShowUpfrontExplainer] = useState(false);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [setterDialogProject, setSetterDialogProject] = useState<{ id: string; name: string } | null>(null);
 
   const calcSystemCost = parseFloat(calcSize) * 1000 * parseFloat(calcRedline);
   const calcSoldTotal = parseFloat(calcSize) * 1000 * parseFloat(calcPPW);
