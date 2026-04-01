@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { SellProject } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+import { validateWelcomeCall, getPreSubmissionChecklist, type WelcomeCallAnswers, type WelcomeCallFlag } from '@/data/sopEngine';
 import ConvertToSaleDialog from './ConvertToSaleDialog';
 import SiteSurveyDialog from './SiteSurveyDialog';
 import WelcomeCall from './WelcomeCall';
 import type { WelcomeCallAnswer } from './WelcomeCall';
-import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, ClipboardCheck, AlertTriangle, RefreshCw, Video } from 'lucide-react';
+import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, ClipboardCheck, AlertTriangle, RefreshCw, Video, XCircle } from 'lucide-react';
 
 interface SellProjectCardProps {
   project: SellProject;
@@ -19,16 +21,33 @@ const statusStyles: Record<string, { bg: string; text: string; label: string }> 
 };
 
 const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjectCardProps) => {
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
   const [showSiteSurvey, setShowSiteSurvey] = useState(false);
   const [showWelcomeCall, setShowWelcomeCall] = useState(false);
   const status = statusStyles[project.creditStatus];
 
+  const isProduction = user && !user.isDemo;
+
   const handleSendDoc = (docIndex: number) => {
     const updatedDocs = [...project.documents];
     updatedDocs[docIndex] = { ...updatedDocs[docIndex], sent: true };
     onUpdateProject({ ...project, documents: updatedDocs });
+  };
+
+  const handleMarkDocsSent = () => {
+    const updatedDocs = project.documents.map(d => ({ ...d, sent: true }));
+    onUpdateProject({ ...project, documents: updatedDocs });
+  };
+
+  const handleMarkDocsSigned = () => {
+    const updatedDocs = project.documents.map(d => ({ ...d, sent: true, signed: true }));
+    onUpdateProject({
+      ...project,
+      documents: updatedDocs,
+      checklist: { ...project.checklist, financeDocsSigned: true },
+    });
   };
 
   const handleSyncAurora = () => {
@@ -52,10 +71,26 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
   };
 
   const handleWelcomeCallComplete = (answers: WelcomeCallAnswer[]) => {
+    // Build welcome call flags using SOP engine
+    const wcAnswers: WelcomeCallAnswers = {
+      q1_zero_upfront: answers[0]?.answer?.toLowerCase() === 'yes',
+      q2_monthly_payment: answers[1]?.answer?.toLowerCase() === 'yes',
+      q3_warranty: answers[2]?.answer?.toLowerCase() === 'yes',
+      q4_personally_signed: answers[3]?.answer?.toLowerCase() === 'yes',
+      q5_roof_damage: answers[4]?.answer?.toLowerCase() === 'yes',
+      q6_25_year_term: answers[5]?.answer?.toLowerCase() === 'yes',
+      q7_rate_increase: answers[6]?.answer === '2.99%' ? 'A' : answers[6]?.answer === '3.99%' ? 'B' : 'C',
+      q8_transferable: answers[7]?.answer?.toLowerCase() === 'yes',
+      q9_outside_promises: answers[8]?.answer?.toLowerCase() === 'yes',
+      q10_annual_usage_kwh: Number(answers[9]?.answer) || 0,
+    };
+    const flags = validateWelcomeCall(wcAnswers);
+
     onUpdateProject({
       ...project,
       welcomeCallComplete: true,
       welcomeCallAnswers: answers.map(a => ({ question: a.question, answer: a.answer, correct: a.correct })),
+      welcomeCallFlags: flags,
       checklist: { ...project.checklist, welcomeCallCompleted: true },
     });
     setShowWelcomeCall(false);
@@ -81,8 +116,36 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
   const allDocsSigned = project.documents.every(d => d.signed);
   const allDocsSent = project.documents.every(d => d.sent);
 
+  // Sequential enforcement for production users
+  // Demo users keep existing loose behavior
+  const canConvert = !!project.auroraSynced;
+  const canSendDocs = !!project.convertedToSale;
+  const canWelcomeCall = isProduction ? (!!project.convertedToSale && allDocsSigned) : !!project.convertedToSale;
+  const canSiteSurvey = isProduction ? (!!project.welcomeCallComplete) : !!project.convertedToSale;
+  const canSubmit = !!project.convertedToSale && !!project.welcomeCallComplete && !!project.siteSurveyComplete;
+
+  // Pre-submission checklist for production users
+  const preSubmission = isProduction ? getPreSubmissionChecklist({
+    auroraSynced: project.auroraSynced,
+    convertedToSale: project.convertedToSale,
+    documentsSigned: allDocsSigned,
+    welcomeCallComplete: project.welcomeCallComplete,
+    siteSurveyComplete: project.siteSurveyComplete,
+    welcomeCallFlags: (project as any).welcomeCallFlags,
+  }) : null;
+
+  const canSubmitProduction = preSubmission ? preSubmission.every(c => c.passed) : canSubmit;
+
   // SOP step tracker
-  const sopSteps = [
+  const sopSteps = isProduction ? [
+    { label: 'Aurora Synced', done: !!project.auroraSynced },
+    { label: 'Converted to Sale', done: !!project.convertedToSale },
+    { label: 'Docs Sent', done: allDocsSent },
+    { label: 'Docs Signed', done: allDocsSigned },
+    { label: 'Welcome Call', done: !!project.welcomeCallComplete },
+    { label: 'Site Survey', done: !!project.siteSurveyComplete },
+    { label: 'Submitted', done: !!project.submittedForApproval },
+  ] : [
     { label: 'Aurora Synced', done: !!project.auroraSynced },
     { label: 'Converted to Sale', done: !!project.convertedToSale },
     { label: 'Documents Sent', done: allDocsSent },
@@ -92,6 +155,9 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
   ];
 
   const completedSteps = sopSteps.filter(s => s.done).length;
+
+  // Welcome call flags
+  const welcomeCallFlags: WelcomeCallFlag[] = (project as any).welcomeCallFlags || [];
 
   return (
     <>
@@ -146,6 +212,20 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
               </div>
             )}
 
+            {/* Welcome call flags warning */}
+            {welcomeCallFlags.length > 0 && (
+              <div className="p-3 bg-[hsl(45,80%,55%)]/10 border border-[hsl(45,80%,55%)]/20 rounded-lg">
+                <div className="flex items-center gap-2 text-[hsl(45,80%,55%)] text-xs font-bold mb-1">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Welcome Call Flags ({welcomeCallFlags.length})
+                </div>
+                <div className="space-y-1">
+                  {welcomeCallFlags.map((f, i) => (
+                    <div key={i} className="text-xs text-white/60">• {f.question}: {f.issue}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Aurora Data */}
             {project.auroraSynced && project.auroraData && (
               <div className="bg-white/[0.03] rounded-lg p-3">
@@ -181,7 +261,7 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                     {project.convertedToSale ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <Zap className="w-3.5 h-3.5 text-white/30" />}
                     <span className={project.convertedToSale ? 'text-white/40 line-through' : 'text-white/70'}>2. Convert to Sale</span>
                   </div>
-                  {project.auroraSynced && !project.convertedToSale && (
+                  {canConvert && !project.convertedToSale && (
                     <button onClick={() => setShowConvert(true)} className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-[10px] font-bold hover:bg-primary/20 transition-all active:scale-[0.97] flex items-center gap-1">
                       <Zap className="w-3 h-3" /> Convert to Sale
                     </button>
@@ -191,9 +271,19 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                 {/* Step 3: Send ASP Documents */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
-                    {allDocsSent ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <FileText className="w-3.5 h-3.5 text-white/30" />}
-                    <span className={allDocsSent ? 'text-white/40 line-through' : 'text-white/70'}>3. Send ASP Documents</span>
+                    {allDocsSigned ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : allDocsSent ? <FileText className="w-3.5 h-3.5 text-[hsl(45,80%,55%)]" /> : <FileText className="w-3.5 h-3.5 text-white/30" />}
+                    <span className={allDocsSigned ? 'text-white/40 line-through' : 'text-white/70'}>3. Send & Sign Documents</span>
                   </div>
+                  {canSendDocs && !allDocsSent && (
+                    <button onClick={handleMarkDocsSent} className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-[10px] font-bold hover:bg-primary/20 transition-all active:scale-[0.97] flex items-center gap-1">
+                      <Send className="w-3 h-3" /> Mark Docs Sent
+                    </button>
+                  )}
+                  {canSendDocs && allDocsSent && !allDocsSigned && (
+                    <button onClick={handleMarkDocsSigned} className="px-3 py-1.5 bg-[hsl(150,60%,50%)]/10 border border-[hsl(150,60%,50%)]/20 rounded-lg text-[hsl(150,60%,50%)] text-[10px] font-bold hover:bg-[hsl(150,60%,50%)]/20 transition-all active:scale-[0.97] flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> Mark All Signed
+                    </button>
+                  )}
                 </div>
 
                 {/* Step 4: Welcome Call */}
@@ -201,8 +291,11 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                   <div className="flex items-center gap-2 text-xs">
                     {project.welcomeCallComplete ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <Video className="w-3.5 h-3.5 text-white/30" />}
                     <span className={project.welcomeCallComplete ? 'text-white/40 line-through' : 'text-white/70'}>4. Welcome Call</span>
+                    {!canWelcomeCall && !project.welcomeCallComplete && isProduction && (
+                      <span className="text-[9px] text-white/20">(unlock after docs signed)</span>
+                    )}
                   </div>
-                  {project.convertedToSale && !project.welcomeCallComplete && (
+                  {canWelcomeCall && !project.welcomeCallComplete && (
                     <button onClick={() => setShowWelcomeCall(true)} className="px-3 py-1.5 bg-[hsl(270,60%,55%)]/10 border border-[hsl(270,60%,55%)]/20 rounded-lg text-[hsl(270,60%,55%)] text-[10px] font-bold hover:bg-[hsl(270,60%,55%)]/20 transition-all active:scale-[0.97] flex items-center gap-1">
                       <Video className="w-3 h-3" /> Start Welcome Call
                     </button>
@@ -214,8 +307,11 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                   <div className="flex items-center gap-2 text-xs">
                     {project.siteSurveyComplete ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <Camera className="w-3.5 h-3.5 text-white/30" />}
                     <span className={project.siteSurveyComplete ? 'text-white/40 line-through' : 'text-white/70'}>5. Site Survey</span>
+                    {!canSiteSurvey && !project.siteSurveyComplete && isProduction && (
+                      <span className="text-[9px] text-white/20">(unlock after welcome call)</span>
+                    )}
                   </div>
-                  {project.convertedToSale && !project.siteSurveyComplete && (
+                  {canSiteSurvey && !project.siteSurveyComplete && (
                     <button onClick={() => setShowSiteSurvey(true)} className="px-3 py-1.5 bg-white/[0.06] border border-white/10 rounded-lg text-white/60 text-[10px] font-bold hover:bg-white/10 transition-all active:scale-[0.97] flex items-center gap-1">
                       <Camera className="w-3 h-3" /> Site Survey
                     </button>
@@ -269,8 +365,23 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
               </div>
             )}
 
+            {/* Pre-submission checklist for production users */}
+            {isProduction && preSubmission && !project.submittedForApproval && project.siteSurveyComplete && (
+              <div className="bg-white/[0.03] rounded-lg p-3">
+                <div className="text-[10px] text-white/30 font-bold tracking-wider uppercase mb-2">Pre-Submission Checklist</div>
+                <div className="space-y-1.5">
+                  {preSubmission.map((check, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      {check.passed ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <XCircle className="w-3.5 h-3.5 text-[hsl(0,70%,55%)]" />}
+                      <span className={check.passed ? 'text-white/60' : 'text-white/40'}>{check.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Submit for Final Approval */}
-            {project.convertedToSale && project.welcomeCallComplete && project.siteSurveyComplete && !project.submittedForApproval && (
+            {(isProduction ? canSubmitProduction : canSubmit) && !project.submittedForApproval && (
               <button
                 onClick={handleSubmitForApproval}
                 className="w-full py-3 bg-[hsl(150,60%,50%)] text-black rounded-xl text-sm font-black transition-all active:scale-[0.98] flex items-center justify-center gap-2"
