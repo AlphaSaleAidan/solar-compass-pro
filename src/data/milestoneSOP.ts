@@ -101,6 +101,7 @@ export const MILESTONE_SOPS: MilestoneSOP[] = [
       { id: 'm6-pto-letter', label: 'PTO approval letter uploaded by installer', actor: 'installer', requiresUpload: true, uploadLabel: 'Upload PTO approval letter' },
       { id: 'm6-ops-checked', label: 'Backend Ops checked PTO letter', actor: 'backend_ops' },
       { id: 'm6-production-confirmed', label: 'System production confirmed by backend ops', actor: 'backend_ops' },
+      { id: 'm6-service-contract', label: '5-year ASP Care Plan enrolled', actor: 'backend_ops' },
       { id: 'm6-ops-approve', label: 'Backend Ops final approval', actor: 'backend_ops' },
     ],
   },
@@ -111,8 +112,8 @@ export const MILESTONE_SOPS: MilestoneSOP[] = [
     fundPercent: 5,
     description: 'PTO achieved within 35 days of permit approval — installer uploads proof, backend ops verifies.',
     checklist: [
-      { id: 'm7-speed-proof', label: 'Installer uploaded proof of PTO within 35 days of permit approval', actor: 'installer', requiresUpload: true, uploadLabel: 'Upload speed bonus proof' },
-      { id: 'm7-ops-verify', label: 'Backend Ops verified timeline (permit → PTO ≤ 35 days)', actor: 'backend_ops' },
+      { id: 'm7-day-count', label: 'Day count verified: permit approval to PTO ≤ 35 days', actor: 'backend_ops' },
+      { id: 'm7-installer-score', label: 'Installer performance score updated', actor: 'backend_ops' },
       { id: 'm7-ops-approve', label: 'Backend Ops final approval', actor: 'backend_ops' },
     ],
   },
