@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { INSTALLED_HOMES, type SellProject, type CreditStatus } from '@/data/mockData';
 import { useDataSource } from '@/contexts/DataSourceProvider';
+import { useGooglePlaces } from '@/hooks/useGooglePlaces';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
