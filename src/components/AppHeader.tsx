@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Zap, LogOut, User, Crown, ArrowLeftRight } from 'lucide-react';
+import { Zap, LogOut, User, Crown, ArrowLeftRight, Settings } from 'lucide-react';
 import type { UserRole } from '@/contexts/AuthContext';
+import UserSettingsModal from '@/components/settings/UserSettingsModal';
 
 interface AppHeaderProps {
   activeTab: string;
