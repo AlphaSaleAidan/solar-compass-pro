@@ -4,6 +4,7 @@ import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { COMMISSIONS } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
 import {
   BarChart3, Zap, Battery, MapPin, DollarSign, Mail, Phone, Calendar,
   ChevronDown, ChevronRight, CheckCircle, XCircle, Clock, FileText, Camera,

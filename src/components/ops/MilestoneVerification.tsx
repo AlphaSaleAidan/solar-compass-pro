@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { MILESTONE_NAMES } from '@/data/mockData';
+import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
 import { CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, Zap, FileText, Camera, Send, Flag, Eye, Upload, ClipboardCheck, Clock, MessageSquare } from 'lucide-react';
 
 const MilestoneVerification = () => {
