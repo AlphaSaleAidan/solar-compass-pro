@@ -26,11 +26,12 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   });
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
 
-  const { inputRef: addressInputRef } = useGooglePlaces((parsed) => {
+  const {
+    inputRef: addressInputRef,
+    error: addressAutocompleteError,
+    errorMessage: addressAutocompleteErrorMessage,
+  } = useGooglePlaces((parsed) => {
     setAddress(parsed.fullAddress);
-    if (addressInputRef.current) {
-      addressInputRef.current.value = parsed.fullAddress;
-    }
   });
 
   // Handle incoming project data from calendar conversion
@@ -113,6 +114,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
       ],
       surveyPhotos: [],
     };
+
     addSellProject(newP);
     setShowNewProjectForm(false);
     setAddress('');
@@ -152,7 +154,6 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
-          
           src="/videos/crown-bg.mp4"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
@@ -252,11 +253,17 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                   <input
                     ref={addressInputRef}
                     type="text"
-                    defaultValue={address}
+                    value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Enter Site Address here..."
                     className="w-full px-6 py-4 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-white placeholder:text-white/30 text-center text-lg font-semibold outline-none focus:border-primary focus:bg-white/10 transition-all duration-200"
                   />
+                  {addressAutocompleteError && (
+                    <p className="mt-2 text-xs text-white/60">
+                      Address autocomplete is temporarily unavailable. You can still type the full address manually.
+                      {addressAutocompleteErrorMessage?.includes('Invalid Google Maps API key format') && ' Please update your Google Maps API key.'}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => { if (address.trim()) setShowNewProjectForm(true); }}
