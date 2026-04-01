@@ -290,8 +290,8 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                     <span className={project.auroraSynced ? 'text-white/40 line-through' : 'text-white/70'}>1. Sync from Aurora</span>
                   </div>
                   {!project.auroraSynced && (
-                    <button onClick={handleSyncAurora} className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-[10px] font-bold hover:bg-primary/20 transition-all active:scale-[0.97] flex items-center gap-1">
-                      <RefreshCw className="w-3 h-3" /> Sync from Aurora
+                    <button onClick={handleSyncAurora} disabled={syncing} className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-[10px] font-bold hover:bg-primary/20 disabled:opacity-50 transition-all active:scale-[0.97] flex items-center gap-1">
+                      {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} {syncing ? 'Syncing...' : 'Sync from Aurora'}
                     </button>
                   )}
                 </div>
