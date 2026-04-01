@@ -265,30 +265,4 @@ export const RANKINGS: { rank: number; name: string; deals: number; installs: nu
 
 export const QC_QUEUE: Project[] = [];
 
-export const INSTALLED_HOMES = [
-  { lat: 29.7604, lng: -95.3698, address: '1234 Main St, Houston, TX', customer: 'Johnson Family', systemSize: '10.2 kW', installDate: '2025-11-15' },
-  { lat: 29.7764, lng: -95.4235, address: '5678 Westheimer Rd, Houston, TX', customer: 'Garcia Family', systemSize: '8.5 kW', installDate: '2025-12-01' },
-  { lat: 29.7284, lng: -95.4098, address: '910 Bellaire Blvd, Houston, TX', customer: 'Smith Family', systemSize: '12 kW', installDate: '2026-01-10' },
-  { lat: 29.7503, lng: -95.3575, address: '2200 Travis St, Houston, TX', customer: 'Williams Family', systemSize: '9.8 kW', installDate: '2026-01-28' },
-  { lat: 29.8168, lng: -95.4146, address: '3450 N Shepherd Dr, Houston, TX', customer: 'Brown Family', systemSize: '11.5 kW', installDate: '2026-02-15' },
-  { lat: 29.6966, lng: -95.4173, address: '7800 Kirby Dr, Houston, TX', customer: 'Davis Family', systemSize: '7.2 kW', installDate: '2025-10-20' },
-  { lat: 29.7900, lng: -95.3900, address: '4400 Heights Blvd, Houston, TX', customer: 'Wilson Family', systemSize: '13 kW', installDate: '2026-02-20' },
-  { lat: 29.7100, lng: -95.2900, address: '6000 Lawndale St, Houston, TX', customer: 'Lopez Family', systemSize: '8.8 kW', installDate: '2025-09-30' },
-  { lat: 29.6500, lng: -95.2800, address: '12000 Gulf Fwy, Houston, TX', customer: 'Taylor Family', systemSize: '11 kW', installDate: '2026-01-05' },
-  { lat: 29.8300, lng: -95.4500, address: '1800 W 34th St, Houston, TX', customer: 'Anderson Family', systemSize: '9.4 kW', installDate: '2025-08-20' },
-  { lat: 29.7400, lng: -95.5100, address: '9200 Fondren Rd, Houston, TX', customer: 'Thomas Family', systemSize: '10.8 kW', installDate: '2025-07-15' },
-  { lat: 29.6800, lng: -95.3400, address: '5500 Telephone Rd, Houston, TX', customer: 'Jackson Family', systemSize: '7.6 kW', installDate: '2026-02-28' },
-  { lat: 29.7950, lng: -95.3200, address: '3100 Lyons Ave, Houston, TX', customer: 'Harris Family', systemSize: '8.2 kW', installDate: '2025-11-05' },
-  { lat: 29.7200, lng: -95.4700, address: '6700 Hillcroft Ave, Houston, TX', customer: 'Clark Family', systemSize: '11.2 kW', installDate: '2025-10-10' },
-  { lat: 29.6700, lng: -95.5200, address: '10500 Beechnut St, Houston, TX', customer: 'Lewis Family', systemSize: '9.0 kW', installDate: '2026-03-01' },
-  { lat: 29.8500, lng: -95.3800, address: '1400 Crosstimbers St, Houston, TX', customer: 'Robinson Family', systemSize: '12.5 kW', installDate: '2025-09-12' },
-  { lat: 29.7350, lng: -95.3100, address: '4800 Navigation Blvd, Houston, TX', customer: 'Walker Family', systemSize: '8.0 kW', installDate: '2026-01-22' },
-  { lat: 29.6600, lng: -95.4600, address: '8800 W Bellfort Ave, Houston, TX', customer: 'Young Family', systemSize: '10.0 kW', installDate: '2025-12-18' },
-  { lat: 29.8100, lng: -95.5000, address: '2200 Mangum Rd, Houston, TX', customer: 'Allen Family', systemSize: '9.5 kW', installDate: '2026-02-05' },
-  { lat: 29.7700, lng: -95.3000, address: '3600 Wayside Dr, Houston, TX', customer: 'King Family', systemSize: '7.8 kW', installDate: '2025-08-30' },
-  { lat: 27.8006, lng: -97.3964, address: '456 Ocean Dr, Corpus Christi, TX', customer: 'Martinez Family', systemSize: '9 kW', installDate: '2025-12-12' },
-  { lat: 27.7436, lng: -97.4019, address: '789 Staples St, Corpus Christi, TX', customer: 'Rodriguez Family', systemSize: '10.5 kW', installDate: '2026-02-01' },
-  { lat: 27.7700, lng: -97.3820, address: '321 Shoreline Blvd, Corpus Christi, TX', customer: 'Nguyen Family', systemSize: '8 kW', installDate: '2026-03-05' },
-  { lat: 27.7550, lng: -97.4200, address: '1400 Ayers St, Corpus Christi, TX', customer: 'Perez Family', systemSize: '11 kW', installDate: '2025-11-20' },
-  { lat: 27.7800, lng: -97.3700, address: '600 N Water St, Corpus Christi, TX', customer: 'Ramirez Family', systemSize: '9.5 kW', installDate: '2026-01-15' },
-];
+export const INSTALLED_HOMES: { lat: number; lng: number; address: string; customer: string; systemSize: string; installDate: string }[] = [];
