@@ -293,7 +293,10 @@ const Commissions = () => {
                           <div><span className="text-muted-foreground">Sold:</span> <strong className="text-foreground">${c.soldTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
                           <div><span className="text-muted-foreground">Baseline:</span> <strong className="text-foreground">${c.projectBaseline.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
                           <div><span className="text-muted-foreground">Gross:</span> <strong className="text-primary">${c.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
-                          <div><span className="text-muted-foreground">Your 60%:</span> <strong className="text-asp-green">${c.yourCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
+                          <div><span className="text-muted-foreground">Your Commission:</span> <strong className="text-asp-green">${c.yourCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
+                          {project.setter && (
+                            <div className="col-span-2"><span className="text-muted-foreground">Setter:</span> <strong className="text-foreground">{project.setter}</strong></div>
+                          )}
                         </div>
                       </div>
                       <div>
