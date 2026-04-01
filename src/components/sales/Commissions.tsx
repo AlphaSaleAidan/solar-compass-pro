@@ -126,18 +126,18 @@ const Commissions = () => {
         </div>
       </div>
 
-      {/* Upcoming Pay + Payment History */}
+      {/* Payment History (completed items only) */}
       <div className="bg-bg2 border border-border rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <DollarSign className="w-4 h-4 text-asp-green" />
-          <h3 className="text-sm font-black text-foreground">Upcoming Pay & Payment History</h3>
+          <h3 className="text-sm font-black text-foreground">Payment History</h3>
         </div>
-        {allUpfrontLineItems.length > 0 ? (
+        {allUpfrontLineItems.filter(item => item.completed).length > 0 ? (
           <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
-            {allUpfrontLineItems.map((item, i) => (
+            {allUpfrontLineItems.filter(item => item.completed).map((item, i) => (
               <div key={i} className="flex items-center justify-between py-2 px-3 bg-bg3 rounded-lg">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {item.completed ? <CheckCircle className="w-3.5 h-3.5 text-asp-green shrink-0" /> : <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                  <CheckCircle className="w-3.5 h-3.5 text-asp-green shrink-0" />
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-foreground truncate">{item.customerName}</div>
                     <div className="text-[10px] text-muted-foreground truncate">{item.milestone}</div>
@@ -145,7 +145,7 @@ const Commissions = () => {
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="text-[10px] text-muted-foreground">{item.completedDate || 'Pending'}</span>
-                  <span className={`text-sm font-bold ${item.completed ? 'text-asp-green' : 'text-muted-foreground'}`}>
+                  <span className="text-sm font-bold text-asp-green">
                     ${item.closerPay}
                   </span>
                   <span className="text-[9px] text-muted-foreground w-16 text-right">{item.expectedPay}</span>
@@ -312,19 +312,51 @@ const Commissions = () => {
                         </div>
                       </div>
                       <div>
+                        <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Upcoming Pay</div>
+                        {(() => {
+                          const pendingUpfronts = c.upfronts.filter(u => !u.completed);
+                          const upfrontTotal = c.upfronts
+                            .filter(u => typeof u.closerPay === 'number')
+                            .reduce((s, u) => s + (u.closerPay as number), 0);
+                          const installPay = Math.max(0, c.yourCommission - upfrontTotal);
+                          return pendingUpfronts.length > 0 ? (
+                            <div className="space-y-1">
+                              {pendingUpfronts.map((u, i) => (
+                                <div key={i} className="flex items-center justify-between text-xs py-1 px-2 bg-bg4 rounded">
+                                  <div className="flex items-center gap-1.5">
+                                    <Clock className="w-3 h-3 text-muted-foreground" />
+                                    <span className="text-muted-foreground">{u.milestone}</span>
+                                  </div>
+                                  <span className="font-bold text-muted-foreground">
+                                    {u.milestone === 'Install Completed'
+                                      ? `$${installPay.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                      : `$${typeof u.closerPay === 'number' ? u.closerPay : u.closerPay}`}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-asp-green text-center py-2 bg-bg4 rounded">All milestones paid ✓</div>
+                          );
+                        })()}
+                      </div>
+                      <div>
                         <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Milestone Pay</div>
                         <div className="space-y-1">
-                          {c.upfronts.map((u, i) => (
+                          {c.upfronts.filter(u => u.completed).map((u, i) => (
                             <div key={i} className="flex items-center justify-between text-xs py-1 px-2 bg-bg4 rounded">
                               <div className="flex items-center gap-1.5">
-                                {u.completed ? <CheckCircle className="w-3 h-3 text-asp-green" /> : <Clock className="w-3 h-3 text-muted-foreground" />}
-                                <span className={u.completed ? 'text-foreground' : 'text-muted-foreground'}>{u.milestone}</span>
+                                <CheckCircle className="w-3 h-3 text-asp-green" />
+                                <span className="text-foreground">{u.milestone}</span>
                               </div>
-                              <span className={`font-bold ${u.completed ? 'text-asp-green' : 'text-muted-foreground'}`}>
+                              <span className="font-bold text-asp-green">
                                 ${typeof u.closerPay === 'number' ? u.closerPay : u.closerPay}
                               </span>
                             </div>
                           ))}
+                          {c.upfronts.filter(u => u.completed).length === 0 && (
+                            <div className="text-[10px] text-muted-foreground text-center py-2 bg-bg4 rounded">No milestones completed yet</div>
+                          )}
                         </div>
                       </div>
                     </div>
