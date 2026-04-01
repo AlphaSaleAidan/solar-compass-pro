@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { INSTALLED_HOMES, type SellProject, type CreditStatus } from '@/data/mockData';
 import { useDataSource } from '@/contexts/DataSourceProvider';
+import { useGooglePlaces } from '@/hooks/useGooglePlaces';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
 import SellProjectCard from '@/components/sales/SellProjectCard';
@@ -18,12 +19,17 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   const [showMap, setShowMap] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [newProject, setNewProject] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     highBill: '', lowBill: '', allElectric: true,
   });
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
+
+  useGooglePlaces(addressInputRef, (parsed) => {
+    setAddress(parsed.fullAddress);
+  });
 
   // Handle incoming project data from calendar conversion
   useEffect(() => {
@@ -242,6 +248,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                 </h1>
                 <div className="max-w-lg mx-auto">
                   <input
+                    ref={addressInputRef}
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
