@@ -17,6 +17,7 @@ const RepStats = () => {
   const [showPipelineBreakdown, setShowPipelineBreakdown] = useState(false);
 
   // Calculate pipeline deals with commissions (same formula as Pipeline/Commissions tabs)
+  // Used for BOTH demo and production to ensure pending pipeline always matches Commissions tab
   const pipelineDeals = store.projects
     .map(p => {
       const comm = calculateCommission(p);
@@ -31,11 +32,12 @@ const RepStats = () => {
     })
     .filter(d => d.status !== 'paid'); // Only pending/processing deals
 
-  const demoPendingPipeline = pipelineDeals.reduce((sum, d) => sum + Math.max(0, d.yourCommission), 0);
+  const calculatedPendingPipeline = pipelineDeals.reduce((sum, d) => sum + Math.max(0, d.yourCommission), 0);
 
-  // Use demo data for demo users, live data for production
+  // Use demo data for demo users, live data for production — but ALWAYS use calculatedPendingPipeline
+  // so it matches the Commissions tab exactly
   const yearlyPaidOut = isDemo ? REP_STATS.yearlyPaidOut : liveStats.yearlyPaidOut;
-  const pendingPipeline = isDemo ? Math.round(demoPendingPipeline) : liveStats.pendingPipeline;
+  const pendingPipeline = Math.round(calculatedPendingPipeline);
   const installCount = isDemo ? REP_STATS.installCount : liveStats.installCount;
   const monthlyAppointments = isDemo ? REP_STATS.monthlyAppointments : liveStats.monthlyAppointments;
   const avgRating = isDemo ? REP_STATS.avgRating : liveStats.avgRating;
