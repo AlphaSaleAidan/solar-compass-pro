@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { SellProject } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { validateWelcomeCall, getPreSubmissionChecklist, type WelcomeCallAnswers, type WelcomeCallFlag } from '@/data/sopEngine';
 import ConvertToSaleDialog from './ConvertToSaleDialog';
 import SiteSurveyDialog from './SiteSurveyDialog';
 import WelcomeCall from './WelcomeCall';
 import type { WelcomeCallAnswer } from './WelcomeCall';
-import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, ClipboardCheck, AlertTriangle, RefreshCw, Video, XCircle } from 'lucide-react';
+import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, ClipboardCheck, AlertTriangle, RefreshCw, Video, XCircle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface SellProjectCardProps {
   project: SellProject;
