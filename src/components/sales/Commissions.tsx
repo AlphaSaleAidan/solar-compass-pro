@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { UPFRONT_MILESTONES } from '@/data/mockData';
 import { calculateCommission } from '@/lib/commissionCalc';
-import { DollarSign, Clock, Calculator, Ticket, ChevronDown, ChevronUp, Info, CheckCircle, XCircle } from 'lucide-react';
+import { DollarSign, Clock, Calculator, Ticket, ChevronDown, ChevronUp, Info, CheckCircle, XCircle, UserPlus } from 'lucide-react';
+import AddSetterDialog from './AddSetterDialog';
 
 const Commissions = () => {
   const store = useDataSource();
