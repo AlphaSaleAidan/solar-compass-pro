@@ -126,18 +126,18 @@ const Commissions = () => {
         </div>
       </div>
 
-      {/* Upcoming Pay + Payment History */}
+      {/* Payment History (completed items only) */}
       <div className="bg-bg2 border border-border rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
           <DollarSign className="w-4 h-4 text-asp-green" />
-          <h3 className="text-sm font-black text-foreground">Upcoming Pay & Payment History</h3>
+          <h3 className="text-sm font-black text-foreground">Payment History</h3>
         </div>
-        {allUpfrontLineItems.length > 0 ? (
+        {allUpfrontLineItems.filter(item => item.completed).length > 0 ? (
           <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
-            {allUpfrontLineItems.map((item, i) => (
+            {allUpfrontLineItems.filter(item => item.completed).map((item, i) => (
               <div key={i} className="flex items-center justify-between py-2 px-3 bg-bg3 rounded-lg">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {item.completed ? <CheckCircle className="w-3.5 h-3.5 text-asp-green shrink-0" /> : <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                  <CheckCircle className="w-3.5 h-3.5 text-asp-green shrink-0" />
                   <div className="min-w-0">
                     <div className="text-xs font-bold text-foreground truncate">{item.customerName}</div>
                     <div className="text-[10px] text-muted-foreground truncate">{item.milestone}</div>
@@ -145,7 +145,7 @@ const Commissions = () => {
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="text-[10px] text-muted-foreground">{item.completedDate || 'Pending'}</span>
-                  <span className={`text-sm font-bold ${item.completed ? 'text-asp-green' : 'text-muted-foreground'}`}>
+                  <span className="text-sm font-bold text-asp-green">
                     ${item.closerPay}
                   </span>
                   <span className="text-[9px] text-muted-foreground w-16 text-right">{item.expectedPay}</span>
