@@ -19,12 +19,17 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   const [showMap, setShowMap] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [newProject, setNewProject] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     highBill: '', lowBill: '', allElectric: true,
   });
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
+
+  useGooglePlaces(addressInputRef, (parsed) => {
+    setAddress(parsed.fullAddress);
+  });
 
   // Handle incoming project data from calendar conversion
   useEffect(() => {
