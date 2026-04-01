@@ -326,6 +326,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          aurora_email: string | null
           avatar_url: string | null
           bank_account_number: string | null
           bank_account_type: string | null
@@ -344,6 +345,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          aurora_email?: string | null
           avatar_url?: string | null
           bank_account_number?: string | null
           bank_account_type?: string | null
@@ -362,6 +364,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          aurora_email?: string | null
           avatar_url?: string | null
           bank_account_number?: string | null
           bank_account_type?: string | null

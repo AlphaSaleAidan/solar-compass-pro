@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN aurora_email text DEFAULT NULL;
