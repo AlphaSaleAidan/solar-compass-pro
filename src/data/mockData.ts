@@ -143,9 +143,50 @@ export interface SellProject {
   approvalNotes?: string;
 }
 
-export const SELL_PROJECTS: SellProject[] = [];
+// Demo-only sample data — only loaded for demo users via ProjectStore
+export const SELL_PROJECTS: SellProject[] = [
+  {
+    id: 'sell-demo-1', firstName: 'Maria', lastName: 'Gonzalez', email: 'maria.g@email.com',
+    phone: '(832) 555-1234', address: '4521 Sunset Blvd, Houston, TX 77005',
+    highBill: 320, lowBill: 180, allElectric: false, creditStatus: 'credit_passed',
+    createdAt: '2026-03-20', checklist: { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false },
+    documents: [{ name: 'Loan Agreement', sent: true, signed: true }, { name: 'Utility Release', sent: true, signed: false }],
+    surveyPhotos: [], auroraSynced: true,
+    auroraData: { systemSize: '8.4 kW', battery: 'Tesla Powerwall 2', financier: 'Goodleap', monthlyPayment: '$145', adders: ['EV Charger'] },
+    convertedToSale: true, welcomeCallComplete: true, siteSurveyComplete: true, submittedForApproval: true, approvalStatus: 'pending',
+  },
+  {
+    id: 'sell-demo-2', firstName: 'James', lastName: 'Parker', email: 'jparker@email.com',
+    phone: '(361) 555-9876', address: '789 Oak Dr, Corpus Christi, TX 78411',
+    highBill: 410, lowBill: 220, allElectric: true, creditStatus: 'credit_passed',
+    createdAt: '2026-03-25', checklist: { creditPassed: true, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [{ name: 'Loan Agreement', sent: true, signed: false }],
+    surveyPhotos: [], auroraSynced: true,
+    auroraData: { systemSize: '11.2 kW', battery: 'Enphase IQ 5P', financier: 'Mosaic', monthlyPayment: '$198', adders: ['Main Panel Upgrade'] },
+    convertedToSale: false,
+  },
+  {
+    id: 'sell-demo-3', firstName: 'Linda', lastName: 'Chen', email: 'lchen@email.com',
+    phone: '(713) 555-4567', address: '2200 Willow Creek Ln, Houston, TX 77024',
+    highBill: 275, lowBill: 140, allElectric: false, creditStatus: 'new',
+    createdAt: '2026-03-28', checklist: { creditPassed: false, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [], surveyPhotos: [],
+  },
+];
 
-export const PROJECTS: Project[] = [];
+const demoProject1 = makeProjectData(
+  { id: 'proj-demo-1', customerName: 'Maria Gonzalez', address: '4521 Sunset Blvd, Houston, TX 77005', email: 'maria.g@email.com', phone: '(832) 555-1234', status: 'active', currentMilestone: 4, totalMilestones: 7, systemSize: '8.4', battery: 'Tesla Powerwall 2', soldPPW: 3.85, repName: 'Demo Rep', installerName: 'SunPro Solar', addedDate: '2026-03-20', stage: 'Install Scheduled', adders: [{ name: 'EV Charger', cost: 1200 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'good', roofIssues: [], annualUsage: 14500, documentsSignedCount: 5, totalDocuments: 5 },
+  { submitted: '2026-03-20', siteSurvey: '2026-03-22', sowConfirmed: '2026-03-24', permitSubmitted: '2026-03-25', lastHOContact: '2026-03-30' },
+  { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: true }
+);
+
+const demoProject2 = makeProjectData(
+  { id: 'proj-demo-2', customerName: 'Robert Williams', address: '1100 Main St, Corpus Christi, TX 78401', email: 'rwilliams@email.com', phone: '(361) 555-3210', status: 'active', currentMilestone: 2, totalMilestones: 7, systemSize: '10.5', battery: 'None', soldPPW: 3.65, repName: 'Demo Rep', installerName: 'Gulf Coast Solar', addedDate: '2026-03-26', stage: 'Permit Submitted', adders: [{ name: 'Critter Guard', cost: 450 }], siteSurveyPhotos: [], permitStatus: 'submitted', roofCondition: 'good', roofIssues: [], annualUsage: 18200, documentsSignedCount: 3, totalDocuments: 5 },
+  { submitted: '2026-03-26', siteSurvey: '2026-03-28', sowConfirmed: null, permitSubmitted: '2026-03-30', lastHOContact: '2026-03-30' },
+  { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false }
+);
+
+export const PROJECTS: Project[] = [demoProject1, demoProject2];
 
 export const MILESTONES = MILESTONE_NAMES;
 
