@@ -1,5 +1,4 @@
-// Mock data for Alpha Sale Pro
-import { Star, Zap, Battery, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, Calendar, Phone, Mail, TrendingUp, Award, Ticket, Gift, ShoppingBag, Headphones, Smartphone, Gem, Ship, PalmtreeIcon, BarChart3, Wrench, Flame, Users, Camera, ClipboardList, Shield, AlertTriangle, MessageSquare } from 'lucide-react';
+// Mock data for Alpha Sale Pro — only used by demo users
 
 export interface MilestoneDetail {
   name: string;
