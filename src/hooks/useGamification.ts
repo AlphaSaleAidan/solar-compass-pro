@@ -89,7 +89,7 @@ export const useGamification = () => {
       }
 
       if (data) {
-        setState({
+        const loadedState: GamificationState = {
           puzzle_pieces: data.puzzle_pieces,
           puzzle_cycle: data.puzzle_cycle,
           puzzle_prize_index: data.puzzle_prize_index,
@@ -98,13 +98,29 @@ export const useGamification = () => {
           tickets: data.tickets,
           alpha_cash: Number(data.alpha_cash),
           cash_bonuses: Number(data.cash_bonuses),
-        });
+        };
+
+        // Auto-reset puzzle if we're in a new 3-day cycle
+        const currentCycle = getCurrentPuzzleCycle();
+        if (currentCycle !== loadedState.puzzle_cycle) {
+          loadedState.puzzle_pieces = 0;
+          loadedState.puzzle_cycle = currentCycle;
+          // Persist the reset
+          await supabase
+            .from('user_gamification')
+            .update({ puzzle_pieces: 0, puzzle_cycle: currentCycle })
+            .eq('user_id', userId);
+        }
+
+        setState(loadedState);
       } else {
-        // Initialize new user
+        // Initialize new user with current cycle
+        const currentCycle = getCurrentPuzzleCycle();
         const { error: insertError } = await supabase
           .from('user_gamification')
-          .insert({ user_id: userId });
+          .insert({ user_id: userId, puzzle_cycle: currentCycle });
         if (insertError) console.error('Error initializing gamification:', insertError);
+        setState(prev => ({ ...prev, puzzle_cycle: currentCycle }));
       }
       setLoading(false);
     };
