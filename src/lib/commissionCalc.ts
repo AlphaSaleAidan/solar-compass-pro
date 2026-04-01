@@ -28,10 +28,10 @@ export interface CommissionCalc {
 
 /**
  * Calculate commission for any project — works for both demo and production data.
- * The key formula: commission = (soldPPW - redline) * watts - adderCost
- * Your commission = commission * splitPercent
+ * The closer gets the FULL commission stack. If a setter is assigned,
+ * the setter receives their split % and the closer keeps the rest.
  */
-export const calculateCommission = (project: Project, splitPercent = 0.60): CommissionCalc => {
+export const calculateCommission = (project: Project, splitPercent = 1.0): CommissionCalc => {
   const redline = 2.35;
   const watts = parseFloat(project.systemSize) * 1000;
   const adderCost = project.adders.reduce((s, a) => s + a.cost, 0);
