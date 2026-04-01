@@ -80,6 +80,41 @@ export type Database = {
         }
         Relationships: []
       }
+      aurora_imports: {
+        Row: {
+          asp_project_code: string | null
+          asp_project_id: string | null
+          aurora_project_id: string
+          id: string
+          imported_at: string | null
+          raw_data: Json | null
+        }
+        Insert: {
+          asp_project_code?: string | null
+          asp_project_id?: string | null
+          aurora_project_id: string
+          id?: string
+          imported_at?: string | null
+          raw_data?: Json | null
+        }
+        Update: {
+          asp_project_code?: string | null
+          asp_project_id?: string | null
+          aurora_project_id?: string
+          id?: string
+          imported_at?: string | null
+          raw_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aurora_imports_asp_project_id_fkey"
+            columns: ["asp_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financier_updates: {
         Row: {
           created_at: string | null
@@ -124,6 +159,7 @@ export type Database = {
           percent: number
           project_id: string
           released_at: string | null
+          source: string | null
         }
         Insert: {
           amount: number
@@ -133,6 +169,7 @@ export type Database = {
           percent: number
           project_id: string
           released_at?: string | null
+          source?: string | null
         }
         Update: {
           amount?: number
@@ -142,6 +179,7 @@ export type Database = {
           percent?: number
           project_id?: string
           released_at?: string | null
+          source?: string | null
         }
         Relationships: [
           {
@@ -203,6 +241,7 @@ export type Database = {
           fund_released_at: string | null
           fund_status: string | null
           id: string
+          milestone: string | null
           milestone_index: number
           ops_notes: string | null
           project_id: string
@@ -218,6 +257,7 @@ export type Database = {
           fund_released_at?: string | null
           fund_status?: string | null
           id?: string
+          milestone?: string | null
           milestone_index: number
           ops_notes?: string | null
           project_id: string
@@ -233,6 +273,7 @@ export type Database = {
           fund_released_at?: string | null
           fund_status?: string | null
           id?: string
+          milestone?: string | null
           milestone_index?: number
           ops_notes?: string | null
           project_id?: string
@@ -534,6 +575,7 @@ export type Database = {
         Row: {
           adders: Json | null
           address: string | null
+          annual_consumption: number | null
           annual_production: number | null
           approval_status: string | null
           approved_at: string | null
@@ -565,12 +607,18 @@ export type Database = {
           installer_org_id: string | null
           inverter_type: string | null
           monthly_payment: number | null
+          offset_percent: number | null
           organization_id: string | null
           panel_count: number | null
           panel_type: string | null
+          pipeline_stage: string | null
           price_per_watt: number | null
           project_code: string | null
           project_cost: number | null
+          qc_dirty_notes: string | null
+          qc_reviewed_at: string | null
+          qc_reviewed_by: string | null
+          qc_status: string | null
           rep_name: string | null
           roof_condition: string | null
           roof_type: string | null
@@ -580,18 +628,24 @@ export type Database = {
           setter_pay: number | null
           site_survey_completed: boolean | null
           site_survey_data: Json | null
+          source: string | null
           state: string | null
           status: Database["public"]["Enums"]["project_status"]
           submitted_for_approval: boolean | null
+          system_price: number | null
           system_size: number | null
           updated_at: string
           welcome_call_completed: boolean | null
+          welcome_call_completed_at: string | null
           welcome_call_data: Json | null
+          welcome_call_flags: Json | null
+          welcome_call_recording_url: string | null
           zip: string | null
         }
         Insert: {
           adders?: Json | null
           address?: string | null
+          annual_consumption?: number | null
           annual_production?: number | null
           approval_status?: string | null
           approved_at?: string | null
@@ -623,12 +677,18 @@ export type Database = {
           installer_org_id?: string | null
           inverter_type?: string | null
           monthly_payment?: number | null
+          offset_percent?: number | null
           organization_id?: string | null
           panel_count?: number | null
           panel_type?: string | null
+          pipeline_stage?: string | null
           price_per_watt?: number | null
           project_code?: string | null
           project_cost?: number | null
+          qc_dirty_notes?: string | null
+          qc_reviewed_at?: string | null
+          qc_reviewed_by?: string | null
+          qc_status?: string | null
           rep_name?: string | null
           roof_condition?: string | null
           roof_type?: string | null
@@ -638,18 +698,24 @@ export type Database = {
           setter_pay?: number | null
           site_survey_completed?: boolean | null
           site_survey_data?: Json | null
+          source?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           submitted_for_approval?: boolean | null
+          system_price?: number | null
           system_size?: number | null
           updated_at?: string
           welcome_call_completed?: boolean | null
+          welcome_call_completed_at?: string | null
           welcome_call_data?: Json | null
+          welcome_call_flags?: Json | null
+          welcome_call_recording_url?: string | null
           zip?: string | null
         }
         Update: {
           adders?: Json | null
           address?: string | null
+          annual_consumption?: number | null
           annual_production?: number | null
           approval_status?: string | null
           approved_at?: string | null
@@ -681,12 +747,18 @@ export type Database = {
           installer_org_id?: string | null
           inverter_type?: string | null
           monthly_payment?: number | null
+          offset_percent?: number | null
           organization_id?: string | null
           panel_count?: number | null
           panel_type?: string | null
+          pipeline_stage?: string | null
           price_per_watt?: number | null
           project_code?: string | null
           project_cost?: number | null
+          qc_dirty_notes?: string | null
+          qc_reviewed_at?: string | null
+          qc_reviewed_by?: string | null
+          qc_status?: string | null
           rep_name?: string | null
           roof_condition?: string | null
           roof_type?: string | null
@@ -696,13 +768,18 @@ export type Database = {
           setter_pay?: number | null
           site_survey_completed?: boolean | null
           site_survey_data?: Json | null
+          source?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           submitted_for_approval?: boolean | null
+          system_price?: number | null
           system_size?: number | null
           updated_at?: string
           welcome_call_completed?: boolean | null
+          welcome_call_completed_at?: string | null
           welcome_call_data?: Json | null
+          welcome_call_flags?: Json | null
+          welcome_call_recording_url?: string | null
           zip?: string | null
         }
         Relationships: [
@@ -897,6 +974,50 @@ export type Database = {
           welcome_call_complete?: boolean | null
         }
         Relationships: []
+      }
+      site_surveys: {
+        Row: {
+          created_at: string | null
+          file_name: string | null
+          file_type: string | null
+          file_url: string
+          id: string
+          notes: string | null
+          project_id: string
+          section: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_name?: string | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          notes?: string | null
+          project_id: string
+          section: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          notes?: string | null
+          project_id?: string
+          section?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_surveys_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ticket_messages: {
         Row: {
