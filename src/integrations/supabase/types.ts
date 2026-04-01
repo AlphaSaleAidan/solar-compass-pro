@@ -1119,6 +1119,81 @@ export type Database = {
           },
         ]
       }
+      user_gamification: {
+        Row: {
+          alpha_cash: number
+          cash_bonuses: number
+          created_at: string
+          id: string
+          puzzle_cycle: number
+          puzzle_pieces: number
+          puzzle_prize_index: number
+          streak_days: number
+          streak_last_deal_date: string | null
+          tickets: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alpha_cash?: number
+          cash_bonuses?: number
+          created_at?: string
+          id?: string
+          puzzle_cycle?: number
+          puzzle_pieces?: number
+          puzzle_prize_index?: number
+          streak_days?: number
+          streak_last_deal_date?: string | null
+          tickets?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alpha_cash?: number
+          cash_bonuses?: number
+          created_at?: string
+          id?: string
+          puzzle_cycle?: number
+          puzzle_pieces?: number
+          puzzle_prize_index?: number
+          streak_days?: number
+          streak_last_deal_date?: string | null
+          tickets?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_inventory: {
+        Row: {
+          id: string
+          item_name: string
+          item_value: number
+          sold: boolean
+          sold_at: string | null
+          user_id: string
+          won_at: string
+        }
+        Insert: {
+          id?: string
+          item_name: string
+          item_value?: number
+          sold?: boolean
+          sold_at?: string | null
+          user_id: string
+          won_at?: string
+        }
+        Update: {
+          id?: string
+          item_name?: string
+          item_value?: number
+          sold?: boolean
+          sold_at?: string | null
+          user_id?: string
+          won_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
