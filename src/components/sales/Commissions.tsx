@@ -312,19 +312,51 @@ const Commissions = () => {
                         </div>
                       </div>
                       <div>
+                        <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Upcoming Pay</div>
+                        {(() => {
+                          const pendingUpfronts = c.upfronts.filter(u => !u.completed);
+                          const upfrontTotal = c.upfronts
+                            .filter(u => typeof u.closerPay === 'number')
+                            .reduce((s, u) => s + (u.closerPay as number), 0);
+                          const installPay = Math.max(0, c.yourCommission - upfrontTotal);
+                          return pendingUpfronts.length > 0 ? (
+                            <div className="space-y-1">
+                              {pendingUpfronts.map((u, i) => (
+                                <div key={i} className="flex items-center justify-between text-xs py-1 px-2 bg-bg4 rounded">
+                                  <div className="flex items-center gap-1.5">
+                                    <Clock className="w-3 h-3 text-muted-foreground" />
+                                    <span className="text-muted-foreground">{u.milestone}</span>
+                                  </div>
+                                  <span className="font-bold text-muted-foreground">
+                                    {u.milestone === 'Install Completed'
+                                      ? `$${installPay.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                                      : `$${typeof u.closerPay === 'number' ? u.closerPay : u.closerPay}`}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-asp-green text-center py-2 bg-bg4 rounded">All milestones paid ✓</div>
+                          );
+                        })()}
+                      </div>
+                      <div>
                         <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Milestone Pay</div>
                         <div className="space-y-1">
-                          {c.upfronts.map((u, i) => (
+                          {c.upfronts.filter(u => u.completed).map((u, i) => (
                             <div key={i} className="flex items-center justify-between text-xs py-1 px-2 bg-bg4 rounded">
                               <div className="flex items-center gap-1.5">
-                                {u.completed ? <CheckCircle className="w-3 h-3 text-asp-green" /> : <Clock className="w-3 h-3 text-muted-foreground" />}
-                                <span className={u.completed ? 'text-foreground' : 'text-muted-foreground'}>{u.milestone}</span>
+                                <CheckCircle className="w-3 h-3 text-asp-green" />
+                                <span className="text-foreground">{u.milestone}</span>
                               </div>
-                              <span className={`font-bold ${u.completed ? 'text-asp-green' : 'text-muted-foreground'}`}>
+                              <span className="font-bold text-asp-green">
                                 ${typeof u.closerPay === 'number' ? u.closerPay : u.closerPay}
                               </span>
                             </div>
                           ))}
+                          {c.upfronts.filter(u => u.completed).length === 0 && (
+                            <div className="text-[10px] text-muted-foreground text-center py-2 bg-bg4 rounded">No milestones completed yet</div>
+                          )}
                         </div>
                       </div>
                     </div>
