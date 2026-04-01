@@ -300,10 +300,22 @@ export const COMMISSIONS = PROJECTS.map((p) => {
   };
 });
 
-export const APPOINTMENTS: { id: number; name: string; address: string; phone: string; email: string; date: string; time: string; highBill: number; lowBill: number; allElectric: boolean; stars: number; setter: string; closer: string | null; status: string; gotBill: boolean; gotContact: boolean; bothHomeowners: boolean; meterPhoto: boolean; billOver250: boolean; outcome: string | null; closerNotes: string; billPhoto: string | null; meterPhotoUrl: string | null; surveyPhotos: string[] }[] = [];
+export const APPOINTMENTS: { id: number; name: string; address: string; phone: string; email: string; date: string; time: string; highBill: number; lowBill: number; allElectric: boolean; stars: number; setter: string; closer: string | null; status: string; gotBill: boolean; gotContact: boolean; bothHomeowners: boolean; meterPhoto: boolean; billOver250: boolean; outcome: string | null; closerNotes: string; billPhoto: string | null; meterPhotoUrl: string | null; surveyPhotos: string[] }[] = [
+  { id: 1, name: 'Sarah Thompson', address: '3200 Elm St, Houston, TX 77004', phone: '(832) 555-7890', email: 'sthompson@email.com', date: new Date().toISOString().split('T')[0], time: '10:00 AM', highBill: 340, lowBill: 190, allElectric: false, stars: 4, setter: 'Demo Rep', closer: null, status: 'confirmed', gotBill: true, gotContact: true, bothHomeowners: true, meterPhoto: true, billOver250: true, outcome: null, closerNotes: '', billPhoto: null, meterPhotoUrl: null, surveyPhotos: [] },
+  { id: 2, name: 'David Martinez', address: '500 Harbor Dr, Corpus Christi, TX 78402', phone: '(361) 555-2468', email: 'dmartinez@email.com', date: new Date().toISOString().split('T')[0], time: '2:00 PM', highBill: 280, lowBill: 150, allElectric: true, stars: 3, setter: 'Demo Rep', closer: null, status: 'confirmed', gotBill: true, gotContact: true, bothHomeowners: false, meterPhoto: true, billOver250: true, outcome: null, closerNotes: '', billPhoto: null, meterPhotoUrl: null, surveyPhotos: [] },
+];
 
-export const RANKINGS: { rank: number; name: string; deals: number; installs: number; revenue: number; ticketBonus: string }[] = [];
+export const RANKINGS: { rank: number; name: string; deals: number; installs: number; revenue: number; ticketBonus: string }[] = [
+  { rank: 1, name: 'Alpha Team', deals: 22, installs: 18, revenue: 485000, ticketBonus: '200%' },
+  { rank: 2, name: 'Demo Rep', deals: 15, installs: 12, revenue: 320000, ticketBonus: '150%' },
+  { rank: 3, name: 'Solar Squad', deals: 14, installs: 10, revenue: 290000, ticketBonus: '150%' },
+  { rank: 4, name: 'Bright Future', deals: 11, installs: 8, revenue: 215000, ticketBonus: '125%' },
+  { rank: 5, name: 'Grid Masters', deals: 9, installs: 7, revenue: 180000, ticketBonus: '125%' },
+];
 
-export const QC_QUEUE: Project[] = [];
+export const QC_QUEUE: Project[] = [demoProject2];
 
-export const INSTALLED_HOMES: { lat: number; lng: number; address: string; customer: string; systemSize: string; installDate: string }[] = [];
+export const INSTALLED_HOMES: { lat: number; lng: number; address: string; customer: string; systemSize: string; installDate: string }[] = [
+  { lat: 29.7174, lng: -95.4018, address: '4521 Sunset Blvd, Houston, TX', customer: 'Maria Gonzalez', systemSize: '8.4 kW', installDate: '2026-03-30' },
+  { lat: 27.8006, lng: -97.3964, address: '1100 Main St, Corpus Christi, TX', customer: 'Robert Williams', systemSize: '10.5 kW', installDate: '2026-03-28' },
+];
