@@ -181,7 +181,7 @@ const demoProject1 = makeProjectData(
 );
 
 const demoProject2 = makeProjectData(
-  { id: 'proj-demo-2', customerName: 'Robert Williams', address: '1100 Main St, Corpus Christi, TX 78401', email: 'rwilliams@email.com', phone: '(361) 555-3210', status: 'active', currentMilestone: 2, totalMilestones: 7, systemSize: '10.5', battery: 'None', soldPPW: 3.65, repName: 'Demo Rep', installerName: 'Gulf Coast Solar', addedDate: '2026-03-26', stage: 'Permit Submitted', adders: [{ name: 'Critter Guard', cost: 450 }], siteSurveyPhotos: [], permitStatus: 'submitted', roofCondition: 'good', roofIssues: [], annualUsage: 18200, documentsSignedCount: 3, totalDocuments: 5 },
+  { id: 'proj-demo-2', customerName: 'Robert Williams', address: '1100 Main St, Corpus Christi, TX 78401', email: 'rwilliams@email.com', phone: '(361) 555-3210', status: 'active', currentMilestone: 2, totalMilestones: 7, systemSize: '10.5', battery: 'None', soldPPW: 3.65, contractValue: 42000, repName: 'Demo Rep', installerName: 'Gulf Coast Solar', addedDate: '2026-03-26', stage: 'Permit Submitted', adders: [{ name: 'Critter Guard', cost: 450 }], siteSurveyPhotos: [], permitStatus: 'submitted', roofCondition: 'good', roofIssues: [], annualUsage: 18200, documentsSignedCount: 3, totalDocuments: 5 },
   { submitted: '2026-03-26', siteSurvey: '2026-03-28', sowConfirmed: null, permitSubmitted: '2026-03-30', lastHOContact: '2026-03-30' },
   { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false }
 );
