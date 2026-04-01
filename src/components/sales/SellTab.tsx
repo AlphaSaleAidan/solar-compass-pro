@@ -255,7 +255,6 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                     placeholder="Enter Site Address here..."
                     className="w-full px-6 py-4 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-white placeholder:text-white/30 text-center text-lg font-semibold outline-none focus:border-primary focus:bg-white/10 transition-all duration-200"
                   />
-                  />
                 </div>
                 <button
                   onClick={() => { if (address.trim()) setShowNewProjectForm(true); }}
