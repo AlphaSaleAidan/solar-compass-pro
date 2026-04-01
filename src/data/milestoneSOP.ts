@@ -112,8 +112,8 @@ export const MILESTONE_SOPS: MilestoneSOP[] = [
     fundPercent: 5,
     description: 'PTO achieved within 35 days of permit approval — installer uploads proof, backend ops verifies.',
     checklist: [
-      { id: 'm7-speed-proof', label: 'Installer uploaded proof of PTO within 35 days of permit approval', actor: 'installer', requiresUpload: true, uploadLabel: 'Upload speed bonus proof' },
-      { id: 'm7-ops-verify', label: 'Backend Ops verified timeline (permit → PTO ≤ 35 days)', actor: 'backend_ops' },
+      { id: 'm7-day-count', label: 'Day count verified: permit approval to PTO ≤ 35 days', actor: 'backend_ops' },
+      { id: 'm7-installer-score', label: 'Installer performance score updated', actor: 'backend_ops' },
       { id: 'm7-ops-approve', label: 'Backend Ops final approval', actor: 'backend_ops' },
     ],
   },
