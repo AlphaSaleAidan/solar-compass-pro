@@ -223,16 +223,13 @@ export const SPIN_TIERS = [
 ];
 
 export const PUZZLE_GIFTS = [
-  'Yeti Tumbler ($45)', 'Amazon Echo ($50)', 'Uber Eats $75', 'Nike Duffel Bag ($60)',
-  'Apple Watch Band ($50)', 'Ray-Ban Sunglasses ($180)', 'DoorDash $100', 'JBL Speaker ($80)',
-  'Sephora $75 Gift Card', 'Stanley Cup + ASP Kit ($55)',
+  '$400 Dinner Card', 'Meta Ray-Bans ($300)', 'Apple Watch SE ($250)', 'Yeti Cooler Bundle ($350)',
 ];
 
 export const TICKET_EARNING_RULES = [
   { action: 'Resolving project tickets', tickets: 1 },
   { action: 'Selling a deal', tickets: 2 },
   { action: 'Getting an install', tickets: 3 },
-  { action: 'Deal to install in under 25 days', tickets: 5 },
 ];
 
 export const REP_STATS = {
