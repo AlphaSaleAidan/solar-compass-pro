@@ -4,6 +4,7 @@ import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { COMMISSIONS } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
 import {
   BarChart3, Zap, Battery, MapPin, DollarSign, Mail, Phone, Calendar,
   ChevronDown, ChevronRight, CheckCircle, XCircle, Clock, FileText, Camera,
@@ -358,12 +359,9 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                                       {(isCurrent || isPassed) && (
                                         <div className="mt-3">
                                           <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-1">Ops Notes</div>
-                                          <textarea
+                                          <OpsNotesTextarea
                                             value={milestoneState.opsNotes[milestoneIdx] || ''}
-                                            onChange={(e) => store.setOpsNotes(p.id, milestoneIdx, e.target.value)}
-                                            placeholder="Add notes about this milestone..."
-                                            rows={2}
-                                            className="w-full px-3 py-2 bg-[hsl(var(--bg2))] border border-border rounded-md text-[10px] text-foreground outline-none focus:border-primary resize-none"
+                                            onCommit={(val) => store.setOpsNotes(p.id, milestoneIdx, val)}
                                           />
                                         </div>
                                       )}

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { MILESTONE_NAMES } from '@/data/mockData';
+import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
 import { CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, Zap, FileText, Camera, Send, Flag, Eye, Upload, ClipboardCheck, Clock, MessageSquare } from 'lucide-react';
 
 const MilestoneVerification = () => {
@@ -324,12 +325,9 @@ const MilestoneVerification = () => {
                                 {(isCurrent || isPassed) && (
                                   <div className="mt-3">
                                     <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-1">Ops Notes</div>
-                                    <textarea
+                                    <OpsNotesTextarea
                                       value={milestoneState.opsNotes[milestoneIdx] || ''}
-                                      onChange={(e) => store.setOpsNotes(p.id, milestoneIdx, e.target.value)}
-                                      placeholder="Add notes about this milestone..."
-                                      rows={2}
-                                      className="w-full px-3 py-2 bg-[hsl(var(--bg2))] border border-border rounded-md text-[10px] text-foreground outline-none focus:border-primary resize-none"
+                                      onCommit={(val) => store.setOpsNotes(p.id, milestoneIdx, val)}
                                     />
                                   </div>
                                 )}
