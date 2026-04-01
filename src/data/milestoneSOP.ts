@@ -101,6 +101,7 @@ export const MILESTONE_SOPS: MilestoneSOP[] = [
       { id: 'm6-pto-letter', label: 'PTO approval letter uploaded by installer', actor: 'installer', requiresUpload: true, uploadLabel: 'Upload PTO approval letter' },
       { id: 'm6-ops-checked', label: 'Backend Ops checked PTO letter', actor: 'backend_ops' },
       { id: 'm6-production-confirmed', label: 'System production confirmed by backend ops', actor: 'backend_ops' },
+      { id: 'm6-service-contract', label: '5-year ASP Care Plan enrolled', actor: 'backend_ops' },
       { id: 'm6-ops-approve', label: 'Backend Ops final approval', actor: 'backend_ops' },
     ],
   },
