@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Puzzle, Gift, Clock, Trophy } from 'lucide-react';
 import { PUZZLE_GIFTS } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
-import { useGamification, PUZZLE_PRIZES } from '@/hooks/useGamification';
+import { useGamification, PUZZLE_PRIZES, getSecondsUntilReset } from '@/hooks/useGamification';
 
 const PuzzleGame = () => {
   const { user } = useAuth();
@@ -11,15 +11,17 @@ const PuzzleGame = () => {
 
   // Demo state
   const [demoPieces, setDemoPieces] = useState([false, false, false, false]);
-  const [timeLeft, setTimeLeft] = useState(72 * 3600);
+  const [timeLeft, setTimeLeft] = useState(() => getSecondsUntilReset());
   const [currentGiftIndex] = useState(Math.floor(Math.random() * PUZZLE_GIFTS.length));
 
   useEffect(() => {
     if (isDemo) setDemoPieces([true, true, false, false]);
   }, [isDemo]);
 
+  // Live countdown to next 3-day cycle reset
   useEffect(() => {
-    const timer = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
+    setTimeLeft(getSecondsUntilReset());
+    const timer = setInterval(() => setTimeLeft(getSecondsUntilReset()), 1000);
     return () => clearInterval(timer);
   }, []);
 
