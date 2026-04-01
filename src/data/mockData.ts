@@ -175,7 +175,7 @@ export const SELL_PROJECTS: SellProject[] = [
 ];
 
 const demoProject1 = makeProjectData(
-  { id: 'proj-demo-1', customerName: 'Maria Gonzalez', address: '4521 Sunset Blvd, Houston, TX 77005', email: 'maria.g@email.com', phone: '(832) 555-1234', status: 'active', currentMilestone: 4, totalMilestones: 7, systemSize: '8.4', battery: 'Tesla Powerwall 2', soldPPW: 3.85, repName: 'Demo Rep', installerName: 'SunPro Solar', addedDate: '2026-03-20', stage: 'Install Scheduled', adders: [{ name: 'EV Charger', cost: 1200 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'good', roofIssues: [], annualUsage: 14500, documentsSignedCount: 5, totalDocuments: 5 },
+  { id: 'proj-demo-1', customerName: 'Maria Gonzalez', address: '4521 Sunset Blvd, Houston, TX 77005', email: 'maria.g@email.com', phone: '(832) 555-1234', status: 'active', currentMilestone: 4, totalMilestones: 7, systemSize: '8.4', battery: 'Tesla Powerwall 2', soldPPW: 3.85, contractValue: 54000, repName: 'Demo Rep', installerName: 'SunPro Solar', addedDate: '2026-03-20', stage: 'Install Scheduled', adders: [{ name: 'EV Charger', cost: 1200 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'good', roofIssues: [], annualUsage: 14500, documentsSignedCount: 5, totalDocuments: 5 },
   { submitted: '2026-03-20', siteSurvey: '2026-03-22', sowConfirmed: '2026-03-24', permitSubmitted: '2026-03-25', lastHOContact: '2026-03-30' },
   { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: true }
 );
