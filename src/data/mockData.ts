@@ -1,5 +1,4 @@
-// Mock data for Alpha Sale Pro
-import { Star, Zap, Battery, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, Calendar, Phone, Mail, TrendingUp, Award, Ticket, Gift, ShoppingBag, Headphones, Smartphone, Gem, Ship, PalmtreeIcon, BarChart3, Wrench, Flame, Users, Camera, ClipboardList, Shield, AlertTriangle, MessageSquare } from 'lucide-react';
+// Mock data for Alpha Sale Pro — only used by demo users
 
 export interface MilestoneDetail {
   name: string;
@@ -143,9 +142,50 @@ export interface SellProject {
   approvalNotes?: string;
 }
 
-export const SELL_PROJECTS: SellProject[] = [];
+// Demo-only sample data — only loaded for demo users via ProjectStore
+export const SELL_PROJECTS: SellProject[] = [
+  {
+    id: 'sell-demo-1', firstName: 'Maria', lastName: 'Gonzalez', email: 'maria.g@email.com',
+    phone: '(832) 555-1234', address: '4521 Sunset Blvd, Houston, TX 77005',
+    highBill: 320, lowBill: 180, allElectric: false, creditStatus: 'credit_passed',
+    createdAt: '2026-03-20', checklist: { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false },
+    documents: [{ name: 'Loan Agreement', sent: true, signed: true }, { name: 'Utility Release', sent: true, signed: false }],
+    surveyPhotos: [], auroraSynced: true,
+    auroraData: { systemSize: '8.4 kW', battery: 'Tesla Powerwall 2', financier: 'Goodleap', monthlyPayment: '$145', adders: ['EV Charger'] },
+    convertedToSale: true, welcomeCallComplete: true, siteSurveyComplete: true, submittedForApproval: true, approvalStatus: 'pending',
+  },
+  {
+    id: 'sell-demo-2', firstName: 'James', lastName: 'Parker', email: 'jparker@email.com',
+    phone: '(361) 555-9876', address: '789 Oak Dr, Corpus Christi, TX 78411',
+    highBill: 410, lowBill: 220, allElectric: true, creditStatus: 'credit_passed',
+    createdAt: '2026-03-25', checklist: { creditPassed: true, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [{ name: 'Loan Agreement', sent: true, signed: false }],
+    surveyPhotos: [], auroraSynced: true,
+    auroraData: { systemSize: '11.2 kW', battery: 'Enphase IQ 5P', financier: 'Mosaic', monthlyPayment: '$198', adders: ['Main Panel Upgrade'] },
+    convertedToSale: false,
+  },
+  {
+    id: 'sell-demo-3', firstName: 'Linda', lastName: 'Chen', email: 'lchen@email.com',
+    phone: '(713) 555-4567', address: '2200 Willow Creek Ln, Houston, TX 77024',
+    highBill: 275, lowBill: 140, allElectric: false, creditStatus: 'new',
+    createdAt: '2026-03-28', checklist: { creditPassed: false, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
+    documents: [], surveyPhotos: [],
+  },
+];
 
-export const PROJECTS: Project[] = [];
+const demoProject1 = makeProjectData(
+  { id: 'proj-demo-1', customerName: 'Maria Gonzalez', address: '4521 Sunset Blvd, Houston, TX 77005', email: 'maria.g@email.com', phone: '(832) 555-1234', status: 'active', currentMilestone: 4, totalMilestones: 7, systemSize: '8.4', battery: 'Tesla Powerwall 2', soldPPW: 3.85, contractValue: 54000, repName: 'Demo Rep', installerName: 'SunPro Solar', addedDate: '2026-03-20', stage: 'Install Scheduled', adders: [{ name: 'EV Charger', cost: 1200 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'good', roofIssues: [], annualUsage: 14500, documentsSignedCount: 5, totalDocuments: 5 },
+  { submitted: '2026-03-20', siteSurvey: '2026-03-22', sowConfirmed: '2026-03-24', permitSubmitted: '2026-03-25', lastHOContact: '2026-03-30' },
+  { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: true }
+);
+
+const demoProject2 = makeProjectData(
+  { id: 'proj-demo-2', customerName: 'Robert Williams', address: '1100 Main St, Corpus Christi, TX 78401', email: 'rwilliams@email.com', phone: '(361) 555-3210', status: 'active', currentMilestone: 2, totalMilestones: 7, systemSize: '10.5', battery: 'None', soldPPW: 3.65, contractValue: 42000, repName: 'Demo Rep', installerName: 'Gulf Coast Solar', addedDate: '2026-03-26', stage: 'Permit Submitted', adders: [{ name: 'Critter Guard', cost: 450 }], siteSurveyPhotos: [], permitStatus: 'submitted', roofCondition: 'good', roofIssues: [], annualUsage: 18200, documentsSignedCount: 3, totalDocuments: 5 },
+  { submitted: '2026-03-26', siteSurvey: '2026-03-28', sowConfirmed: null, permitSubmitted: '2026-03-30', lastHOContact: '2026-03-30' },
+  { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false }
+);
+
+export const PROJECTS: Project[] = [demoProject1, demoProject2];
 
 export const MILESTONES = MILESTONE_NAMES;
 
@@ -196,19 +236,19 @@ export const TICKET_EARNING_RULES = [
 ];
 
 export const REP_STATS = {
-  yearlyPaidOut: 0,
-  pendingPipeline: 0,
-  installCount: 0,
-  monthlyAppointments: 0,
-  avgRating: 0,
-  ticketBalance: 0,
-  vacationPieces: 0,
-  dealStreak: 0,
-  totalSits: 0,
-  totalCloses: 0,
-  creditFails: 0,
-  creditPassed: 0,
-  nonClosed: 0,
+  yearlyPaidOut: 12450,
+  pendingPipeline: 8200,
+  installCount: 3,
+  monthlyAppointments: 8,
+  avgRating: 4.2,
+  ticketBalance: 7,
+  vacationPieces: 1,
+  dealStreak: 2,
+  totalSits: 15,
+  totalCloses: 5,
+  creditFails: 2,
+  creditPassed: 6,
+  nonClosed: 7,
 };
 
 export const COMMISSIONS = PROJECTS.map((p) => {
@@ -259,10 +299,22 @@ export const COMMISSIONS = PROJECTS.map((p) => {
   };
 });
 
-export const APPOINTMENTS: { id: number; name: string; address: string; phone: string; email: string; date: string; time: string; highBill: number; lowBill: number; allElectric: boolean; stars: number; setter: string; closer: string | null; status: string; gotBill: boolean; gotContact: boolean; bothHomeowners: boolean; meterPhoto: boolean; billOver250: boolean; outcome: string | null; closerNotes: string; billPhoto: string | null; meterPhotoUrl: string | null; surveyPhotos: string[] }[] = [];
+export const APPOINTMENTS: { id: number; name: string; address: string; phone: string; email: string; date: string; time: string; highBill: number; lowBill: number; allElectric: boolean; stars: number; setter: string; closer: string | null; status: string; gotBill: boolean; gotContact: boolean; bothHomeowners: boolean; meterPhoto: boolean; billOver250: boolean; outcome: string | null; closerNotes: string; billPhoto: string | null; meterPhotoUrl: string | null; surveyPhotos: string[] }[] = [
+  { id: 1, name: 'Sarah Thompson', address: '3200 Elm St, Houston, TX 77004', phone: '(832) 555-7890', email: 'sthompson@email.com', date: new Date().toISOString().split('T')[0], time: '10:00 AM', highBill: 340, lowBill: 190, allElectric: false, stars: 4, setter: 'Demo Rep', closer: null, status: 'confirmed', gotBill: true, gotContact: true, bothHomeowners: true, meterPhoto: true, billOver250: true, outcome: null, closerNotes: '', billPhoto: null, meterPhotoUrl: null, surveyPhotos: [] },
+  { id: 2, name: 'David Martinez', address: '500 Harbor Dr, Corpus Christi, TX 78402', phone: '(361) 555-2468', email: 'dmartinez@email.com', date: new Date().toISOString().split('T')[0], time: '2:00 PM', highBill: 280, lowBill: 150, allElectric: true, stars: 3, setter: 'Demo Rep', closer: null, status: 'confirmed', gotBill: true, gotContact: true, bothHomeowners: false, meterPhoto: true, billOver250: true, outcome: null, closerNotes: '', billPhoto: null, meterPhotoUrl: null, surveyPhotos: [] },
+];
 
-export const RANKINGS: { rank: number; name: string; deals: number; installs: number; revenue: number; ticketBonus: string }[] = [];
+export const RANKINGS: { rank: number; name: string; deals: number; installs: number; revenue: number; ticketBonus: string }[] = [
+  { rank: 1, name: 'Alpha Team', deals: 22, installs: 18, revenue: 485000, ticketBonus: '200%' },
+  { rank: 2, name: 'Demo Rep', deals: 15, installs: 12, revenue: 320000, ticketBonus: '150%' },
+  { rank: 3, name: 'Solar Squad', deals: 14, installs: 10, revenue: 290000, ticketBonus: '150%' },
+  { rank: 4, name: 'Bright Future', deals: 11, installs: 8, revenue: 215000, ticketBonus: '125%' },
+  { rank: 5, name: 'Grid Masters', deals: 9, installs: 7, revenue: 180000, ticketBonus: '125%' },
+];
 
-export const QC_QUEUE: Project[] = [];
+export const QC_QUEUE: Project[] = [demoProject2];
 
-export const INSTALLED_HOMES: { lat: number; lng: number; address: string; customer: string; systemSize: string; installDate: string }[] = [];
+export const INSTALLED_HOMES: { lat: number; lng: number; address: string; customer: string; systemSize: string; installDate: string }[] = [
+  { lat: 29.7174, lng: -95.4018, address: '4521 Sunset Blvd, Houston, TX', customer: 'Maria Gonzalez', systemSize: '8.4 kW', installDate: '2026-03-30' },
+  { lat: 27.8006, lng: -97.3964, address: '1100 Main St, Corpus Christi, TX', customer: 'Robert Williams', systemSize: '10.5 kW', installDate: '2026-03-28' },
+];
