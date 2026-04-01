@@ -190,12 +190,11 @@ export const useGamification = () => {
     }
     updates.streak_last_deal_date = today;
 
-    // Puzzle logic
-    if (newPieces >= 4) {
-      // Completed puzzle! Award prize
+    // Puzzle logic — 3-day cycle resets externally; completing 4 pieces awards prize within cycle
+    if (newPieces >= 4 && state.puzzle_pieces < 4) {
+      // Completed puzzle! Award prize — pieces stay at 4 until cycle resets
       prizeWon = PUZZLE_PRIZES[state.puzzle_prize_index % PUZZLE_PRIZES.length];
-      updates.puzzle_pieces = 0;
-      updates.puzzle_cycle = state.puzzle_cycle + 1;
+      updates.puzzle_pieces = 4;
       updates.puzzle_prize_index = (state.puzzle_prize_index + 1) % PUZZLE_PRIZES.length;
 
       // Add prize to rewards table
