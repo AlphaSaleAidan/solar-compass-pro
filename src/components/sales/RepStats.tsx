@@ -1,30 +1,58 @@
 import { useState } from 'react';
 import { DollarSign, BarChart3, Wrench, Calendar, Star, Flame, Ticket, TrendingUp, XCircle, CheckCircle, UserX, ChevronDown, ChevronUp, MapPin, Phone, Mail, Camera, FileText } from 'lucide-react';
 import { REP_STATS, APPOINTMENTS } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGamification } from '@/hooks/useGamification';
+import { useRepStats } from '@/hooks/useRepStats';
 
 const RepStats = () => {
-  const [expandedAppt, setExpandedAppt] = useState<number | null>(null);
+  const { user } = useAuth();
+  const isDemo = user?.isDemo;
+  const gamification = useGamification();
+  const { stats: liveStats } = useRepStats();
+  const [expandedAppt, setExpandedAppt] = useState<string | null>(null);
+
+  // Use demo data for demo users, live data for production
+  const yearlyPaidOut = isDemo ? REP_STATS.yearlyPaidOut : liveStats.yearlyPaidOut;
+  const pendingPipeline = isDemo ? REP_STATS.pendingPipeline : liveStats.pendingPipeline;
+  const installCount = isDemo ? REP_STATS.installCount : liveStats.installCount;
+  const monthlyAppointments = isDemo ? REP_STATS.monthlyAppointments : liveStats.monthlyAppointments;
+  const avgRating = isDemo ? REP_STATS.avgRating : liveStats.avgRating;
+  const streak = isDemo ? REP_STATS.dealStreak : gamification.state.streak_days;
 
   const stats = [
-    { label: 'Yearly Paid Out', value: `$${REP_STATS.yearlyPaidOut.toLocaleString()}`, icon: DollarSign, color: 'text-asp-green' },
-    { label: 'Pending Pipeline', value: `$${REP_STATS.pendingPipeline.toLocaleString()}`, icon: BarChart3, color: 'text-primary' },
-    { label: 'Installs', value: REP_STATS.installCount.toString(), icon: Wrench, color: 'text-asp-yellow' },
+    { label: 'Yearly Paid Out', value: `$${yearlyPaidOut.toLocaleString()}`, icon: DollarSign, color: 'text-asp-green' },
+    { label: 'Pending Pipeline', value: `$${pendingPipeline.toLocaleString()}`, icon: BarChart3, color: 'text-primary' },
+    { label: 'Installs', value: installCount.toString(), icon: Wrench, color: 'text-asp-yellow' },
   ];
 
+  // Performance metrics
+  const totalSits = isDemo ? REP_STATS.totalSits : liveStats.totalSits;
+  const totalCloses = isDemo ? REP_STATS.totalCloses : liveStats.totalCloses;
+  const creditFails = isDemo ? REP_STATS.creditFails : liveStats.creditFails;
+  const creditPassed = isDemo ? REP_STATS.creditPassed : liveStats.creditPassed;
+  const nonClosed = isDemo ? REP_STATS.nonClosed : liveStats.nonClosed;
+
+  const closingPct = totalSits > 0 ? Math.round(((totalCloses + creditFails) / totalSits) * 100) : 0;
+  const totalDeals = creditPassed + creditFails + nonClosed;
+  const creditPassedPct = totalDeals > 0 ? Math.round((creditPassed / totalDeals) * 100) : 0;
+  const creditFailPct = totalDeals > 0 ? Math.round((creditFails / totalDeals) * 100) : 0;
+  const nonClosedPct = totalDeals > 0 ? Math.round((nonClosed / totalDeals) * 100) : 0;
+
+  // Today's appointments
   const today = new Date().toISOString().split('T')[0];
-  const todaysAppts = APPOINTMENTS.filter(a => a.date === today || a.date === '2026-03-28');
-  const getStarCount = (appt: typeof APPOINTMENTS[0]) => {
-    const criteria = [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250];
-    return criteria.filter(Boolean).length;
+  const todaysAppts = isDemo
+    ? APPOINTMENTS.filter(a => a.date === today || a.date === '2026-03-28')
+    : liveStats.todaysAppointments;
+
+  const getStarCount = (appt: any) => {
+    if (isDemo) {
+      const criteria = [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250];
+      return criteria.filter(Boolean).length;
+    }
+    return appt.stars || 0;
   };
 
-  const closingPct = REP_STATS.totalSits > 0 ? Math.round(((REP_STATS.totalCloses + REP_STATS.creditFails) / REP_STATS.totalSits) * 100) : 0;
-  const totalDeals = REP_STATS.creditPassed + REP_STATS.creditFails + REP_STATS.nonClosed;
-  const creditPassedPct = totalDeals > 0 ? Math.round((REP_STATS.creditPassed / totalDeals) * 100) : 0;
-  const creditFailPct = totalDeals > 0 ? Math.round((REP_STATS.creditFails / totalDeals) * 100) : 0;
-  const nonClosedPct = totalDeals > 0 ? Math.round((REP_STATS.nonClosed / totalDeals) * 100) : 0;
-
-  const streak = REP_STATS.dealStreak;
   const streakStages = [
     { label: '+50% Tickets', threshold: 1, boost: '50%' },
     { label: '+100% Tickets', threshold: 2, boost: '100%' },
@@ -83,21 +111,21 @@ const RepStats = () => {
           <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Monthly Appointments</div>
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-xl font-black text-foreground">{REP_STATS.monthlyAppointments}</span>
+          <span className="text-xl font-black text-foreground">{monthlyAppointments}</span>
           <span className="text-xs text-muted-foreground">this month</span>
         </div>
         <div className="mt-2 flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Avg Rating:</span>
           <div className="flex items-center gap-0.5">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(REP_STATS.avgRating) ? 'text-asp-yellow fill-asp-yellow' : 'text-muted-foreground/30'}`} />
+              <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(avgRating) ? 'text-asp-yellow fill-asp-yellow' : 'text-muted-foreground/30'}`} />
             ))}
-            <span className="text-sm font-bold text-asp-yellow ml-1">{REP_STATS.avgRating}</span>
+            <span className="text-sm font-bold text-asp-yellow ml-1">{avgRating || '—'}</span>
           </div>
         </div>
       </div>
 
-      {/* Next Incoming Appointments Today — CLICKABLE */}
+      {/* Next Incoming Appointments Today */}
       <div className="bg-bg2 border border-border rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Calendar className="w-4 h-4 text-primary" />
@@ -105,18 +133,28 @@ const RepStats = () => {
         </div>
         {todaysAppts.length > 0 ? (
           <div className="space-y-2">
-            {todaysAppts.map((a) => {
+            {todaysAppts.map((a: any) => {
               const starCount = getStarCount(a);
-              const isExpanded = expandedAppt === a.id;
+              const apptId = a.id?.toString();
+              const isExpanded = expandedAppt === apptId;
+              const name = isDemo ? a.name : a.customer_name;
+              const time = isDemo ? a.time : a.appointment_time;
+              const address = a.address;
+              const phone = a.phone;
+              const email = a.email;
+              const highBill = isDemo ? a.highBill : a.high_bill;
+              const lowBill = isDemo ? a.lowBill : a.low_bill;
+              const closerNotes = isDemo ? a.closerNotes : a.closer_notes;
+
               return (
-                <div key={a.id} className="bg-bg3 rounded-lg overflow-hidden">
+                <div key={apptId} className="bg-bg3 rounded-lg overflow-hidden">
                   <div
                     className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-bg4/50 transition-colors"
-                    onClick={() => setExpandedAppt(isExpanded ? null : a.id)}
+                    onClick={() => setExpandedAppt(isExpanded ? null : apptId)}
                   >
                     <div>
-                      <div className="text-sm font-bold text-foreground">{a.name}</div>
-                      <div className="text-[10px] text-muted-foreground">{a.time}</div>
+                      <div className="text-sm font-bold text-foreground">{name}</div>
+                      <div className="text-[10px] text-muted-foreground">{time}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-0.5">
@@ -131,29 +169,21 @@ const RepStats = () => {
                     <div className="px-3 pb-3 pt-1 border-t border-border animate-fade-in-up space-y-2">
                       <div className="grid grid-cols-2 gap-2 text-[11px]">
                         <div className="flex items-center gap-1 text-muted-foreground">
-                          <MapPin className="w-3 h-3" /> {a.address}
+                          <MapPin className="w-3 h-3" /> {address}
                         </div>
                         <div className="flex items-center gap-1 text-muted-foreground">
-                          <Phone className="w-3 h-3" /> {a.phone}
+                          <Phone className="w-3 h-3" /> {phone}
                         </div>
                         <div className="flex items-center gap-1 text-muted-foreground">
-                          <Mail className="w-3 h-3" /> {a.email}
+                          <Mail className="w-3 h-3" /> {email}
                         </div>
                         <div className="text-muted-foreground">
-                          Bills: <span className="text-asp-red font-bold">${a.highBill}</span> / <span className="text-asp-green font-bold">${a.lowBill}</span>
+                          Bills: <span className="text-asp-red font-bold">${highBill}</span> / <span className="text-asp-green font-bold">${lowBill}</span>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-[10px]">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <FileText className="w-3 h-3" /> Bill: {a.billPhoto ? <span className="text-asp-green">Uploaded</span> : <span className="text-asp-red">Missing</span>}
-                        </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Camera className="w-3 h-3" /> Meter: {a.meterPhoto ? <span className="text-asp-green">Yes</span> : <span className="text-asp-red">No</span>}
-                        </div>
-                      </div>
-                      {a.closerNotes && (
+                      {closerNotes && (
                         <div className="text-[10px] text-muted-foreground bg-bg4 rounded px-2 py-1">
-                          <strong className="text-foreground">Notes:</strong> {a.closerNotes}
+                          <strong className="text-foreground">Notes:</strong> {closerNotes}
                         </div>
                       )}
                     </div>

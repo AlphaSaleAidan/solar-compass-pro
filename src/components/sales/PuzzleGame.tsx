@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Puzzle, Gift, Clock } from 'lucide-react';
+import { Puzzle, Gift, Clock, Trophy } from 'lucide-react';
 import { PUZZLE_GIFTS } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGamification, PUZZLE_PRIZES } from '@/hooks/useGamification';
 
 const PuzzleGame = () => {
-  const [pieces, setPieces] = useState([false, false, false, false]);
+  const { user } = useAuth();
+  const isDemo = user?.isDemo;
+  const gamification = useGamification();
+
+  // Demo state
+  const [demoPieces, setDemoPieces] = useState([false, false, false, false]);
   const [timeLeft, setTimeLeft] = useState(72 * 3600);
   const [currentGiftIndex] = useState(Math.floor(Math.random() * PUZZLE_GIFTS.length));
-  const currentGift = PUZZLE_GIFTS[currentGiftIndex];
 
-  useEffect(() => { setPieces([true, true, false, false]); }, []);
+  useEffect(() => {
+    if (isDemo) setDemoPieces([true, true, false, false]);
+  }, [isDemo]);
+
   useEffect(() => {
     const timer = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
     return () => clearInterval(timer);
@@ -17,24 +26,30 @@ const PuzzleGame = () => {
   const hours = Math.floor(timeLeft / 3600);
   const mins = Math.floor((timeLeft % 3600) / 60);
   const secs = timeLeft % 60;
-  const completedCount = pieces.filter(Boolean).length;
 
-  // Puzzle piece SVG paths — properly interlocking 2x2 grid
-  // Each piece occupies a 50x50 base cell. Tabs extend 8px outward, blanks indent 8px inward.
-  // Tab/blank centered at the midpoint (25) of each edge, width 14 (from 18 to 32).
-  const T = 8; // tab depth
+  // Determine pieces based on demo vs production
+  const pieces = isDemo
+    ? demoPieces
+    : [
+        gamification.state.puzzle_pieces >= 1,
+        gamification.state.puzzle_pieces >= 2,
+        gamification.state.puzzle_pieces >= 3,
+        gamification.state.puzzle_pieces >= 4,
+      ];
+
+  const completedCount = pieces.filter(Boolean).length;
+  const currentPrize = isDemo
+    ? PUZZLE_GIFTS[currentGiftIndex]
+    : gamification.currentPuzzlePrize.name;
+
+  const T = 8;
   const piecePaths = [
-    // Top-left: flat top, flat left, tab RIGHT, tab BOTTOM
     `M0 0 H50 V18 C50 18, ${50+T} 18, ${50+T} 25 C${50+T} 32, 50 32, 50 32 V50 H32 C32 50, 32 ${50+T}, 25 ${50+T} C18 ${50+T}, 18 50, 18 50 H0 Z`,
-    // Top-right: flat top, blank LEFT (matches TL tab), flat right, tab BOTTOM
     `M0 0 H50 V50 H32 C32 50, 32 ${50+T}, 25 ${50+T} C18 ${50+T}, 18 50, 18 50 H0 V32 C0 32, ${-T} 32, ${-T} 25 C${-T} 18, 0 18, 0 18 V0 Z`,
-    // Bottom-left: blank TOP (matches TL tab), flat left, tab RIGHT, flat bottom
     `M0 0 H18 C18 0, 18 ${-T}, 25 ${-T} C32 ${-T}, 32 0, 32 0 H50 V18 C50 18, ${50+T} 18, ${50+T} 25 C${50+T} 32, 50 32, 50 32 V50 H0 Z`,
-    // Bottom-right: blank TOP (matches TR tab), blank LEFT (matches BL tab), flat right, flat bottom
     `M0 0 H18 C18 0, 18 ${-T}, 25 ${-T} C32 ${-T}, 32 0, 32 0 H50 V50 H0 V32 C0 32, ${-T} 32, ${-T} 25 C${-T} 18, 0 18, 0 18 V0 Z`,
   ];
 
-  // Position offsets — pieces with blanks need to align with neighboring tabs
   const positions = [
     { x: 0, y: 0 },
     { x: 50, y: 0 },
@@ -50,7 +65,12 @@ const PuzzleGame = () => {
             <Puzzle className="w-5 h-5 text-primary" />
             <h3 className="text-base font-black text-foreground">Deal Puzzle Challenge</h3>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Close 4 deals to win the prize!</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Close 4 deals to win the prize!
+            {!isDemo && gamification.state.puzzle_cycle > 0 && (
+              <span className="ml-1 text-primary font-bold">Cycle #{gamification.state.puzzle_cycle + 1}</span>
+            )}
+          </p>
         </div>
         <div className="text-right">
           <div className="flex items-center gap-1 text-xs text-muted-foreground font-bold uppercase tracking-wider">
@@ -74,8 +94,8 @@ const PuzzleGame = () => {
             <g key={i} transform={`translate(${positions[i].x}, ${positions[i].y})`}>
               <path
                 d={path}
-                 fill={pieces[i] ? 'url(#piece-filled)' : 'hsl(217 91% 60% / 0.08)'}
-                 stroke={pieces[i] ? 'hsl(217 91% 60%)' : 'hsl(217 91% 60% / 0.25)'}
+                fill={pieces[i] ? 'url(#piece-filled)' : 'hsl(217 91% 60% / 0.08)'}
+                stroke={pieces[i] ? 'hsl(217 91% 60%)' : 'hsl(217 91% 60% / 0.25)'}
                 strokeWidth="1.5"
                 className="transition-all duration-700"
               />
@@ -105,8 +125,14 @@ const PuzzleGame = () => {
         <div className="text-xs text-muted-foreground">{completedCount}/4 pieces collected</div>
         <div className="mt-2 px-3 py-1.5 bg-asp-yellow/10 border border-asp-yellow/25 rounded-lg inline-flex items-center gap-2">
           <Gift className="w-4 h-4 text-asp-yellow" />
-          <span className="text-xs font-bold text-asp-yellow">{currentGift}</span>
+          <span className="text-xs font-bold text-asp-yellow">{currentPrize}</span>
         </div>
+        {!isDemo && gamification.state.puzzle_cycle > 0 && (
+          <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-primary">
+            <Trophy className="w-3 h-3" />
+            <span>{gamification.state.puzzle_cycle} puzzle{gamification.state.puzzle_cycle !== 1 ? 's' : ''} completed</span>
+          </div>
+        )}
       </div>
     </div>
   );
