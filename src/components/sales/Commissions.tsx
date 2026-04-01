@@ -364,6 +364,26 @@ const Commissions = () => {
                           )}
                         </div>
                       </div>
+                      {/* Add a Setter button */}
+                      {!project.setter && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSetterDialogProject({ id: c.projectId, name: c.customerName }); }}
+                          className="w-full flex items-center justify-center gap-2 py-2 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          Add a Setter
+                        </button>
+                      )}
+                      {project.setter && (
+                        <div className="flex items-center gap-2 py-2 px-3 bg-bg4 rounded-lg text-xs">
+                          <UserPlus className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-muted-foreground">Setter:</span>
+                          <strong className="text-foreground">{project.setter}</strong>
+                          {project.setterSplitPercent && (
+                            <span className="text-muted-foreground ml-auto">{project.setterSplitPercent}% split</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -374,6 +394,16 @@ const Commissions = () => {
           <div className="text-xs text-muted-foreground text-center py-4 bg-bg3 rounded-lg">No projects yet — close deals to see commissions here!</div>
         )}
       </div>
+
+      {/* Add Setter Dialog */}
+      {setterDialogProject && (
+        <AddSetterDialog
+          open={!!setterDialogProject}
+          onOpenChange={(open) => !open && setSetterDialogProject(null)}
+          projectId={setterDialogProject.id}
+          customerName={setterDialogProject.name}
+        />
+      )}
     </div>
   );
 };

@@ -126,7 +126,7 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                           <div><span className="text-muted-foreground">System:</span> <strong className="text-foreground">{p.systemSize} ({(parseFloat(p.systemSize) * 1000).toLocaleString()}W)</strong></div>
                           <div><span className="text-muted-foreground">Adders:</span> <strong className="text-foreground">${comm.adderCost.toLocaleString()}</strong></div>
                           <div><span className="text-muted-foreground">Gross:</span> <strong className="text-primary">${comm.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
-                          <div><span className="text-muted-foreground">Your 60%:</span> <strong className="text-asp-green">${yourComm.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
+                          <div><span className="text-muted-foreground">Your Commission:</span> <strong className="text-asp-green">${yourComm.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
                         </div>
                       </div>
 
