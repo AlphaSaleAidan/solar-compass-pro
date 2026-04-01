@@ -145,48 +145,7 @@ export interface SellProject {
 
 export const SELL_PROJECTS: SellProject[] = [];
 
-export const PROJECTS: Project[] = [
-  makeProjectData(
-    { id: 'ASP-2024', customerName: 'James Hernandez', address: '4821 Oak Ridge Dr, Austin, TX 78745', email: 'james.h@email.com', phone: '(512) 555-0142', status: 'active', currentMilestone: 4, totalMilestones: 7, systemSize: '11.2 kW', battery: 'Duracell 20kW', soldPPW: 4.25, contractValue: 48620, repName: 'Jordan Mills', installerName: 'SunTech Installations', addedDate: '2026-01-15', stage: 'Install Scheduled', adders: [{ name: 'Battery', cost: 8500 }, { name: 'Electrical Panel', cost: 2200 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'good', roofIssues: [], annualUsage: 14200, documentsSignedCount: 5, totalDocuments: 6 },
-    { submitted: '2026-01-15', siteSurvey: '2026-01-22', sowConfirmed: '2026-01-28', permitSubmitted: '2026-02-03', lastHOContact: '2026-03-18' },
-    { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: true }
-  ),
-  makeProjectData(
-    { id: 'ASP-2025', customerName: 'Robert Chen', address: '1203 Magnolia Ln, San Antonio, TX 78201', email: 'robert.c@email.com', phone: '(210) 555-0198', status: 'active', currentMilestone: 5, totalMilestones: 7, systemSize: '8.5 kW', battery: 'Tesla Powerwall 13.5kW', soldPPW: 4.50, contractValue: 39270, repName: 'Caitlin Fox', installerName: 'Pro Solar TX', addedDate: '2025-12-08', stage: 'Utility Inspection', adders: [{ name: 'Battery', cost: 12000 }, { name: 'Critter Guard', cost: 800 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'good', roofIssues: [], annualUsage: 11800, documentsSignedCount: 6, totalDocuments: 6 },
-    { submitted: '2025-12-08', siteSurvey: '2025-12-15', sowConfirmed: '2025-12-20', permitSubmitted: '2026-01-05', lastHOContact: '2026-03-15' },
-    { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: true }
-  ),
-  makeProjectData(
-    { id: 'ASP-2026', customerName: 'Patricia Williams', address: '982 Sunset Blvd, Houston, TX 77002', email: 'pat.w@email.com', phone: '(713) 555-0234', status: 'active', currentMilestone: 3, totalMilestones: 7, systemSize: '12 kW', battery: 'Duracell 40kW', soldPPW: 4.15, contractValue: 52800, repName: 'Jordan Mills', installerName: 'Pro Solar TX', addedDate: '2026-02-01', stage: 'Permit Approved', adders: [{ name: 'Battery', cost: 14000 }, { name: 'Electrical Panel', cost: 2200 }, { name: 'EV Charger', cost: 1500 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'minor_damage', roofIssues: ['Minor shingle wear on south face'], annualUsage: 18400, documentsSignedCount: 4, totalDocuments: 6 },
-    { submitted: '2026-02-01', siteSurvey: '2026-02-10', sowConfirmed: '2026-02-18', permitSubmitted: '2026-02-25', lastHOContact: '2026-03-12' },
-    { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: false }
-  ),
-  makeProjectData(
-    { id: 'ASP-2029', customerName: 'Luis Mendoza', address: '335 Pecan St, Dallas, TX 75201', email: 'luis.m@email.com', phone: '(214) 555-0177', status: 'active', currentMilestone: 3, totalMilestones: 7, systemSize: '9 kW', battery: 'Duracell 20kW', soldPPW: 4.30, contractValue: 41400, repName: 'Samantha Cole', installerName: 'SunTech Installations', addedDate: '2026-02-14', stage: 'Install Scheduled', adders: [{ name: 'Battery', cost: 8500 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'good', roofIssues: [], annualUsage: 12600, documentsSignedCount: 5, totalDocuments: 6 },
-    { submitted: '2026-02-14', siteSurvey: '2026-02-20', sowConfirmed: '2026-02-26', permitSubmitted: '2026-03-01', lastHOContact: '2026-03-17' },
-    { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: true }
-  ),
-  makeProjectData(
-    { id: 'ASP-2030', customerName: 'Angela Davis', address: '7744 Elm Creek Rd, Fort Worth, TX 76109', email: 'angela.d@email.com', phone: '(817) 555-0311', status: 'delayed', currentMilestone: 3, totalMilestones: 7, systemSize: '7.5 kW', battery: 'Duracell 20kW', soldPPW: 4.00, contractValue: 29750, repName: 'Jordan Mills', installerName: 'Lone Star Solar', addedDate: '2026-01-20', stage: 'Install Delayed', adders: [{ name: 'Battery', cost: 8500 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'major_damage', roofIssues: ['Water damage on northeast section', 'Structural sagging near chimney'], annualUsage: 9800, documentsSignedCount: 4, totalDocuments: 6 },
-    { submitted: '2026-01-20', siteSurvey: '2026-01-28', sowConfirmed: '2026-02-05', permitSubmitted: '2026-02-12', lastHOContact: '2026-03-10' },
-    { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: false, siteSurveyDone: true, aspOnboarding: false }
-  ),
-  makeProjectData(
-    { id: 'ASP-2033', customerName: 'Marcus Thompson', address: '1120 Live Oak Trail, Austin, TX 78703', email: 'marcus.t@email.com', phone: '(512) 555-0288', status: 'active', currentMilestone: 6, totalMilestones: 7, systemSize: '6.5 kW', battery: 'Tesla Powerwall 13.5kW', soldPPW: 4.76, contractValue: 27190, repName: 'Caitlin Fox', installerName: 'SunTech Installations', addedDate: '2025-11-22', stage: 'PTO Pending', adders: [{ name: 'Battery', cost: 12000 }, { name: 'Critter Guard', cost: 800 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'good', roofIssues: [], annualUsage: 8400, documentsSignedCount: 6, totalDocuments: 6 },
-    { submitted: '2025-11-22', siteSurvey: '2025-12-01', sowConfirmed: '2025-12-08', permitSubmitted: '2025-12-15', lastHOContact: '2026-03-19' },
-    { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: true }
-  ),
-  makeProjectData(
-    { id: 'ASP-2034', customerName: 'Deborah White', address: '903 Bluebonnet Way, Plano, TX 75025', email: 'deb.w@email.com', phone: '(469) 555-0199', status: 'on_hold', currentMilestone: 2, totalMilestones: 7, systemSize: '10.8 kW', battery: 'Duracell 40kW', soldPPW: 4.35, contractValue: 55080, repName: 'Samantha Cole', installerName: 'Green Wave Energy', addedDate: '2026-01-10', stage: 'On Hold - Financing', adders: [{ name: 'Battery', cost: 14000 }, { name: 'Electrical Panel', cost: 2200 }], siteSurveyPhotos: [], permitStatus: 'pending', roofCondition: 'good', roofIssues: [], annualUsage: 15200, documentsSignedCount: 2, totalDocuments: 6 },
-    { submitted: '2026-01-10', siteSurvey: '2026-01-18', sowConfirmed: null, permitSubmitted: null, lastHOContact: '2026-03-05' },
-    { creditPassed: true, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: true, aspOnboarding: false }
-  ),
-  makeProjectData(
-    { id: 'ASP-2041', customerName: 'Tyler Morgan', address: '567 Willow Creek Blvd, Round Rock, TX 78664', email: 'tyler.m@email.com', phone: '(512) 555-0344', status: 'active', currentMilestone: 3, totalMilestones: 7, systemSize: '9.8 kW', battery: 'Duracell 40kW', soldPPW: 4.10, contractValue: 47850, repName: 'Jordan Mills', installerName: 'Lone Star Solar', addedDate: '2026-03-01', stage: 'Install Scheduled', adders: [{ name: 'Battery', cost: 14000 }, { name: 'Critter Guard', cost: 800 }], siteSurveyPhotos: [], permitStatus: 'approved', roofCondition: 'good', roofIssues: [], annualUsage: 13400, documentsSignedCount: 5, totalDocuments: 6 },
-    { submitted: '2026-03-01', siteSurvey: '2026-03-08', sowConfirmed: '2026-03-12', permitSubmitted: '2026-03-15', lastHOContact: '2026-03-19' },
-    { creditPassed: true, financeDocsSigned: true, welcomeCallCompleted: true, siteSurveyDone: true, aspOnboarding: true }
-  ),
-];
+export const PROJECTS: Project[] = [];
 
 export const MILESTONES = MILESTONE_NAMES;
 
