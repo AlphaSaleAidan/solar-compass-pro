@@ -237,19 +237,19 @@ export const TICKET_EARNING_RULES = [
 ];
 
 export const REP_STATS = {
-  yearlyPaidOut: 0,
-  pendingPipeline: 0,
-  installCount: 0,
-  monthlyAppointments: 0,
-  avgRating: 0,
-  ticketBalance: 0,
-  vacationPieces: 0,
-  dealStreak: 0,
-  totalSits: 0,
-  totalCloses: 0,
-  creditFails: 0,
-  creditPassed: 0,
-  nonClosed: 0,
+  yearlyPaidOut: 12450,
+  pendingPipeline: 8200,
+  installCount: 3,
+  monthlyAppointments: 8,
+  avgRating: 4.2,
+  ticketBalance: 7,
+  vacationPieces: 1,
+  dealStreak: 2,
+  totalSits: 15,
+  totalCloses: 5,
+  creditFails: 2,
+  creditPassed: 6,
+  nonClosed: 7,
 };
 
 export const COMMISSIONS = PROJECTS.map((p) => {
