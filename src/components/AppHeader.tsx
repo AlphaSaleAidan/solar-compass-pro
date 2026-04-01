@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Zap, LogOut, User, Crown, ArrowLeftRight } from 'lucide-react';
+import { Zap, LogOut, User, Crown, ArrowLeftRight, Settings } from 'lucide-react';
 import type { UserRole } from '@/contexts/AuthContext';
+import UserSettingsModal from '@/components/settings/UserSettingsModal';
 
 interface AppHeaderProps {
   activeTab: string;
@@ -11,6 +13,7 @@ interface AppHeaderProps {
 const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const { user, logout, switchRole } = useAuth();
   const navigate = useNavigate();
+  const [showSettings, setShowSettings] = useState(false);
   if (!user) return null;
 
   const isPlus = user.portalMode === 'asp_plus';
@@ -105,9 +108,13 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         {user.isDemo && (
           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-400/25">DEMO</span>
         )}
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm border ${isPlus ? 'bg-gray-100 border-gray-200' : 'bg-bg4 border-border2'}`}>
-          <User className="w-4 h-4" />
-        </div>
+        <button
+          onClick={() => setShowSettings(true)}
+          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm border transition-all hover:border-primary ${isPlus ? 'bg-gray-100 border-gray-200' : 'bg-bg4 border-border2'}`}
+          title="Settings"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
         <span className={`text-xs font-bold ${isPlus ? 'text-gray-700' : 'text-gray-300'}`}>{user.name}</span>
         <button
           onClick={handleLogout}
@@ -119,6 +126,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
           Logout
         </button>
       </div>
+      <UserSettingsModal open={showSettings} onOpenChange={setShowSettings} />
     </header>
   );
 };
