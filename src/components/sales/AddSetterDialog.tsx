@@ -79,13 +79,21 @@ const AddSetterDialog = ({ open, onOpenChange, projectId, customerName, onSetter
         return;
       }
 
+      // Validate projectId is a valid UUID before sending to DB
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(projectId)) {
+        toast.error('Cannot assign setter in demo mode — use a production project');
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('projects')
         .update({
-          setter_id: selectedSetter.user_id as any,
+          setter_id: selectedSetter.user_id,
           setter: selectedSetter.full_name,
-          setter_split_percent: pct as any,
-        })
+          setter_split_percent: pct,
+        } as any)
         .eq('id', projectId);
 
       if (error) throw error;
