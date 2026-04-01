@@ -261,20 +261,7 @@ export const COMMISSIONS = PROJECTS.map((p) => {
 
 export const APPOINTMENTS: { id: number; name: string; address: string; phone: string; email: string; date: string; time: string; highBill: number; lowBill: number; allElectric: boolean; stars: number; setter: string; closer: string | null; status: string; gotBill: boolean; gotContact: boolean; bothHomeowners: boolean; meterPhoto: boolean; billOver250: boolean; outcome: string | null; closerNotes: string; billPhoto: string | null; meterPhotoUrl: string | null; surveyPhotos: string[] }[] = [];
 
-export const RANKINGS = [
-  { rank: 1, name: 'Jordan Mills', deals: 18, installs: 14, revenue: 284600, ticketBonus: '200%' },
-  { rank: 2, name: 'Samantha Cole', deals: 15, installs: 11, revenue: 241200, ticketBonus: '200%' },
-  { rank: 3, name: 'Caitlin Fox', deals: 14, installs: 10, revenue: 218900, ticketBonus: '200%' },
-  { rank: 4, name: 'Marcus Bell', deals: 12, installs: 9, revenue: 195400, ticketBonus: '100%' },
-  { rank: 5, name: 'Tanya Rivers', deals: 11, installs: 8, revenue: 178200, ticketBonus: '100%' },
-  { rank: 6, name: 'Derek Wong', deals: 10, installs: 7, revenue: 162800, ticketBonus: '100%' },
-  { rank: 7, name: 'Ashley Torres', deals: 9, installs: 7, revenue: 151300, ticketBonus: '100%' },
-  { rank: 8, name: 'Brandon Scott', deals: 8, installs: 6, revenue: 138700, ticketBonus: '100%' },
-  { rank: 9, name: 'Nicole Adams', deals: 7, installs: 5, revenue: 122400, ticketBonus: '100%' },
-  { rank: 10, name: 'Chris Ramirez', deals: 6, installs: 4, revenue: 104200, ticketBonus: '100%' },
-  { rank: 11, name: 'Taylor James', deals: 5, installs: 4, revenue: 89100, ticketBonus: '50%' },
-  { rank: 12, name: 'Morgan Lee', deals: 5, installs: 3, revenue: 82400, ticketBonus: '50%' },
-];
+export const RANKINGS: { rank: number; name: string; deals: number; installs: number; revenue: number; ticketBonus: string }[] = [];
 
 export const QC_QUEUE: Project[] = [
   { ...PROJECTS[6], id: 'ASP-2050', customerName: 'Rachel Kim', status: 'active', currentMilestone: 0, stage: 'QC Review' },
