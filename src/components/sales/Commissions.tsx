@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { UPFRONT_MILESTONES } from '@/data/mockData';
 import { calculateCommission } from '@/lib/commissionCalc';
-import { DollarSign, Clock, Calculator, Ticket, ChevronDown, ChevronUp, Info, CheckCircle, XCircle } from 'lucide-react';
+import { DollarSign, Clock, Calculator, Ticket, ChevronDown, ChevronUp, Info, CheckCircle, XCircle, UserPlus } from 'lucide-react';
+import AddSetterDialog from './AddSetterDialog';
 
 const Commissions = () => {
   const store = useDataSource();
@@ -15,10 +16,11 @@ const Commissions = () => {
   const [calcPPW, setCalcPPW] = useState('4.25');
   const [calcRedline, setCalcRedline] = useState('2.35');
   const [calcAdders, setCalcAdders] = useState('8500');
-  const [calcSplit, setCalcSplit] = useState('60');
+  const [calcSplit, setCalcSplit] = useState('100');
   const [timePeriod, setTimePeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [showUpfrontExplainer, setShowUpfrontExplainer] = useState(false);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [setterDialogProject, setSetterDialogProject] = useState<{ id: string; name: string } | null>(null);
 
   const calcSystemCost = parseFloat(calcSize) * 1000 * parseFloat(calcRedline);
   const calcSoldTotal = parseFloat(calcSize) * 1000 * parseFloat(calcPPW);
@@ -291,7 +293,10 @@ const Commissions = () => {
                           <div><span className="text-muted-foreground">Sold:</span> <strong className="text-foreground">${c.soldTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
                           <div><span className="text-muted-foreground">Baseline:</span> <strong className="text-foreground">${c.projectBaseline.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
                           <div><span className="text-muted-foreground">Gross:</span> <strong className="text-primary">${c.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
-                          <div><span className="text-muted-foreground">Your 60%:</span> <strong className="text-asp-green">${c.yourCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
+                          <div><span className="text-muted-foreground">Your Commission:</span> <strong className="text-asp-green">${c.yourCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
+                          {project.setter && (
+                            <div className="col-span-2"><span className="text-muted-foreground">Setter:</span> <strong className="text-foreground">{project.setter}</strong></div>
+                          )}
                         </div>
                       </div>
                       <div>
@@ -359,6 +364,26 @@ const Commissions = () => {
                           )}
                         </div>
                       </div>
+                      {/* Add a Setter button */}
+                      {!project.setter && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSetterDialogProject({ id: c.projectId, name: c.customerName }); }}
+                          className="w-full flex items-center justify-center gap-2 py-2 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          Add a Setter
+                        </button>
+                      )}
+                      {project.setter && (
+                        <div className="flex items-center gap-2 py-2 px-3 bg-bg4 rounded-lg text-xs">
+                          <UserPlus className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-muted-foreground">Setter:</span>
+                          <strong className="text-foreground">{project.setter}</strong>
+                          {project.setterSplitPercent && (
+                            <span className="text-muted-foreground ml-auto">{project.setterSplitPercent}% split</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -369,6 +394,16 @@ const Commissions = () => {
           <div className="text-xs text-muted-foreground text-center py-4 bg-bg3 rounded-lg">No projects yet — close deals to see commissions here!</div>
         )}
       </div>
+
+      {/* Add Setter Dialog */}
+      {setterDialogProject && (
+        <AddSetterDialog
+          open={!!setterDialogProject}
+          onOpenChange={(open) => !open && setSetterDialogProject(null)}
+          projectId={setterDialogProject.id}
+          customerName={setterDialogProject.name}
+        />
+      )}
     </div>
   );
 };

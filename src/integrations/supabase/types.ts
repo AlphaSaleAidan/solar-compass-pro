@@ -628,7 +628,9 @@ export type Database = {
           sales_rep_id: string | null
           sell_project_id: string | null
           setter: string | null
+          setter_id: string | null
           setter_pay: number | null
+          setter_split_percent: number | null
           site_survey_completed: boolean | null
           site_survey_data: Json | null
           source: string | null
@@ -698,7 +700,9 @@ export type Database = {
           sales_rep_id?: string | null
           sell_project_id?: string | null
           setter?: string | null
+          setter_id?: string | null
           setter_pay?: number | null
+          setter_split_percent?: number | null
           site_survey_completed?: boolean | null
           site_survey_data?: Json | null
           source?: string | null
@@ -768,7 +772,9 @@ export type Database = {
           sales_rep_id?: string | null
           sell_project_id?: string | null
           setter?: string | null
+          setter_id?: string | null
           setter_pay?: number | null
+          setter_split_percent?: number | null
           site_survey_completed?: boolean | null
           site_survey_data?: Json | null
           source?: string | null

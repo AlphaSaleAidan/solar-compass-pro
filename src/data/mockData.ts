@@ -74,6 +74,9 @@ export interface Project {
   dates: ProjectDates;
   milestoneDetails: MilestoneDetail[];
   checklist: CustomerChecklist;
+  setter?: string;
+  setterId?: string;
+  setterSplitPercent?: number;
 }
 
 export const MILESTONE_NAMES = [
