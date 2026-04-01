@@ -135,6 +135,7 @@ export interface SellProject {
   convertedToSale?: boolean;
   welcomeCallComplete?: boolean;
   welcomeCallAnswers?: { question: string; answer: string; correct?: boolean }[];
+  welcomeCallFlags?: { question: string; issue: string }[];
   siteSurveyPhotos?: Record<string, string[]>;
   siteSurveyComplete?: boolean;
   submittedForApproval?: boolean;
