@@ -26,11 +26,12 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
   });
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
 
-  const { inputRef: addressInputRef } = useGooglePlaces((parsed) => {
+  const {
+    inputRef: addressInputRef,
+    error: addressAutocompleteError,
+    errorMessage: addressAutocompleteErrorMessage,
+  } = useGooglePlaces((parsed) => {
     setAddress(parsed.fullAddress);
-    if (addressInputRef.current) {
-      addressInputRef.current.value = parsed.fullAddress;
-    }
   });
 
   // Handle incoming project data from calendar conversion
@@ -49,214 +50,22 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
       setActiveSubTab('create');
     }
   }, [initialProjectData]);
-
-  useEffect(() => {
-    return () => {
-      if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
-    };
-  }, [cameraStream]);
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
-      });
-      setCameraStream(stream);
-      setShowCamera(true);
-      setTimeout(() => {
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      }, 100);
-    } catch (err) {
-      console.error('Camera access denied:', err);
-    }
-  };
-
-  const stopCamera = () => {
-    if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
-    setCameraStream(null);
-    setShowCamera(false);
-  };
-
-  const capturePhoto = () => {
-    if (!videoRef.current) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg');
-    const link = document.createElement('a');
-    link.download = `site-survey-${Date.now()}.jpg`;
-    link.href = dataUrl;
-    link.click();
-  };
-
-  const handleCreateProject = () => {
-    if (!newProject.firstName.trim() || !address.trim()) return;
-    const newP: SellProject = {
-      id: `SP-${String(sellProjects.length + 1).padStart(3, '0')}`,
-      firstName: newProject.firstName,
-      lastName: newProject.lastName,
-      email: newProject.email,
-      phone: newProject.phone,
-      address,
-      highBill: Number(newProject.highBill) || 0,
-      lowBill: Number(newProject.lowBill) || 0,
-      allElectric: newProject.allElectric,
-      creditStatus: 'new',
-      createdAt: new Date().toISOString().split('T')[0],
-      checklist: { creditPassed: false, financeDocsSigned: false, welcomeCallCompleted: false, siteSurveyDone: false, aspOnboarding: false },
-      documents: [
-        { name: 'ASP Agreement', sent: false, signed: false },
-        { name: 'Installer Contract', sent: false, signed: false },
-        { name: 'Loan Authorization', sent: false, signed: false },
-        { name: 'Welcome Call Email', sent: false, signed: false },
-      ],
-      surveyPhotos: [],
-    };
-    addSellProject(newP);
-    setShowNewProjectForm(false);
-    setAddress('');
-    setNewProject({ firstName: '', lastName: '', email: '', phone: '', highBill: '', lowBill: '', allElectric: true });
-    setActiveSubTab('projects');
-    setProjectFilter('new');
-  };
-
-  const filteredProjects = projectFilter === 'all'
-    ? sellProjects
-    : sellProjects.filter(p => p.creditStatus === projectFilter);
-
-  const statusCounts = {
-    all: sellProjects.length,
-    new: sellProjects.filter(p => p.creditStatus === 'new').length,
-    credit_passed: sellProjects.filter(p => p.creditStatus === 'credit_passed').length,
-    credit_fail: sellProjects.filter(p => p.creditStatus === 'credit_fail').length,
-  };
-
-  // Sold deals data (simulated from credit_passed projects)
-  const soldDeals = sellProjects.filter(p => p.creditStatus === 'credit_passed').map(p => ({
-    ...p,
-    systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
-    ppw: (4.0 + Math.random() * 0.5).toFixed(2),
-    financier: ['GoodLeap', 'Sunlight Financial', 'Mosaic'][Math.floor(Math.random() * 3)],
-    battery: 'Duracell 20kW',
-    terms: '25 year @ 2.99%',
-  }));
-
-  return (
-    <div className="relative min-h-[calc(100vh-58px)] overflow-hidden">
-      {/* Ocean video background */}
-      <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          
-          src="/videos/crown-bg.mp4"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
-      </div>
-
-      {/* Quick action bar */}
-      <div className="relative z-10 flex items-center gap-3 px-6 py-3 border-b border-white/[0.06]">
-        <a
-          href="https://app.aurorasolar.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] backdrop-blur-md border border-white/10 rounded-lg text-white/80 text-xs font-bold hover:bg-white/10 transition-all duration-150 active:scale-[0.97]"
-        >
-          <Sun className="w-3.5 h-3.5" /> Aurora Solar
-        </a>
-        <Dialog open={showMap} onOpenChange={setShowMap}>
-          <DialogTrigger asChild>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] backdrop-blur-md border border-white/10 rounded-lg text-white/80 text-xs font-bold hover:bg-white/10 transition-all duration-150 active:scale-[0.97]">
-              <Map className="w-3.5 h-3.5" /> Installed Homes Map
-            </button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[85vh] bg-[hsl(210,20%,10%)] border-white/10">
-            <DialogHeader>
-              <DialogTitle className="text-white font-black flex items-center gap-2"><Map className="w-4 h-4" /> Installed Homes Map</DialogTitle>
-            </DialogHeader>
-            {showMap && <InstalledHomesMap homes={INSTALLED_HOMES} />}
-          </DialogContent>
-        </Dialog>
-        <button
-          onClick={startCamera}
-          className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] backdrop-blur-md border border-white/10 rounded-lg text-white/80 text-xs font-bold hover:bg-white/10 transition-all duration-150 active:scale-[0.97]"
-        >
-          <Camera className="w-3.5 h-3.5" /> Site Survey Camera
-        </button>
-
-        <div className="ml-auto flex gap-1">
-          <button
-            onClick={() => setActiveSubTab('create')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] flex items-center gap-1.5 ${
-              activeSubTab === 'create'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
-            }`}
-          >
-            <Plus className="w-3.5 h-3.5" /> Create
-          </button>
-          <button
-            onClick={() => setActiveSubTab('projects')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] flex items-center gap-1.5 ${
-              activeSubTab === 'projects'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
-            }`}
-          >
-            <FolderOpen className="w-3.5 h-3.5" /> Projects ({sellProjects.length})
-          </button>
-        </div>
-      </div>
-
-      {/* Camera view */}
-      {showCamera && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col">
-          <div className="flex items-center justify-between p-4 bg-black/80">
-            <span className="text-white font-bold text-sm flex items-center gap-2"><Camera className="w-4 h-4" /> Site Survey Camera</span>
-            <div className="flex gap-2">
-              <button onClick={capturePhoto} className="px-4 py-2 bg-primary rounded-lg text-primary-foreground text-xs font-bold active:scale-[0.97]">
-                Capture
-              </button>
-              <button onClick={stopCamera} className="px-4 py-2 bg-[hsl(0,70%,50%)] rounded-lg text-white text-xs font-bold active:scale-[0.97]">
-                Close
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            <video ref={videoRef} autoPlay playsInline className="max-w-full max-h-full" />
-          </div>
-          <div className="p-4 bg-black/80 text-center">
-            <p className="text-white/60 text-xs">Point camera at roof to measure rafter spacing. Use grid overlay for pitch estimation.</p>
-            <div className="absolute inset-0 pointer-events-none" style={{
-              backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
-              backgroundSize: '80px 80px',
-            }} />
-          </div>
-        </div>
-      )}
-
-      {/* Main content */}
-      <div className="relative z-10">
-        {activeSubTab === 'create' ? (
-          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-140px)] px-6">
-            {!showNewProjectForm ? (
-              <div className="text-center space-y-6">
-                <h1 className="text-4xl font-black text-white drop-shadow-lg" style={{ textShadow: '0 2px 30px hsla(195, 70%, 50%, 0.4)' }}>
-                  Create New Project
-                </h1>
+...
                 <div className="max-w-lg mx-auto">
                   <input
                     ref={addressInputRef}
                     type="text"
-                    defaultValue={address}
+                    value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Enter Site Address here..."
                     className="w-full px-6 py-4 bg-white/[0.06] backdrop-blur-xl border border-white/15 rounded-2xl text-white placeholder:text-white/30 text-center text-lg font-semibold outline-none focus:border-primary focus:bg-white/10 transition-all duration-200"
                   />
+                  {addressAutocompleteError && (
+                    <p className="mt-2 text-xs text-white/60">
+                      Address autocomplete is temporarily unavailable. You can still type the full address manually.
+                      {addressAutocompleteErrorMessage?.includes('Invalid Google Maps API key format') && ' Please update your Google Maps API key format.'}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => { if (address.trim()) setShowNewProjectForm(true); }}
