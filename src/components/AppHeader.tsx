@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Zap, LogOut, User, Crown, ArrowLeftRight, Settings } from 'lucide-react';
 import type { UserRole } from '@/contexts/AuthContext';
 import UserSettingsModal from '@/components/settings/UserSettingsModal';
@@ -14,6 +15,21 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const { user, logout, switchRole } = useAuth();
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user && !user.isDemo) {
+      supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('user_id', user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+        });
+    }
+  }, [user]);
+
   if (!user) return null;
 
   const isPlus = user.portalMode === 'asp_plus';
@@ -48,7 +64,6 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
 
   const handleRoleSwitch = (role: UserRole) => {
     switchRole(role);
-    // Reset to default tab for the new role
     const defaultTab = ['installer', 'financier'].includes(role) ? 'Portal' :
       role === 'sales_rep' ? 'Dashboard' : 'QC Review';
     onTabChange(defaultTab);
@@ -87,7 +102,6 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
       </nav>
 
       <div className="flex items-center gap-3 ml-auto">
-        {/* Master role switcher */}
         {isMaster && (
           <div className="flex items-center gap-1">
             <ArrowLeftRight className="w-3 h-3 text-gray-500" />
@@ -110,10 +124,14 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         )}
         <button
           onClick={() => setShowSettings(true)}
-          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm border transition-all hover:border-primary ${isPlus ? 'bg-gray-100 border-gray-200' : 'bg-bg4 border-border2'}`}
+          className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-sm border-2 transition-all hover:border-primary ${isPlus ? 'bg-gray-100 border-gray-200' : 'bg-bg4 border-border2'}`}
           title="Settings"
         >
-          <Settings className="w-4 h-4" />
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <User className="w-4 h-4" />
+          )}
         </button>
         <span className={`text-xs font-bold ${isPlus ? 'text-gray-700' : 'text-gray-300'}`}>{user.name}</span>
         <button
@@ -126,7 +144,11 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
           Logout
         </button>
       </div>
-      <UserSettingsModal open={showSettings} onOpenChange={setShowSettings} />
+      <UserSettingsModal
+        open={showSettings}
+        onOpenChange={setShowSettings}
+        onAvatarChange={(url) => setAvatarUrl(url)}
+      />
     </header>
   );
 };
