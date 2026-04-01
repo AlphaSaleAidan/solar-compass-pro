@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { MILESTONE_NAMES, COMMISSIONS } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
+import { calculateCommission } from '@/lib/commissionCalc';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Zap, Battery, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, Calendar, Mail, Phone, ChevronDown, ChevronUp, BarChart3, Camera, Shield } from 'lucide-react';
 
@@ -35,8 +35,8 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {allProjects.map((p) => {
-            const comm = COMMISSIONS.find(c => c.projectId === p.id);
-            const yourComm = comm ? comm.yourCommission : 0;
+            const comm = calculateCommission(p);
+            const yourComm = comm.yourCommission;
             const ms = store.getMilestoneState(p.id);
 
             return (
@@ -117,6 +117,19 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
 
                   {expandedProject === p.id && (
                     <div className="animate-fade-in-up space-y-3">
+                      {/* Commission Breakdown */}
+                      <div className="bg-bg3 rounded-lg p-3">
+                        <div className="text-[11px] text-muted-foreground font-bold tracking-wide uppercase mb-2">Commission Breakdown</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div><span className="text-muted-foreground">Sold PPW:</span> <strong className="text-foreground">${p.soldPPW}/W</strong></div>
+                          <div><span className="text-muted-foreground">Redline:</span> <strong className="text-foreground">$2.35/W</strong></div>
+                          <div><span className="text-muted-foreground">System:</span> <strong className="text-foreground">{p.systemSize} ({(parseFloat(p.systemSize) * 1000).toLocaleString()}W)</strong></div>
+                          <div><span className="text-muted-foreground">Adders:</span> <strong className="text-foreground">${comm.adderCost.toLocaleString()}</strong></div>
+                          <div><span className="text-muted-foreground">Gross:</span> <strong className="text-primary">${comm.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
+                          <div><span className="text-muted-foreground">Your 60%:</span> <strong className="text-asp-green">${yourComm.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
+                        </div>
+                      </div>
+
                       <div className="bg-bg3 rounded-lg p-3">
                         <div className="flex items-center gap-1.5 mb-2">
                           <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
