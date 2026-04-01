@@ -40,6 +40,24 @@ export const PUZZLE_PRIZES = [
   { name: 'Yeti Cooler Bundle', icon: '🧊', value: 350 },
 ];
 
+// Fixed 3-day puzzle cycle — epoch is April 1, 2026 at 00:01 local time
+const PUZZLE_EPOCH = new Date(2026, 3, 1, 0, 1, 0, 0).getTime(); // Month is 0-indexed
+const CYCLE_DURATION_MS = 3 * 24 * 60 * 60 * 1000; // 3 days in ms
+
+export const getCurrentPuzzleCycle = () => {
+  const now = Date.now();
+  return Math.floor((now - PUZZLE_EPOCH) / CYCLE_DURATION_MS);
+};
+
+export const getNextCycleReset = () => {
+  const cycle = getCurrentPuzzleCycle();
+  return new Date(PUZZLE_EPOCH + (cycle + 1) * CYCLE_DURATION_MS);
+};
+
+export const getSecondsUntilReset = () => {
+  return Math.max(0, Math.floor((getNextCycleReset().getTime() - Date.now()) / 1000));
+};
+
 export const useGamification = () => {
   const { user } = useAuth();
   const [state, setState] = useState<GamificationState>(DEFAULT_STATE);
