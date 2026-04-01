@@ -4,27 +4,42 @@ import { REP_STATS, APPOINTMENTS } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGamification } from '@/hooks/useGamification';
 import { useRepStats } from '@/hooks/useRepStats';
+import { useDataSource } from '@/contexts/DataSourceProvider';
+import { calculateCommission } from '@/lib/commissionCalc';
 
 const RepStats = () => {
   const { user } = useAuth();
   const isDemo = user?.isDemo;
   const gamification = useGamification();
   const { stats: liveStats } = useRepStats();
+  const store = useDataSource();
   const [expandedAppt, setExpandedAppt] = useState<string | null>(null);
+  const [showPipelineBreakdown, setShowPipelineBreakdown] = useState(false);
+
+  // Calculate pipeline deals with commissions (same formula as Pipeline/Commissions tabs)
+  const pipelineDeals = store.projects
+    .map(p => {
+      const comm = calculateCommission(p);
+      return {
+        id: p.id,
+        customerName: p.customerName,
+        systemSize: p.systemSize,
+        yourCommission: comm.yourCommission,
+        status: comm.status,
+        stage: p.stage,
+      };
+    })
+    .filter(d => d.status !== 'paid'); // Only pending/processing deals
+
+  const demoPendingPipeline = pipelineDeals.reduce((sum, d) => sum + Math.max(0, d.yourCommission), 0);
 
   // Use demo data for demo users, live data for production
   const yearlyPaidOut = isDemo ? REP_STATS.yearlyPaidOut : liveStats.yearlyPaidOut;
-  const pendingPipeline = isDemo ? REP_STATS.pendingPipeline : liveStats.pendingPipeline;
+  const pendingPipeline = isDemo ? Math.round(demoPendingPipeline) : liveStats.pendingPipeline;
   const installCount = isDemo ? REP_STATS.installCount : liveStats.installCount;
   const monthlyAppointments = isDemo ? REP_STATS.monthlyAppointments : liveStats.monthlyAppointments;
   const avgRating = isDemo ? REP_STATS.avgRating : liveStats.avgRating;
   const streak = isDemo ? REP_STATS.dealStreak : gamification.state.streak_days;
-
-  const stats = [
-    { label: 'Yearly Paid Out', value: `$${yearlyPaidOut.toLocaleString()}`, icon: DollarSign, color: 'text-asp-green' },
-    { label: 'Pending Pipeline', value: `$${pendingPipeline.toLocaleString()}`, icon: BarChart3, color: 'text-primary' },
-    { label: 'Installs', value: installCount.toString(), icon: Wrench, color: 'text-asp-yellow' },
-  ];
 
   // Performance metrics
   const totalSits = isDemo ? REP_STATS.totalSits : liveStats.totalSits;
@@ -93,16 +108,65 @@ const RepStats = () => {
         </div>
       </div>
 
-      {/* Main Stats */}
-      {stats.map((s) => (
-        <div key={s.label} className="bg-bg2 border border-border rounded-xl p-4 flex items-center gap-3">
-          <s.icon className={`w-5 h-5 ${s.color}`} />
+      {/* Yearly Paid Out */}
+      <div className="bg-bg2 border border-border rounded-xl p-4 flex items-center gap-3">
+        <DollarSign className="w-5 h-5 text-asp-green" />
+        <div className="flex-1">
+          <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Yearly Paid Out</div>
+          <div className="text-xl font-black text-asp-green">${yearlyPaidOut.toLocaleString()}</div>
+        </div>
+      </div>
+
+      {/* Pending Pipeline — with dropdown */}
+      <div className="bg-bg2 border border-border rounded-xl overflow-hidden">
+        <div
+          className="p-4 flex items-center gap-3 cursor-pointer hover:bg-bg3/30 transition-colors"
+          onClick={() => setShowPipelineBreakdown(!showPipelineBreakdown)}
+        >
+          <BarChart3 className="w-5 h-5 text-primary" />
           <div className="flex-1">
-            <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">{s.label}</div>
-            <div className={`text-xl font-black ${s.color}`}>{s.value}</div>
+            <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Pending Pipeline</div>
+            <div className="text-xl font-black text-primary">${pendingPipeline.toLocaleString()}</div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground font-bold">{pipelineDeals.length} deal{pipelineDeals.length !== 1 ? 's' : ''}</span>
+            {showPipelineBreakdown ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </div>
         </div>
-      ))}
+        {showPipelineBreakdown && (
+          <div className="px-4 pb-4 animate-fade-in-up">
+            <div className="border-t border-border pt-3 space-y-1.5">
+              {pipelineDeals.length > 0 ? pipelineDeals.map(deal => (
+                <div key={deal.id} className="flex items-center justify-between py-2 px-3 bg-bg3 rounded-lg">
+                  <div>
+                    <div className="text-xs font-bold text-foreground">{deal.customerName}</div>
+                    <div className="text-[10px] text-muted-foreground">{deal.systemSize} · {deal.stage}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-black text-primary">
+                      ${Math.max(0, deal.yourCommission).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </div>
+                    <div className={`text-[9px] font-bold uppercase ${deal.status === 'pending' ? 'text-asp-yellow' : 'text-asp-blue'}`}>
+                      {deal.status}
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div className="text-xs text-muted-foreground text-center py-3">No pending deals</div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Installs */}
+      <div className="bg-bg2 border border-border rounded-xl p-4 flex items-center gap-3">
+        <Wrench className="w-5 h-5 text-asp-yellow" />
+        <div className="flex-1">
+          <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Installs</div>
+          <div className="text-xl font-black text-asp-yellow">{installCount}</div>
+        </div>
+      </div>
 
       {/* Monthly Appointments */}
       <div className="bg-bg2 border border-border rounded-xl p-4">
