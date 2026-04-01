@@ -13,6 +13,7 @@ interface AppHeaderProps {
 const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const { user, logout, switchRole } = useAuth();
   const navigate = useNavigate();
+  const [showSettings, setShowSettings] = useState(false);
   if (!user) return null;
 
   const isPlus = user.portalMode === 'asp_plus';
