@@ -40,6 +40,24 @@ export const PUZZLE_PRIZES = [
   { name: 'Yeti Cooler Bundle', icon: '🧊', value: 350 },
 ];
 
+// Fixed 3-day puzzle cycle — epoch is April 1, 2026 at 00:01 local time
+const PUZZLE_EPOCH = new Date(2026, 3, 1, 0, 1, 0, 0).getTime(); // Month is 0-indexed
+const CYCLE_DURATION_MS = 3 * 24 * 60 * 60 * 1000; // 3 days in ms
+
+export const getCurrentPuzzleCycle = () => {
+  const now = Date.now();
+  return Math.floor((now - PUZZLE_EPOCH) / CYCLE_DURATION_MS);
+};
+
+export const getNextCycleReset = () => {
+  const cycle = getCurrentPuzzleCycle();
+  return new Date(PUZZLE_EPOCH + (cycle + 1) * CYCLE_DURATION_MS);
+};
+
+export const getSecondsUntilReset = () => {
+  return Math.max(0, Math.floor((getNextCycleReset().getTime() - Date.now()) / 1000));
+};
+
 export const useGamification = () => {
   const { user } = useAuth();
   const [state, setState] = useState<GamificationState>(DEFAULT_STATE);
@@ -71,7 +89,7 @@ export const useGamification = () => {
       }
 
       if (data) {
-        setState({
+        const loadedState: GamificationState = {
           puzzle_pieces: data.puzzle_pieces,
           puzzle_cycle: data.puzzle_cycle,
           puzzle_prize_index: data.puzzle_prize_index,
@@ -80,13 +98,29 @@ export const useGamification = () => {
           tickets: data.tickets,
           alpha_cash: Number(data.alpha_cash),
           cash_bonuses: Number(data.cash_bonuses),
-        });
+        };
+
+        // Auto-reset puzzle if we're in a new 3-day cycle
+        const currentCycle = getCurrentPuzzleCycle();
+        if (currentCycle !== loadedState.puzzle_cycle) {
+          loadedState.puzzle_pieces = 0;
+          loadedState.puzzle_cycle = currentCycle;
+          // Persist the reset
+          await supabase
+            .from('user_gamification')
+            .update({ puzzle_pieces: 0, puzzle_cycle: currentCycle })
+            .eq('user_id', userId);
+        }
+
+        setState(loadedState);
       } else {
-        // Initialize new user
+        // Initialize new user with current cycle
+        const currentCycle = getCurrentPuzzleCycle();
         const { error: insertError } = await supabase
           .from('user_gamification')
-          .insert({ user_id: userId });
+          .insert({ user_id: userId, puzzle_cycle: currentCycle });
         if (insertError) console.error('Error initializing gamification:', insertError);
+        setState(prev => ({ ...prev, puzzle_cycle: currentCycle }));
       }
       setLoading(false);
     };
@@ -156,12 +190,11 @@ export const useGamification = () => {
     }
     updates.streak_last_deal_date = today;
 
-    // Puzzle logic
-    if (newPieces >= 4) {
-      // Completed puzzle! Award prize
+    // Puzzle logic — 3-day cycle resets externally; completing 4 pieces awards prize within cycle
+    if (newPieces >= 4 && state.puzzle_pieces < 4) {
+      // Completed puzzle! Award prize — pieces stay at 4 until cycle resets
       prizeWon = PUZZLE_PRIZES[state.puzzle_prize_index % PUZZLE_PRIZES.length];
-      updates.puzzle_pieces = 0;
-      updates.puzzle_cycle = state.puzzle_cycle + 1;
+      updates.puzzle_pieces = 4;
       updates.puzzle_prize_index = (state.puzzle_prize_index + 1) % PUZZLE_PRIZES.length;
 
       // Add prize to rewards table
