@@ -29,6 +29,7 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
   const [showSiteSurvey, setShowSiteSurvey] = useState(false);
   const [showWelcomeCall, setShowWelcomeCall] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncFailed, setSyncFailed] = useState(false);
   const status = statusStyles[project.creditStatus];
 
   const isProduction = user && !user.isDemo;
