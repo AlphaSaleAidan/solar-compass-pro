@@ -1,0 +1,1 @@
+ALTER TABLE public.sell_projects ADD COLUMN welcome_call_recording_url text;

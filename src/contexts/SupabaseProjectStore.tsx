@@ -114,6 +114,7 @@ function mapDbProjectToUI(row: any): Project {
       siteSurveyDone: row.site_survey_completed || false,
       aspOnboarding: false,
     },
+    welcomeCallRecordingUrl: row.welcome_call_recording_url || undefined,
     // Keep raw DB id for mutations
     _dbId: row.id,
   } as Project & { _dbId: string };
@@ -145,6 +146,7 @@ function mapDbSellProjectToUI(row: any): SellProject {
     submittedForApproval: row.submitted_for_approval || false,
     approvalStatus: row.approval_status || 'pending',
     approvalNotes: row.rejection_reason || undefined,
+    welcomeCallRecordingUrl: row.welcome_call_recording_url || undefined,
     qcInitialApproved: row.qc_initial_approved || false,
     documentsSigned: row.documents_signed || false,
     _dbId: row.id,
@@ -632,6 +634,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       rejection_reason: project.approvalNotes,
       qc_initial_approved: project.qcInitialApproved,
       documents_signed: project.documentsSigned,
+      welcome_call_recording_url: project.welcomeCallRecordingUrl,
     }).eq('id', dbId);
   }, [sellProjects]);
 

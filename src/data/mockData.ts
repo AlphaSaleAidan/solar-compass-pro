@@ -77,6 +77,7 @@ export interface Project {
   setter?: string;
   setterId?: string;
   setterSplitPercent?: number;
+  welcomeCallRecordingUrl?: string;
 }
 
 export const MILESTONE_NAMES = [
@@ -143,6 +144,7 @@ export interface SellProject {
   submittedForApproval?: boolean;
   approvalStatus?: 'pending' | 'clean' | 'dirty';
   approvalNotes?: string;
+  welcomeCallRecordingUrl?: string;
   // Two-phase QC workflow
   qcInitialApproved?: boolean;
   documentsSigned?: boolean;

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Zap, Send, Upload, Plus, History } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ESCROW_MILESTONES = [
@@ -146,7 +146,27 @@ const FinancierPortal = () => {
               </div>
             </div>
 
-            {/* Adders */}
+            {/* Welcome Call Recording */}
+            {p.welcomeCallRecordingUrl && (
+              <div className="bg-muted/50 border border-border rounded-xl p-4">
+                <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5">
+                  <Video className="w-3.5 h-3.5 text-primary" /> Welcome Call Recording
+                </h3>
+                <div className="flex items-center gap-3 p-2.5 bg-muted border border-primary/20 rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
+                    <Video className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs font-bold text-card-foreground">{p.customerName} — Welcome Call</div>
+                    <div className="text-[10px] text-muted-foreground">Recording ID: {p.welcomeCallRecordingUrl}</div>
+                  </div>
+                  <button className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[10px] font-bold hover:bg-primary/20 transition-colors">
+                    ▶ Play
+                  </button>
+                </div>
+              </div>
+            )}
+
             {p.adders.length > 0 && (
               <div>
                 <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2">Adders</h3>
