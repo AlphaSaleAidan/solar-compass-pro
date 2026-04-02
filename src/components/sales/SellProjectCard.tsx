@@ -29,6 +29,7 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
   const [showSiteSurvey, setShowSiteSurvey] = useState(false);
   const [showWelcomeCall, setShowWelcomeCall] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncFailed, setSyncFailed] = useState(false);
   const status = statusStyles[project.creditStatus];
 
   const isProduction = user && !user.isDemo;
@@ -84,7 +85,8 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
         onUpdateProject({ ...project, auroraSynced: true, auroraData });
         toast.success('Aurora data synced successfully');
       } catch (err) {
-        toast.error('Failed to sync from Aurora');
+        setSyncFailed(true);
+        toast.error('Sync Failed — account not found in Aurora');
       } finally {
         setSyncing(false);
       }
@@ -286,12 +288,14 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                 {/* Step 1: Sync from Aurora */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
-                    {project.auroraSynced ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <Sun className="w-3.5 h-3.5 text-white/30" />}
-                    <span className={project.auroraSynced ? 'text-white/40 line-through' : 'text-white/70'}>1. Sync from Aurora</span>
+                    {project.auroraSynced ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : syncFailed ? <XCircle className="w-3.5 h-3.5 text-[hsl(0,70%,55%)]" /> : <Sun className="w-3.5 h-3.5 text-white/30" />}
+                    <span className={project.auroraSynced ? 'text-white/40 line-through' : syncFailed ? 'text-[hsl(0,70%,55%)] font-bold' : 'text-white/70'}>
+                      {syncFailed ? '1. Sync Failed' : '1. Sync from Aurora'}
+                    </span>
                   </div>
                   {!project.auroraSynced && (
-                    <button onClick={handleSyncAurora} disabled={syncing} className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-[10px] font-bold hover:bg-primary/20 disabled:opacity-50 transition-all active:scale-[0.97] flex items-center gap-1">
-                      {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} {syncing ? 'Syncing...' : 'Sync from Aurora'}
+                    <button onClick={() => { setSyncFailed(false); handleSyncAurora(); }} disabled={syncing} className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-[10px] font-bold hover:bg-primary/20 disabled:opacity-50 transition-all active:scale-[0.97] flex items-center gap-1">
+                      {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} {syncing ? 'Syncing...' : syncFailed ? 'Retry Sync' : 'Sync from Aurora'}
                     </button>
                   )}
                 </div>
