@@ -982,6 +982,7 @@ export type Database = {
           created_by: string
           credit_status: string | null
           documents_sent: boolean | null
+          documents_signed: boolean | null
           email: string | null
           first_name: string
           high_bill: number | null
@@ -991,6 +992,7 @@ export type Database = {
           organization_id: string | null
           phone: string | null
           project_code: string | null
+          qc_initial_approved: boolean | null
           rejection_reason: string | null
           setter: string | null
           site_survey_complete: boolean | null
@@ -1013,6 +1015,7 @@ export type Database = {
           created_by: string
           credit_status?: string | null
           documents_sent?: boolean | null
+          documents_signed?: boolean | null
           email?: string | null
           first_name: string
           high_bill?: number | null
@@ -1022,6 +1025,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           project_code?: string | null
+          qc_initial_approved?: boolean | null
           rejection_reason?: string | null
           setter?: string | null
           site_survey_complete?: boolean | null
@@ -1044,6 +1048,7 @@ export type Database = {
           created_by?: string
           credit_status?: string | null
           documents_sent?: boolean | null
+          documents_signed?: boolean | null
           email?: string | null
           first_name?: string
           high_bill?: number | null
@@ -1053,6 +1058,7 @@ export type Database = {
           organization_id?: string | null
           phone?: string | null
           project_code?: string | null
+          qc_initial_approved?: boolean | null
           rejection_reason?: string | null
           setter?: string | null
           site_survey_complete?: boolean | null
