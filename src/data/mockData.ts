@@ -143,6 +143,7 @@ export interface SellProject {
   submittedForApproval?: boolean;
   approvalStatus?: 'pending' | 'clean' | 'dirty';
   approvalNotes?: string;
+  welcomeCallRecordingUrl?: string;
   // Two-phase QC workflow
   qcInitialApproved?: boolean;
   documentsSigned?: boolean;
