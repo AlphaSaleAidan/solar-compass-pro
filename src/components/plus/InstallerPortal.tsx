@@ -51,12 +51,10 @@ const InstallerPortal = () => {
   const docInputRef = useRef<HTMLInputElement>(null);
   const photoUploadRef = useRef<HTMLInputElement>(null);
 
-  // For demo: filter by hardcoded installer names
-  // For production: show all projects assigned to this installer's org, or all projects if no org filtering yet
+  // For demo: show all projects (demo data is already scoped)
+  // For production: RLS handles filtering — show all projects from the store
   const installerName = isDemo ? 'SunTech Installations' : (user?.companyName || 'Installer');
-  const installerProjects = isDemo 
-    ? store.projects.filter(p => p.installerName === 'SunTech Installations' || p.installerName === 'Pro Solar TX')
-    : store.projects;
+  const installerProjects = store.projects;
   const completedCount = installerProjects.filter(p => p.currentMilestone >= 5).length;
   const activeCount = installerProjects.filter(p => p.status !== 'completed').length;
   const avgDaysToPTO = 24;
