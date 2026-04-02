@@ -49,29 +49,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Listen for Supabase auth state changes
   useEffect(() => {
+    let initialSessionHandled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
-        // Use functional update to check demo status without adding to deps
         setUser(prev => {
           if (prev?.isDemo) return prev;
-          // Load production user asynchronously
+          // Only load if not already handled by getSession below
+          if (!initialSessionHandled) return prev;
           loadProductionUser(newSession.user);
           return prev;
         });
       } else {
         setUser(prev => prev?.isDemo ? prev : null);
       }
-      setLoading(false);
+      if (initialSessionHandled) setLoading(false);
     });
 
-    // Check existing session
+    // Check existing session once
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      initialSessionHandled = true;
       setSession(existingSession);
       if (existingSession?.user) {
         loadProductionUser(existingSession.user);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -80,16 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProductionUser = async (supabaseUser: SupabaseUser) => {
     try {
-      // Fetch user roles
-      const { data: roles } = await supabase.rpc('get_user_roles', { _user_id: supabaseUser.id });
-      const userRoles = (roles || []) as UserRole[];
+      // Run both queries in parallel for faster login
+      const [rolesResult, profileResult] = await Promise.all([
+        supabase.rpc('get_user_roles', { _user_id: supabaseUser.id }),
+        supabase.from('profiles').select('*').eq('user_id', supabaseUser.id).single(),
+      ]);
 
-      // Fetch profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', supabaseUser.id)
-        .single();
+      const userRoles = (rolesResult.data || []) as UserRole[];
+      const profile = profileResult.data;
 
       const isMaster = userRoles.includes('master');
       const primaryRole = isMaster ? 'master' : userRoles[0] || 'sales_rep';
@@ -113,8 +115,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         organizationId: profile?.organization_id || undefined,
         companyName: (profile as any)?.company_name || undefined,
       });
+      setLoading(false);
     } catch (err) {
       console.error('Error loading production user:', err);
+      setLoading(false);
     }
   };
 
