@@ -417,6 +417,24 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       completed_at: new Date().toISOString(),
     }, { onConflict: 'project_id,milestone_index' });
 
+    // If Install Completed milestone (index 4) is approved, update leaderboard installs
+    if (milestoneIndex === 4) {
+      const project = projects.find(p => p.id === projectId);
+      const repId = (project as any)?.salesRepId || (project as any)?.sales_rep_id;
+      if (repId) {
+        const { data: existing } = await supabase
+          .from('leaderboard')
+          .select('*')
+          .eq('user_id', repId)
+          .maybeSingle();
+        if (existing) {
+          await supabase.from('leaderboard').update({
+            installs_count: (existing as any).installs_count + 1,
+          }).eq('user_id', repId);
+        }
+      }
+    }
+
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, currentMilestone: newMilestone, stage: MILESTONE_SOPS[newMilestone]?.name || 'Completed' } : p));
     setMilestoneStates(prev => ({
       ...prev,
@@ -620,6 +638,8 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     // Create a project from the sell_project
     const sp = sellProjects.find(p => p.id === projectId);
     if (sp) {
+      const createdByUserId = (sp as any).createdBy || user?.id;
+      
       await supabase.from('projects').insert({
         customer_name: `${sp.firstName} ${sp.lastName}`,
         customer_email: sp.email,
@@ -627,11 +647,44 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
         address: sp.address,
         status: 'in_pipeline' as any,
         current_milestone: 0,
-        sales_rep_id: user?.id,
+        sales_rep_id: createdByUserId,
         rep_name: user?.name,
         sell_project_id: getSellDbId(projectId),
         organization_id: 'alphasale',
       });
+
+      // Update leaderboard for the sales rep who created this deal
+      const dealRevenue = Number((sp as any).auroraData?.systemPrice) || Number((sp as any).auroraData?.contractValue) || 0;
+      
+      // Get the rep's name from their profile
+      let repName = user?.name || 'Unknown';
+      if (createdByUserId && createdByUserId !== user?.id) {
+        const { data: profile } = await supabase.from('profiles').select('full_name').eq('user_id', createdByUserId).maybeSingle();
+        if (profile) repName = profile.full_name;
+      }
+
+      // Upsert leaderboard entry
+      const { data: existing } = await supabase
+        .from('leaderboard')
+        .select('*')
+        .eq('user_id', createdByUserId)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase.from('leaderboard').update({
+          deals_count: (existing as any).deals_count + 1,
+          revenue: Number((existing as any).revenue) + dealRevenue,
+          user_name: repName,
+        }).eq('user_id', createdByUserId);
+      } else {
+        await supabase.from('leaderboard').insert({
+          user_id: createdByUserId,
+          user_name: repName,
+          deals_count: 1,
+          installs_count: 0,
+          revenue: dealRevenue,
+        });
+      }
     }
 
     setSellProjects(prev => prev.map(p => p.id === projectId ? { ...p, approvalStatus: 'clean' as const } : p));
