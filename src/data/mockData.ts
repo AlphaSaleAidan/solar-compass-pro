@@ -77,6 +77,7 @@ export interface Project {
   setter?: string;
   setterId?: string;
   setterSplitPercent?: number;
+  welcomeCallRecordingUrl?: string;
 }
 
 export const MILESTONE_NAMES = [
