@@ -124,11 +124,13 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
     };
     const flags = validateWelcomeCall(wcAnswers);
 
+    const recordingUrl = `welcome-call-${project.id}-${Date.now()}`;
     onUpdateProject({
       ...project,
       welcomeCallComplete: true,
       welcomeCallAnswers: answers.map(a => ({ question: a.question, answer: a.answer, correct: a.correct })),
       welcomeCallFlags: flags,
+      welcomeCallRecordingUrl: recordingUrl,
       checklist: { ...project.checklist, welcomeCallCompleted: true },
     });
     setShowWelcomeCall(false);

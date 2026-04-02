@@ -183,6 +183,27 @@ const FinalApprovalQueue = ({ projects, onMarkClean, onMarkDirty }: FinalApprova
                       </div>
                     </div>
 
+                    {/* Welcome call recording */}
+                    {p.welcomeCallRecordingUrl && (
+                      <div className="bg-bg3 border border-border rounded-lg p-3">
+                        <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2 flex items-center gap-1.5">
+                          <Video className="w-3.5 h-3.5 text-primary" /> Welcome Call Recording
+                        </div>
+                        <div className="flex items-center gap-3 p-2 bg-bg2 border border-primary/20 rounded-lg">
+                          <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
+                            <Video className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-xs font-bold text-foreground">{p.firstName} {p.lastName} — Welcome Call</div>
+                            <div className="text-[10px] text-muted-foreground">Recording ID: {p.welcomeCallRecordingUrl}</div>
+                          </div>
+                          <button className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[10px] font-bold hover:bg-primary/20 transition-colors">
+                            ▶ Play
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Welcome call answers */}
                     {p.welcomeCallAnswers && (
                       <div className="bg-bg3 border border-border rounded-lg p-3">
