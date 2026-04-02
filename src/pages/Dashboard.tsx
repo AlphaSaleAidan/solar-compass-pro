@@ -18,7 +18,6 @@ import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
 import PlusPortal from '@/components/plus/PlusPortal';
 import ActivityFeed from '@/components/shared/ActivityFeed';
 import { useDataSource } from '@/contexts/DataSourceProvider';
-import { useDataSource } from '@/contexts/DataSourceProvider';
 
 const Dashboard = () => {
   const { user } = useAuth();
