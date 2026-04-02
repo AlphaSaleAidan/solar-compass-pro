@@ -51,6 +51,49 @@ interface AuroraProjectData {
   setter?: string;
 }
 
+// Data verification — runs on every sync to ensure consistency
+// Future: will cross-check against Aurora API
+interface VerificationResult {
+  verified: boolean;
+  missingFields: string[];
+  warnings: string[];
+}
+
+function verifyAuroraProjectData(data: AuroraProjectData): VerificationResult {
+  const missingFields: string[] = [];
+  const warnings: string[] = [];
+
+  const required: (keyof AuroraProjectData)[] = [
+    'customerName', 'address', 'systemSize', 'battery',
+    'financier', 'monthlyPayment', 'auroraProjectId',
+  ];
+
+  for (const field of required) {
+    if (data[field] == null || data[field] === '') {
+      missingFields.push(field);
+    }
+  }
+
+  // Business logic range checks
+  if (data.systemSize && (data.systemSize < 3 || data.systemSize > 30)) {
+    warnings.push(`systemSize ${data.systemSize} kW outside typical range (3-30)`);
+  }
+  if (data.pricePerWatt && (data.pricePerWatt < 1.5 || data.pricePerWatt > 6)) {
+    warnings.push(`pricePerWatt $${data.pricePerWatt} outside typical range ($1.50-$6.00)`);
+  }
+  if (data.escalationRate && data.escalationRate > 5) {
+    warnings.push(`escalationRate ${data.escalationRate}% unusually high`);
+  }
+  if (data.offsetPercent && data.offsetPercent > 150) {
+    warnings.push(`offsetPercent ${data.offsetPercent}% exceeds 150%`);
+  }
+  if (data.monthlyPayment && data.monthlyPayment < 50) {
+    warnings.push(`monthlyPayment $${data.monthlyPayment} seems unusually low`);
+  }
+
+  return { verified: missingFields.length === 0, missingFields, warnings };
+}
+
 function generateWelcomeCallData(data: AuroraProjectData) {
   return [
     { question: "Is the homeowner aware of the solar installation?", answer: "Yes", correct: true },
@@ -104,7 +147,20 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Check for duplicate
+  // Run verification checks on incoming data
+  const verification = verifyAuroraProjectData(data);
+  if (!verification.verified) {
+    return new Response(
+      JSON.stringify({
+        error: "Data verification failed",
+        missingFields: verification.missingFields,
+        warnings: verification.warnings,
+      }),
+      { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+
   const { data: existing } = await admin
     .from("sell_projects")
     .select("id, project_code")

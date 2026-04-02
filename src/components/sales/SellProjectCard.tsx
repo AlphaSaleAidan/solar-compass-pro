@@ -9,6 +9,7 @@ import WelcomeCall from './WelcomeCall';
 import type { WelcomeCallAnswer } from './WelcomeCall';
 import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, ClipboardCheck, AlertTriangle, RefreshCw, Video, XCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { resolveAuroraData } from '@/lib/auroraDataResolver';
 
 interface SellProjectCardProps {
   project: SellProject;
@@ -270,16 +271,19 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
             )}
 
             {/* Aurora Data */}
-            {project.auroraSynced && project.auroraData && (
-              <div className="bg-white/[0.03] rounded-lg p-3">
-                <div className="text-[10px] text-white/30 font-bold tracking-wider uppercase mb-2">Aurora System Data</div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div><span className="text-white/40">System:</span> <span className="text-white font-bold">{project.auroraData.systemSize}</span></div>
-                  <div><span className="text-white/40">Battery:</span> <span className="text-white font-bold">{project.auroraData.battery}</span></div>
-                  <div><span className="text-white/40">Financier:</span> <span className="text-[hsl(150,60%,50%)] font-bold">{project.auroraData.financier}</span></div>
+            {project.auroraSynced && project.auroraData && (() => {
+              const resolved = resolveAuroraData(project.auroraData);
+              return (
+                <div className="bg-white/[0.03] rounded-lg p-3">
+                  <div className="text-[10px] text-white/30 font-bold tracking-wider uppercase mb-2">Aurora System Data</div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div><span className="text-white/40">System:</span> <span className="text-white font-bold">{resolved.systemSize || '—'}</span></div>
+                    <div><span className="text-white/40">Battery:</span> <span className="text-white font-bold">{resolved.battery || '—'}</span></div>
+                    <div><span className="text-white/40">Financier:</span> <span className="text-[hsl(150,60%,50%)] font-bold">{resolved.financier || '—'}</span></div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* SOP Actions */}
             <div className="bg-white/[0.03] rounded-lg p-3">
