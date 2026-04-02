@@ -417,6 +417,24 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       completed_at: new Date().toISOString(),
     }, { onConflict: 'project_id,milestone_index' });
 
+    // If Install Completed milestone (index 4) is approved, update leaderboard installs
+    if (milestoneIndex === 4) {
+      const project = projects.find(p => p.id === projectId);
+      const repId = (project as any)?.salesRepId || (project as any)?.sales_rep_id;
+      if (repId) {
+        const { data: existing } = await supabase
+          .from('leaderboard')
+          .select('*')
+          .eq('user_id', repId)
+          .maybeSingle();
+        if (existing) {
+          await supabase.from('leaderboard').update({
+            installs_count: (existing as any).installs_count + 1,
+          }).eq('user_id', repId);
+        }
+      }
+    }
+
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, currentMilestone: newMilestone, stage: MILESTONE_SOPS[newMilestone]?.name || 'Completed' } : p));
     setMilestoneStates(prev => ({
       ...prev,
