@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LogOut, User, Crown, ArrowLeftRight, Settings, Wifi, WifiOff } from 'lucide-react';
+import { Zap, LogOut, User, Crown, ArrowLeftRight, Wifi, WifiOff } from 'lucide-react';
 import type { UserRole } from '@/contexts/AuthContext';
 import UserSettingsModal from '@/components/settings/UserSettingsModal';
 
