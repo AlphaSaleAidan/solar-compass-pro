@@ -191,22 +191,8 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
 
         <div className="ml-auto flex gap-1">
           <button
-            onClick={() => setActiveSubTab('create')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] flex items-center gap-1.5 ${
-              activeSubTab === 'create'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
-            }`}
-          >
-            <Crown className="w-3.5 h-3.5" /> New Deal
-          </button>
-          <button
             onClick={() => setActiveSubTab('projects')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] flex items-center gap-1.5 ${
-              activeSubTab === 'projects'
-                ? 'bg-[hsl(175,60%,45%)] text-white'
-                : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
-            }`}
+            className="px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] flex items-center gap-1.5 bg-[hsl(var(--teal))] text-white"
           >
             <FolderOpen className="w-3.5 h-3.5" /> Projects ({sellProjects.length})
           </button>
