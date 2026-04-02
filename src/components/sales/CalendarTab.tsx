@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { APPOINTMENTS } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, MessageSquare, ArrowRight } from 'lucide-react';
+import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Camera, FileText, MessageSquare, ArrowRight } from 'lucide-react';
 
 interface CalendarTabProps {
   onConvertToProject?: (data: { name: string; email: string; phone: string; address: string }) => void;
@@ -70,10 +70,23 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
     no_sit: 'No Sit',
   };
 
-  // Full month calendar - get all dates for March 2026
-  const currentMonth = new Date(2026, 2, 1); // March 2026
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
+  // Full month calendar — use current date with navigation
+  const [calendarDate, setCalendarDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+
+  const goToPrevMonth = () => setCalendarDate(new Date(year, month - 1, 1));
+  const goToNextMonth = () => setCalendarDate(new Date(year, month + 1, 1));
+  const goToToday = () => {
+    const now = new Date();
+    setCalendarDate(new Date(now.getFullYear(), now.getMonth(), 1));
+  };
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
   const monthDays = Array.from({ length: daysInMonth }, (_, i) => {
@@ -87,9 +100,23 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
   return (
     <div className="space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Calendar className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-black text-foreground">Appointment Calendar</h2>
+          <div className="flex items-center gap-1 ml-2">
+            <button onClick={goToPrevMonth} className="p-1 rounded hover:bg-white/10 transition-colors">
+              <ChevronLeft className="w-4 h-4 text-white/60" />
+            </button>
+            <span className="text-sm font-bold text-white/80 min-w-[120px] text-center">
+              {monthNames[month]} {year}
+            </span>
+            <button onClick={goToNextMonth} className="p-1 rounded hover:bg-white/10 transition-colors">
+              <ChevronRight className="w-4 h-4 text-white/60" />
+            </button>
+            <button onClick={goToToday} className="ml-1 px-2 py-0.5 text-[10px] font-bold text-primary border border-primary/20 rounded hover:bg-primary/10 transition-colors">
+              Today
+            </button>
+          </div>
         </div>
         <button
           onClick={() => setShowNewAppt(!showNewAppt)}

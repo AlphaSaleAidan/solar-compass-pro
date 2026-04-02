@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { PROJECTS } from '@/data/mockData';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { Save, RotateCcw, ChevronDown, ChevronRight, Pencil, UserPlus, Eye, Link2, CheckCircle, FileText, Send, AlertTriangle } from 'lucide-react';
 
 const ProjectEditor = () => {
+  const store = useDataSource();
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [editedFields, setEditedFields] = useState<Record<string, Record<string, string>>>({});
   const [auroraAccounts, setAuroraAccounts] = useState<Record<string, { email: string; status: string }>>({});
@@ -10,7 +11,7 @@ const ProjectEditor = () => {
   const [auroraEmail, setAuroraEmail] = useState('');
   const [savedProjects, setSavedProjects] = useState<string[]>([]);
 
-  const project = PROJECTS.find(p => p.id === selectedProject);
+  const project = store.projects.find(p => p.id === selectedProject);
 
   const handleFieldChange = (projectId: string, field: string, value: string) => {
     setEditedFields(prev => ({
@@ -58,10 +59,10 @@ const ProjectEditor = () => {
         {/* Project List */}
         <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl overflow-hidden">
           <div className="px-4 py-3 bg-[hsl(var(--bg3))] border-b border-border text-xs font-extrabold text-foreground tracking-wider uppercase flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5" /> All Projects ({PROJECTS.length})
+            <FileText className="w-3.5 h-3.5" /> All Projects ({store.projects.length})
           </div>
           <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
-            {PROJECTS.map(p => (
+            {store.projects.map(p => (
               <div
                 key={p.id}
                 onClick={() => setSelectedProject(p.id)}

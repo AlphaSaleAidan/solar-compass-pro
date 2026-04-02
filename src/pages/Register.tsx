@@ -25,18 +25,24 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Client-side validation
+    if (!fullName.trim()) { setError('Full name is required'); return; }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Valid email is required'); return; }
+    if (!phone.trim()) { setError('Phone number is required'); return; }
+    if (selectedRoleOption?.needsEntity && !entityName.trim()) { setError('Entity/Company name is required for this role'); return; }
+
     setIsLoading(true);
 
     const { error: insertError } = await supabase
       .from('registration_requests')
       .insert({
-        full_name: fullName,
-        email,
-        phone,
-        entity_name: entityName || null,
+        full_name: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.trim(),
+        entity_name: entityName.trim() || null,
         requested_role: requestedRole,
-        notes: notes || null,
-        invited_by: '00000000-0000-0000-0000-000000000000', // placeholder
+        notes: notes.trim() || null,
       });
 
     if (insertError) {

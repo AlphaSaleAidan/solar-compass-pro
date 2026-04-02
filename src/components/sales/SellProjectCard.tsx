@@ -67,16 +67,43 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
         }
 
         toast.info('Aurora sync initiated — checking for project data...');
-        
-        const auroraData = {
-          systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
-          battery: 'Duracell 20kW',
-          financier: ['GoodLeap', 'Sunlight Financial', 'Mosaic'][Math.floor(Math.random() * 3)],
-          monthlyPayment: `$${(160 + Math.random() * 80).toFixed(0)}`,
-          adders: ['Battery ($8,500)', 'Critter Guard ($800)'],
-        };
-        onUpdateProject({ ...project, auroraSynced: true, auroraData });
-        toast.success('Aurora data synced successfully');
+
+        // Call the aurora-sync edge function for real data
+        const { data: syncResult, error: syncError } = await supabase.functions.invoke('aurora-sync', {
+          body: {
+            aurora_email: profile.aurora_email,
+            sell_project_id: project.id,
+            manual: true,
+            project_data: null,
+          },
+        });
+
+        if (syncError || !syncResult?.systemSize) {
+          // Aurora data not yet available — set pending state
+          onUpdateProject({
+            ...project,
+            auroraSynced: false,
+            auroraData: {
+              systemSize: '',
+              battery: '',
+              financier: '',
+              monthlyPayment: '',
+              adders: [],
+            },
+          });
+          toast.warning('Aurora sync pending — data will appear when your Aurora project is linked');
+        } else {
+          // Real Aurora data received
+          const auroraData = {
+            systemSize: syncResult.systemSize || '',
+            battery: syncResult.battery || '',
+            financier: syncResult.financier || '',
+            monthlyPayment: syncResult.monthlyPayment || '',
+            adders: syncResult.adders || [],
+          };
+          onUpdateProject({ ...project, auroraSynced: true, auroraData });
+          toast.success('Aurora data synced successfully');
+        }
       } catch (err) {
         setSyncFailed(true);
         toast.error('Sync Failed — account not found in Aurora');
@@ -86,7 +113,7 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
       return;
     }
 
-    // Demo mode: mock data
+    // Demo mode only — random mock data for demonstration
     const auroraData = {
       systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
       battery: 'Duracell 20kW',

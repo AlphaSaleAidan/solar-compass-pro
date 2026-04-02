@@ -117,6 +117,30 @@ function parseAddressComponents(components: any[]): Omit<ParsedAddress, 'fullAdd
   return { street: `${street_number} ${route}`.trim(), city, state, zip };
 }
 
+// Rate limit tracker — warn at 80% of budget, block at limit
+const PLACES_DAILY_BUDGET = 5000;
+const PLACES_WARN_AT = 4000;
+const STORAGE_KEY = 'asp_places_usage';
+
+function getPlacesUsage(): { count: number; date: string } {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const today = new Date().toISOString().slice(0, 10);
+      if (parsed.date === today) return parsed;
+    }
+  } catch {}
+  return { count: 0, date: new Date().toISOString().slice(0, 10) };
+}
+
+function incrementPlacesUsage(): number {
+  const usage = getPlacesUsage();
+  usage.count += 1;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(usage));
+  return usage.count;
+}
+
 export function useGooglePlaces(onSelect: (address: ParsedAddress) => void) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
@@ -129,6 +153,13 @@ export function useGooglePlaces(onSelect: (address: ParsedAddress) => void) {
     let cancelled = false;
 
     const init = async () => {
+      // Check daily budget before loading
+      const usage = getPlacesUsage();
+      if (usage.count >= PLACES_DAILY_BUDGET) {
+        setErrorMessage(`Daily address lookup limit reached (${PLACES_DAILY_BUDGET}). Type the address manually.`);
+        return;
+      }
+
       try {
         await loadGoogleMaps();
 
@@ -143,6 +174,12 @@ export function useGooglePlaces(onSelect: (address: ParsedAddress) => void) {
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace();
           if (!place?.address_components) return;
+
+          // Track usage for rate limiting
+          const currentCount = incrementPlacesUsage();
+          if (currentCount >= PLACES_WARN_AT && currentCount < PLACES_DAILY_BUDGET) {
+            console.warn(`[ASP] Google Places usage: ${currentCount}/${PLACES_DAILY_BUDGET} today`);
+          }
 
           const parsed = parseAddressComponents(place.address_components);
           onSelectRef.current({
