@@ -117,6 +117,32 @@ function parseAddressComponents(components: any[]): Omit<ParsedAddress, 'fullAdd
   return { street: `${street_number} ${route}`.trim(), city, state, zip };
 }
 
+function playBubblePopSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.04);
+    oscillator.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.12);
+
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.15);
+
+    setTimeout(() => ctx.close(), 200);
+  } catch (e) {
+    // Audio not available — no-op
+  }
+}
+
 export function useGooglePlaces(onSelect: (address: ParsedAddress) => void) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
@@ -143,6 +169,8 @@ export function useGooglePlaces(onSelect: (address: ParsedAddress) => void) {
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace();
           if (!place?.address_components) return;
+
+          playBubblePopSound();
 
           const parsed = parseAddressComponents(place.address_components);
           onSelectRef.current({
