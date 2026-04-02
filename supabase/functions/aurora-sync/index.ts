@@ -93,6 +93,8 @@ function verifyAuroraProjectData(data: AuroraProjectData): VerificationResult {
 
   return { verified: missingFields.length === 0, missingFields, warnings };
 }
+
+function generateWelcomeCallData(data: AuroraProjectData) {
   return [
     { question: "Is the homeowner aware of the solar installation?", answer: "Yes", correct: true },
     { question: "Does the homeowner understand their monthly payment?", answer: `$${data.monthlyPayment}/month with ${data.financier}`, correct: true },
