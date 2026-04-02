@@ -145,7 +145,20 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Check for duplicate
+  // Run verification checks on incoming data
+  const verification = verifyAuroraProjectData(data);
+  if (!verification.verified) {
+    return new Response(
+      JSON.stringify({
+        error: "Data verification failed",
+        missingFields: verification.missingFields,
+        warnings: verification.warnings,
+      }),
+      { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+
   const { data: existing } = await admin
     .from("sell_projects")
     .select("id, project_code")
