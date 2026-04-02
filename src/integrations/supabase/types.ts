@@ -392,6 +392,53 @@ export type Database = {
           },
         ]
       }
+      project_activity_log: {
+        Row: {
+          action_type: string
+          actor_id: string | null
+          actor_name: string
+          actor_role: string
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          portal: string
+          project_id: string
+        }
+        Insert: {
+          action_type: string
+          actor_id?: string | null
+          actor_name: string
+          actor_role: string
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          portal: string
+          project_id: string
+        }
+        Update: {
+          action_type?: string
+          actor_id?: string | null
+          actor_name?: string
+          actor_role?: string
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          portal?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_activity_project"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_checklist_items: {
         Row: {
           completed: boolean | null

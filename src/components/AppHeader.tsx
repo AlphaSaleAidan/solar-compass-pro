@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LogOut, User, Crown, ArrowLeftRight, Settings } from 'lucide-react';
+import { Zap, LogOut, User, Crown, ArrowLeftRight, Wifi, WifiOff } from 'lucide-react';
 import type { UserRole } from '@/contexts/AuthContext';
 import UserSettingsModal from '@/components/settings/UserSettingsModal';
 
@@ -16,6 +16,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [realtimeConnected, setRealtimeConnected] = useState(true);
 
   useEffect(() => {
     if (user && !user.isDemo) {
@@ -30,6 +31,16 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
     }
   }, [user]);
 
+  // Realtime connection health
+  useEffect(() => {
+    if (!user || user.isDemo) return;
+    const channel = supabase.channel('header-sync-check')
+      .subscribe((status) => {
+        setRealtimeConnected(status === 'SUBSCRIBED');
+      });
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   if (!user) return null;
 
   const isPlus = user.portalMode === 'asp_plus';
@@ -41,12 +52,12 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   };
 
   const aspTabs = user.role === 'sales_rep'
-    ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', '🦁']
-    : ['QC Review', 'Final Approval', 'Milestones', 'Projects', 'Communication', 'Super Support'];
+    ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', '🦁', 'Activity']
+    : ['QC Review', 'Final Approval', 'Milestones', 'Projects', 'Communication', 'Super Support', 'Activity'];
 
   const aspPlusTabs = user.role === 'financier'
-    ? ['Portal']
-    : ['Portal'];
+    ? ['Portal', 'Activity']
+    : ['Portal', 'Activity'];
 
   const tabs = isPlus ? aspPlusTabs : aspTabs;
 
@@ -102,6 +113,19 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
       </nav>
 
       <div className="flex items-center gap-3 ml-auto">
+        {/* Live sync indicator */}
+        {!user.isDemo && (
+          <div className="flex items-center gap-1">
+            {realtimeConnected ? (
+              <Wifi className="w-3 h-3 text-asp-green" />
+            ) : (
+              <WifiOff className="w-3 h-3 text-asp-red" />
+            )}
+            <span className={`text-[9px] font-bold uppercase ${realtimeConnected ? 'text-asp-green' : 'text-asp-red'}`}>
+              {realtimeConnected ? 'Synced' : 'Offline'}
+            </span>
+          </div>
+        )}
         {isMaster && (
           <div className="flex items-center gap-1">
             <ArrowLeftRight className="w-3 h-3 text-gray-500" />

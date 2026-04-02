@@ -16,6 +16,7 @@ import OpsProjectsTab from '@/components/ops/OpsProjectsTab';
 import SuperSupport from '@/components/ops/SuperSupport';
 import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
 import PlusPortal from '@/components/plus/PlusPortal';
+import ActivityFeed from '@/components/shared/ActivityFeed';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 
 const Dashboard = () => {
@@ -35,7 +36,13 @@ const Dashboard = () => {
   };
 
   const renderContent = () => {
+    // Activity tab is shared across all portals
+    if (activeTab === 'Activity') {
+      return <ActivityFeed />;
+    }
+
     if (isPlus) {
+      if (activeTab === 'Portal') return <PlusPortal />;
       return <PlusPortal />;
     }
 
