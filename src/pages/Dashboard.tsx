@@ -80,7 +80,7 @@ const Dashboard = () => {
       case 'Final Approval':
         return (
           <FinalApprovalQueue
-            projects={sellProjects.filter(p => p.submittedForApproval)}
+            projects={sellProjects.filter(p => p.submittedForApproval && p.qcInitialApproved)}
             onMarkClean={markSellProjectClean}
             onMarkDirty={markSellProjectDirty}
           />
