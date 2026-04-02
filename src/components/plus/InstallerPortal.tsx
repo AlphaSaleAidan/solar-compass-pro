@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
