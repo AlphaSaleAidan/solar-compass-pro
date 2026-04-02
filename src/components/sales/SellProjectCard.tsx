@@ -85,7 +85,8 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
         onUpdateProject({ ...project, auroraSynced: true, auroraData });
         toast.success('Aurora data synced successfully');
       } catch (err) {
-        toast.error('Failed to sync from Aurora');
+        setSyncFailed(true);
+        toast.error('Sync Failed — account not found in Aurora');
       } finally {
         setSyncing(false);
       }
