@@ -84,16 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProductionUser = async (supabaseUser: SupabaseUser) => {
     try {
-      // Fetch user roles
-      const { data: roles } = await supabase.rpc('get_user_roles', { _user_id: supabaseUser.id });
-      const userRoles = (roles || []) as UserRole[];
+      // Run both queries in parallel for faster login
+      const [rolesResult, profileResult] = await Promise.all([
+        supabase.rpc('get_user_roles', { _user_id: supabaseUser.id }),
+        supabase.from('profiles').select('*').eq('user_id', supabaseUser.id).single(),
+      ]);
 
-      // Fetch profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', supabaseUser.id)
-        .single();
+      const userRoles = (rolesResult.data || []) as UserRole[];
+      const profile = profileResult.data;
 
       const isMaster = userRoles.includes('master');
       const primaryRole = isMaster ? 'master' : userRoles[0] || 'sales_rep';
@@ -117,8 +115,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         organizationId: profile?.organization_id || undefined,
         companyName: (profile as any)?.company_name || undefined,
       });
+      setLoading(false);
     } catch (err) {
       console.error('Error loading production user:', err);
+      setLoading(false);
     }
   };
 
