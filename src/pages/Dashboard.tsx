@@ -16,6 +16,8 @@ import OpsProjectsTab from '@/components/ops/OpsProjectsTab';
 import SuperSupport from '@/components/ops/SuperSupport';
 import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
 import PlusPortal from '@/components/plus/PlusPortal';
+import ActivityFeed from '@/components/shared/ActivityFeed';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 
 const Dashboard = () => {

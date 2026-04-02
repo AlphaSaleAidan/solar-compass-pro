@@ -113,6 +113,19 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
       </nav>
 
       <div className="flex items-center gap-3 ml-auto">
+        {/* Live sync indicator */}
+        {!user.isDemo && (
+          <div className="flex items-center gap-1">
+            {realtimeConnected ? (
+              <Wifi className="w-3 h-3 text-asp-green" />
+            ) : (
+              <WifiOff className="w-3 h-3 text-asp-red" />
+            )}
+            <span className={`text-[9px] font-bold uppercase ${realtimeConnected ? 'text-asp-green' : 'text-asp-red'}`}>
+              {realtimeConnected ? 'Synced' : 'Offline'}
+            </span>
+          </div>
+        )}
         {isMaster && (
           <div className="flex items-center gap-1">
             <ArrowLeftRight className="w-3 h-3 text-gray-500" />
