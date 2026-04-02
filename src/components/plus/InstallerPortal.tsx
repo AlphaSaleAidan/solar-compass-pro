@@ -31,6 +31,8 @@ const PAYMENT_DETAILS = [
 
 const InstallerPortal = () => {
   const store = useDataSource();
+  const { user } = useAuth();
+  const isDemo = user?.isDemo;
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones'>('overview');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -49,8 +51,12 @@ const InstallerPortal = () => {
   const docInputRef = useRef<HTMLInputElement>(null);
   const photoUploadRef = useRef<HTMLInputElement>(null);
 
-  const installerName = 'SunTech Installations';
-  const installerProjects = store.projects.filter(p => p.installerName === installerName || p.installerName === 'Pro Solar TX');
+  // For demo: filter by hardcoded installer names
+  // For production: show all projects assigned to this installer's org, or all projects if no org filtering yet
+  const installerName = isDemo ? 'SunTech Installations' : (user?.companyName || 'Installer');
+  const installerProjects = isDemo 
+    ? store.projects.filter(p => p.installerName === 'SunTech Installations' || p.installerName === 'Pro Solar TX')
+    : store.projects;
   const completedCount = installerProjects.filter(p => p.currentMilestone >= 5).length;
   const activeCount = installerProjects.filter(p => p.status !== 'completed').length;
   const avgDaysToPTO = 24;
