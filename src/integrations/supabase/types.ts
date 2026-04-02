@@ -232,6 +232,39 @@ export type Database = {
           },
         ]
       }
+      leaderboard: {
+        Row: {
+          created_at: string
+          deals_count: number
+          id: string
+          installs_count: number
+          revenue: number
+          updated_at: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          created_at?: string
+          deals_count?: number
+          id?: string
+          installs_count?: number
+          revenue?: number
+          updated_at?: string
+          user_id: string
+          user_name?: string
+        }
+        Update: {
+          created_at?: string
+          deals_count?: number
+          id?: string
+          installs_count?: number
+          revenue?: number
+          updated_at?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       milestone_states: {
         Row: {
           approved_by: string | null
