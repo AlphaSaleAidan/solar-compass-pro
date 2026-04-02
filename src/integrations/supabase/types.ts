@@ -1001,6 +1001,7 @@ export type Database = {
           updated_at: string | null
           welcome_call_answers: Json | null
           welcome_call_complete: boolean | null
+          welcome_call_recording_url: string | null
         }
         Insert: {
           address?: string | null
@@ -1034,6 +1035,7 @@ export type Database = {
           updated_at?: string | null
           welcome_call_answers?: Json | null
           welcome_call_complete?: boolean | null
+          welcome_call_recording_url?: string | null
         }
         Update: {
           address?: string | null
@@ -1067,6 +1069,7 @@ export type Database = {
           updated_at?: string | null
           welcome_call_answers?: Json | null
           welcome_call_complete?: boolean | null
+          welcome_call_recording_url?: string | null
         }
         Relationships: []
       }
