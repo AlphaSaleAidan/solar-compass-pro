@@ -144,8 +144,6 @@ export function useGooglePlaces(onSelect: (address: ParsedAddress) => void) {
           const place = autocomplete.getPlace();
           if (!place?.address_components) return;
 
-          playBubblePopSound();
-
           const parsed = parseAddressComponents(place.address_components);
           onSelectRef.current({
             ...parsed,
