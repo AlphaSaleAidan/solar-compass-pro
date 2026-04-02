@@ -31,6 +31,16 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
     }
   }, [user]);
 
+  // Realtime connection health
+  useEffect(() => {
+    if (!user || user.isDemo) return;
+    const channel = supabase.channel('header-sync-check')
+      .subscribe((status) => {
+        setRealtimeConnected(status === 'SUBSCRIBED');
+      });
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   if (!user) return null;
 
   const isPlus = user.portalMode === 'asp_plus';
