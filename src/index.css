@@ -163,3 +163,46 @@
 .stagger-3 { animation-delay: 180ms; }
 .stagger-4 { animation-delay: 240ms; }
 .stagger-5 { animation-delay: 300ms; }
+
+/* Google Places autocomplete dropdown styling */
+.pac-container {
+  font-family: var(--font-main), sans-serif;
+  background-color: hsl(222 25% 7%);
+  border: 1px solid hsl(220 22% 15%);
+  border-radius: 0.5rem;
+  margin-top: 4px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.pac-container .pac-item {
+  font-family: var(--font-main), sans-serif;
+  color: hsl(214 32% 91%);
+  border-top: 1px solid hsl(220 22% 11%);
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.pac-container .pac-item:hover {
+  background-color: hsl(220 22% 11%);
+}
+
+.pac-container .pac-item .pac-item-query {
+  font-family: var(--font-main), sans-serif;
+  color: hsl(177 100% 41%);
+  font-weight: 600;
+}
+
+.pac-container .pac-item .pac-matched {
+  font-weight: 700;
+}
+
+.pac-container .pac-item span {
+  font-family: var(--font-main), sans-serif;
+}
+
+.pac-container::after {
+  background-image: none !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
