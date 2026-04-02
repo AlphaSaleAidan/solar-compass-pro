@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -30,6 +31,8 @@ const PAYMENT_DETAILS = [
 
 const InstallerPortal = () => {
   const store = useDataSource();
+  const { user } = useAuth();
+  const isDemo = user?.isDemo;
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones'>('overview');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -48,8 +51,10 @@ const InstallerPortal = () => {
   const docInputRef = useRef<HTMLInputElement>(null);
   const photoUploadRef = useRef<HTMLInputElement>(null);
 
-  const installerName = 'SunTech Installations';
-  const installerProjects = store.projects.filter(p => p.installerName === installerName || p.installerName === 'Pro Solar TX');
+  // For demo: show all projects (demo data is already scoped)
+  // For production: RLS handles filtering — show all projects from the store
+  const installerName = isDemo ? 'SunTech Installations' : (user?.companyName || 'Installer');
+  const installerProjects = store.projects;
   const completedCount = installerProjects.filter(p => p.currentMilestone >= 5).length;
   const activeCount = installerProjects.filter(p => p.status !== 'completed').length;
   const avgDaysToPTO = 24;
