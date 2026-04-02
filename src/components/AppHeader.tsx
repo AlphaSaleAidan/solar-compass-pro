@@ -16,6 +16,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [realtimeConnected, setRealtimeConnected] = useState(true);
 
   useEffect(() => {
     if (user && !user.isDemo) {
