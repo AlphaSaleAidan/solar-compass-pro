@@ -143,6 +143,9 @@ export interface SellProject {
   submittedForApproval?: boolean;
   approvalStatus?: 'pending' | 'clean' | 'dirty';
   approvalNotes?: string;
+  // Two-phase QC workflow
+  qcInitialApproved?: boolean;
+  documentsSigned?: boolean;
 }
 
 // Demo-only sample data — only loaded for demo users via ProjectStore
