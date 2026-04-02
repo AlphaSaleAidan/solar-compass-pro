@@ -36,7 +36,13 @@ const Dashboard = () => {
   };
 
   const renderContent = () => {
+    // Activity tab is shared across all portals
+    if (activeTab === 'Activity') {
+      return <ActivityFeed />;
+    }
+
     if (isPlus) {
+      if (activeTab === 'Portal') return <PlusPortal />;
       return <PlusPortal />;
     }
 
