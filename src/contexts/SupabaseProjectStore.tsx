@@ -145,6 +145,8 @@ function mapDbSellProjectToUI(row: any): SellProject {
     submittedForApproval: row.submitted_for_approval || false,
     approvalStatus: row.approval_status || 'pending',
     approvalNotes: row.rejection_reason || undefined,
+    qcInitialApproved: row.qc_initial_approved || false,
+    documentsSigned: row.documents_signed || false,
     _dbId: row.id,
   } as SellProject & { _dbId: string };
 }
@@ -628,6 +630,8 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       documents_sent: project.checklist?.financeDocsSigned || false,
       approval_status: project.approvalStatus,
       rejection_reason: project.approvalNotes,
+      qc_initial_approved: project.qcInitialApproved,
+      documents_signed: project.documentsSigned,
     }).eq('id', dbId);
   }, [sellProjects]);
 

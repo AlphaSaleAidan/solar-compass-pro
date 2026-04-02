@@ -7,7 +7,7 @@ import ConvertToSaleDialog from './ConvertToSaleDialog';
 import SiteSurveyDialog from './SiteSurveyDialog';
 import WelcomeCall from './WelcomeCall';
 import type { WelcomeCallAnswer } from './WelcomeCall';
-import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, ClipboardCheck, AlertTriangle, RefreshCw, Video, XCircle, Loader2 } from 'lucide-react';
+import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, ClipboardCheck, AlertTriangle, RefreshCw, Video, XCircle, Loader2, Clock, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { resolveAuroraData } from '@/lib/auroraDataResolver';
 
@@ -35,12 +35,6 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
 
   const isProduction = user && !user.isDemo;
 
-  const handleSendDoc = (docIndex: number) => {
-    const updatedDocs = [...project.documents];
-    updatedDocs[docIndex] = { ...updatedDocs[docIndex], sent: true };
-    onUpdateProject({ ...project, documents: updatedDocs });
-  };
-
   const handleMarkDocsSent = () => {
     const updatedDocs = project.documents.map(d => ({ ...d, sent: true }));
     onUpdateProject({ ...project, documents: updatedDocs });
@@ -51,13 +45,13 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
     onUpdateProject({
       ...project,
       documents: updatedDocs,
+      documentsSigned: true,
       checklist: { ...project.checklist, financeDocsSigned: true },
     });
   };
 
   const handleSyncAurora = async () => {
     if (isProduction) {
-      // Production: call aurora-sync edge function
       setSyncing(true);
       try {
         const { data: profile } = await supabase
@@ -72,8 +66,6 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
           return;
         }
 
-        // For now, use manual sync - populate from existing aurora_data if available
-        // In future, this will call Aurora API directly
         toast.info('Aurora sync initiated — checking for project data...');
         
         const auroraData = {
@@ -106,16 +98,18 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
   };
 
   const handleConvertConfirm = () => {
+    // Convert to Sale → sends to Action ASAP QC Review
     onUpdateProject({
       ...project,
       convertedToSale: true,
       creditStatus: 'credit_passed',
+      approvalStatus: 'pending', // Goes to QC Review (Action ASAP)
       checklist: { ...project.checklist, creditPassed: true },
     });
+    toast.success('Deal sent to Backend Ops for QC Review');
   };
 
   const handleWelcomeCallComplete = (answers: WelcomeCallAnswer[]) => {
-    // Build welcome call flags using SOP engine
     const wcAnswers: WelcomeCallAnswers = {
       q1_zero_upfront: answers[0]?.answer?.toLowerCase() === 'yes',
       q2_monthly_payment: answers[1]?.answer?.toLowerCase() === 'yes',
@@ -155,18 +149,23 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
       submittedForApproval: true,
       approvalStatus: 'pending',
     });
+    toast.success('Project submitted for Final Approval');
   };
 
-  const allDocsSigned = project.documents.every(d => d.signed);
+  const allDocsSigned = project.documentsSigned || project.documents.every(d => d.signed);
   const allDocsSent = project.documents.every(d => d.sent);
 
-  // Sequential enforcement for production users
-  // Demo users keep existing loose behavior
+  // Two-phase SOP workflow:
+  // Phase 1: Sync → Convert to Sale → (QC Review by Backend Ops)
+  // Phase 2 (after QC Initial Approval): Docs → Welcome Call → Site Survey → Final Submission
+  const qcApproved = !!project.qcInitialApproved;
+  const waitingForQC = !!project.convertedToSale && !qcApproved && project.approvalStatus === 'pending';
+  
   const canConvert = !!project.auroraSynced;
-  const canSendDocs = !!project.convertedToSale;
-  const canWelcomeCall = isProduction ? (!!project.convertedToSale && allDocsSigned) : !!project.convertedToSale;
-  const canSiteSurvey = isProduction ? (!!project.welcomeCallComplete) : !!project.convertedToSale;
-  const canSubmit = !!project.convertedToSale && !!project.welcomeCallComplete && !!project.siteSurveyComplete;
+  const canSendDocs = qcApproved;
+  const canWelcomeCall = isProduction ? (qcApproved && allDocsSigned) : qcApproved;
+  const canSiteSurvey = isProduction ? (!!project.welcomeCallComplete) : qcApproved;
+  const canSubmit = qcApproved && allDocsSigned && !!project.welcomeCallComplete && !!project.siteSurveyComplete;
 
   // Pre-submission checklist for production users
   const preSubmission = isProduction ? getPreSubmissionChecklist({
@@ -180,22 +179,15 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
 
   const canSubmitProduction = preSubmission ? preSubmission.every(c => c.passed) : canSubmit;
 
-  // SOP step tracker
-  const sopSteps = isProduction ? [
+  // SOP step tracker — reflects two-phase workflow
+  const sopSteps = [
     { label: 'Aurora Synced', done: !!project.auroraSynced },
     { label: 'Converted to Sale', done: !!project.convertedToSale },
-    { label: 'Docs Sent', done: allDocsSent },
-    { label: 'Docs Signed', done: allDocsSigned },
+    { label: 'QC Approved', done: qcApproved },
+    { label: 'ASP/Installer Docs', done: allDocsSigned },
     { label: 'Welcome Call', done: !!project.welcomeCallComplete },
     { label: 'Site Survey', done: !!project.siteSurveyComplete },
-    { label: 'Submitted', done: !!project.submittedForApproval },
-  ] : [
-    { label: 'Aurora Synced', done: !!project.auroraSynced },
-    { label: 'Converted to Sale', done: !!project.convertedToSale },
-    { label: 'Documents Sent', done: allDocsSent },
-    { label: 'Welcome Call', done: !!project.welcomeCallComplete },
-    { label: 'Site Survey', done: !!project.siteSurveyComplete },
-    { label: 'Submitted', done: !!project.submittedForApproval },
+    { label: 'Final Approval', done: project.submittedForApproval && project.approvalStatus === 'clean' },
   ];
 
   const completedSteps = sopSteps.filter(s => s.done).length;
@@ -216,14 +208,24 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${status.bg} ${status.text}`}>
                 {status.label}
               </span>
-              {project.approvalStatus === 'clean' && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[hsl(150,60%,50%)]/15 text-[hsl(150,60%,50%)]">✓ Clean</span>
+              {waitingForQC && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[hsl(45,80%,55%)]/15 text-[hsl(45,80%,55%)] flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Awaiting QC
+                </span>
+              )}
+              {qcApproved && !project.submittedForApproval && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[hsl(175,60%,45%)]/15 text-[hsl(175,60%,45%)]">
+                  ✓ QC Approved
+                </span>
+              )}
+              {project.submittedForApproval && project.approvalStatus === 'clean' && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[hsl(150,60%,50%)]/15 text-[hsl(150,60%,50%)]">✓ Pipeline</span>
               )}
               {project.approvalStatus === 'dirty' && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[hsl(0,70%,55%)]/15 text-[hsl(0,70%,55%)]">⚠ Dirty</span>
               )}
-              {project.approvalStatus === 'pending' && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[hsl(45,80%,55%)]/15 text-[hsl(45,80%,55%)]">⏳ Review</span>
+              {project.submittedForApproval && project.approvalStatus === 'pending' && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[hsl(45,80%,55%)]/15 text-[hsl(45,80%,55%)]">⏳ Final Review</span>
               )}
             </div>
             <div className="text-xs text-white/40 mt-0.5 truncate">{project.address}</div>
@@ -253,6 +255,16 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                   <AlertTriangle className="w-3.5 h-3.5" /> Marked Dirty by Backend Ops
                 </div>
                 <p className="text-xs text-white/60">{project.approvalNotes}</p>
+              </div>
+            )}
+
+            {/* Waiting for QC banner */}
+            {waitingForQC && (
+              <div className="p-3 bg-[hsl(45,80%,55%)]/10 border border-[hsl(45,80%,55%)]/20 rounded-lg">
+                <div className="flex items-center gap-2 text-[hsl(45,80%,55%)] text-xs font-bold">
+                  <Clock className="w-3.5 h-3.5" /> Awaiting Backend Ops QC Review
+                </div>
+                <p className="text-xs text-white/50 mt-1">Your deal has been submitted for initial QC. Documents will be sent after approval.</p>
               </div>
             )}
 
@@ -304,11 +316,12 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                   )}
                 </div>
 
-                {/* Step 2: Convert to Sale */}
+                {/* Step 2: Convert to Sale → sends to QC */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
                     {project.convertedToSale ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <Zap className="w-3.5 h-3.5 text-white/30" />}
                     <span className={project.convertedToSale ? 'text-white/40 line-through' : 'text-white/70'}>2. Convert to Sale</span>
+                    {project.convertedToSale && !qcApproved && <span className="text-[9px] text-[hsl(45,80%,55%)]">(sent to QC)</span>}
                   </div>
                   {canConvert && !project.convertedToSale && (
                     <button onClick={() => setShowConvert(true)} className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-[10px] font-bold hover:bg-primary/20 transition-all active:scale-[0.97] flex items-center gap-1">
@@ -317,15 +330,28 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                   )}
                 </div>
 
-                {/* Step 3: Send ASP Documents */}
+                {/* Step 3: QC Approval (Backend Ops) */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs">
+                    {qcApproved ? <ShieldCheck className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : waitingForQC ? <Clock className="w-3.5 h-3.5 text-[hsl(45,80%,55%)]" /> : <ShieldCheck className="w-3.5 h-3.5 text-white/30" />}
+                    <span className={qcApproved ? 'text-white/40 line-through' : waitingForQC ? 'text-[hsl(45,80%,55%)]' : 'text-white/70'}>
+                      3. QC Review {waitingForQC ? '(pending)' : ''}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Step 4: ASP/Installer Documents — single checkmark */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
                     {allDocsSigned ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : allDocsSent ? <FileText className="w-3.5 h-3.5 text-[hsl(45,80%,55%)]" /> : <FileText className="w-3.5 h-3.5 text-white/30" />}
-                    <span className={allDocsSigned ? 'text-white/40 line-through' : 'text-white/70'}>3. Send & Sign Documents</span>
+                    <span className={allDocsSigned ? 'text-white/40 line-through' : 'text-white/70'}>4. ASP / Installer Documents</span>
+                    {!qcApproved && !allDocsSigned && (
+                      <span className="text-[9px] text-white/20">(unlock after QC approval)</span>
+                    )}
                   </div>
                   {canSendDocs && !allDocsSent && (
                     <button onClick={handleMarkDocsSent} className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-[10px] font-bold hover:bg-primary/20 transition-all active:scale-[0.97] flex items-center gap-1">
-                      <Send className="w-3 h-3" /> Mark Docs Sent
+                      <Send className="w-3 h-3" /> Send Documents
                     </button>
                   )}
                   {canSendDocs && allDocsSent && !allDocsSigned && (
@@ -335,11 +361,11 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                   )}
                 </div>
 
-                {/* Step 4: Welcome Call */}
+                {/* Step 5: Welcome Call */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
                     {project.welcomeCallComplete ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <Video className="w-3.5 h-3.5 text-white/30" />}
-                    <span className={project.welcomeCallComplete ? 'text-white/40 line-through' : 'text-white/70'}>4. Welcome Call</span>
+                    <span className={project.welcomeCallComplete ? 'text-white/40 line-through' : 'text-white/70'}>5. Welcome Call</span>
                     {!canWelcomeCall && !project.welcomeCallComplete && isProduction && (
                       <span className="text-[9px] text-white/20">(unlock after docs signed)</span>
                     )}
@@ -351,11 +377,11 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                   )}
                 </div>
 
-                {/* Step 5: Site Survey */}
+                {/* Step 6: Site Survey */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
                     {project.siteSurveyComplete ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <Camera className="w-3.5 h-3.5 text-white/30" />}
-                    <span className={project.siteSurveyComplete ? 'text-white/40 line-through' : 'text-white/70'}>5. Site Survey</span>
+                    <span className={project.siteSurveyComplete ? 'text-white/40 line-through' : 'text-white/70'}>6. Site Survey</span>
                     {!canSiteSurvey && !project.siteSurveyComplete && isProduction && (
                       <span className="text-[9px] text-white/20">(unlock after welcome call)</span>
                     )}
@@ -367,22 +393,22 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                   )}
                 </div>
 
-                {/* Step 6: Submit for Approval */}
+                {/* Step 7: Submit for Final Approval */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs">
-                    {project.submittedForApproval ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : <ClipboardCheck className="w-3.5 h-3.5 text-white/30" />}
-                    <span className={project.submittedForApproval ? 'text-white/40 line-through' : 'text-white/70'}>6. Submit for Final Approval</span>
+                    {project.submittedForApproval && project.approvalStatus === 'clean' ? <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)]" /> : project.submittedForApproval ? <ClipboardCheck className="w-3.5 h-3.5 text-[hsl(45,80%,55%)]" /> : <ClipboardCheck className="w-3.5 h-3.5 text-white/30" />}
+                    <span className={project.submittedForApproval && project.approvalStatus === 'clean' ? 'text-white/40 line-through' : 'text-white/70'}>7. Submit for Final Approval</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Documents section - show send buttons after conversion */}
-            {project.convertedToSale && (
+            {/* Documents section - show after QC approval */}
+            {qcApproved && (
               <div className="bg-white/[0.03] rounded-lg p-3">
-                <div className="text-[10px] text-white/30 font-bold tracking-wider uppercase mb-2">ASP Documents</div>
+                <div className="text-[10px] text-white/30 font-bold tracking-wider uppercase mb-2">ASP / Installer Documents</div>
                 <div className="space-y-2">
-                  {project.documents.map((doc, i) => (
+                  {project.documents.length > 0 ? project.documents.map((doc, i) => (
                     <div key={i} className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <FileText className="w-3 h-3 text-white/30" />
@@ -390,13 +416,14 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                         {doc.signed && <span className="text-[hsl(150,60%,50%)] text-[10px] font-bold">✓ Signed</span>}
                         {doc.sent && !doc.signed && <span className="text-[hsl(45,80%,55%)] text-[10px] font-bold">Sent</span>}
                       </div>
-                      {!doc.sent && (
-                        <button onClick={() => handleSendDoc(i)} className="px-2.5 py-1 bg-primary/15 text-primary rounded text-[10px] font-bold hover:bg-primary/25 transition-colors active:scale-[0.97] flex items-center gap-1">
-                          <Send className="w-3 h-3" /> Send via DocuSign
-                        </button>
-                      )}
                     </div>
-                  ))}
+                  )) : (
+                    <div className="flex items-center gap-2 text-xs">
+                      <FileText className="w-3 h-3 text-white/30" />
+                      <span className="text-white/60">ASP Agreement & Installer Contract</span>
+                      {allDocsSigned ? <span className="text-[hsl(150,60%,50%)] text-[10px] font-bold">✓ Signed</span> : allDocsSent ? <span className="text-[hsl(45,80%,55%)] text-[10px] font-bold">Sent</span> : null}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

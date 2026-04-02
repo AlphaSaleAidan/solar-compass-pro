@@ -198,13 +198,13 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                 : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
             }`}
           >
-            <Plus className="w-3.5 h-3.5" /> Create
+            <Crown className="w-3.5 h-3.5" /> New Deal
           </button>
           <button
             onClick={() => setActiveSubTab('projects')}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all duration-150 active:scale-[0.97] flex items-center gap-1.5 ${
               activeSubTab === 'projects'
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-[hsl(175,60%,45%)] text-white'
                 : 'bg-white/[0.06] text-white/60 hover:bg-white/10 hover:text-white/80'
             }`}
           >
