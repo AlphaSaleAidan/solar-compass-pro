@@ -173,7 +173,9 @@
 
 @keyframes bubble-pop {
   0% { transform: scale(1); opacity: 1; }
-  30% { transform: scale(1.2); opacity: 0.8; }
+  15% { transform: scale(1.35); opacity: 0.9; border-color: hsla(177, 100%, 60%, 0.8); }
+  40% { transform: scale(1.5); opacity: 0.5; }
+  70% { transform: scale(0.6); opacity: 0.2; }
   100% { transform: scale(0); opacity: 0; }
 }
 
