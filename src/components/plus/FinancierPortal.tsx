@@ -936,6 +936,16 @@ const FinancierPortal = () => {
 
       {renderSection()}
       {selectedProjectData && renderProjectDetail()}
+      {deleteProject && (
+        <DeleteProjectDialog
+          open={!!deleteProject}
+          onOpenChange={(v) => { if (!v) setDeleteProject(null); }}
+          projectId={deleteProject.id}
+          projectName={deleteProject.name}
+          projectType="project"
+          onDeleted={() => { setDeleteProject(null); setSelectedProject(null); window.location.reload(); }}
+        />
+      )}
     </div>
   );
 };
