@@ -29,6 +29,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
   const [editedFields, setEditedFields] = useState<Record<string, Record<string, string>>>({});
   const [savedProjects, setSavedProjects] = useState<string[]>([]);
   const [auroraAccounts, setAuroraAccounts] = useState<Record<string, { email: string; status: string }>>({});
+  const [deleteProject, setDeleteProject] = useState<{ id: string; name: string; code?: string } | null>(null);
   const [showAuroraModal, setShowAuroraModal] = useState<string | null>(null);
   const [auroraEmail, setAuroraEmail] = useState('');
 
