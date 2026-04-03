@@ -553,7 +553,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
           projectName={deleteProject.name}
           projectCode={deleteProject.code}
           projectType="project"
-          onDeleted={() => { setDeleteProject(null); window.location.reload(); }}
+          onDeleted={() => { setDeleteProject(null); setExpandedProject(null); }}
         />
       )}
     </TooltipProvider>

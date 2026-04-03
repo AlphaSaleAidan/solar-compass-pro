@@ -943,7 +943,7 @@ const FinancierPortal = () => {
           projectId={deleteProject.id}
           projectName={deleteProject.name}
           projectType="project"
-          onDeleted={() => { setDeleteProject(null); setSelectedProject(null); window.location.reload(); }}
+          onDeleted={() => { setDeleteProject(null); setSelectedProject(null); }}
         />
       )}
     </div>
