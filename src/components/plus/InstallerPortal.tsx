@@ -123,6 +123,12 @@ const InstallerPortal = () => {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setDeleteProject({ id: p.id, name: p.customerName })}
+                className="px-3 py-1.5 bg-destructive/10 border border-destructive/25 rounded-lg text-[10px] font-bold text-destructive hover:bg-destructive/20 transition-all flex items-center gap-1"
+              >
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
+              <button
                 onClick={() => setShowTicketModal(true)}
                 className="px-3 py-1.5 bg-[hsl(var(--red))]/10 border border-[hsl(var(--red))]/25 rounded-lg text-[10px] font-bold text-[hsl(var(--red))] hover:bg-[hsl(var(--red))]/20 transition-all flex items-center gap-1"
               >
