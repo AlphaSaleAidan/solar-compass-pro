@@ -515,7 +515,7 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
         onOpenChange={setShowDelete}
         projectId={project.id}
         projectName={`${project.firstName} ${project.lastName}`}
-        projectCode={project.projectCode}
+        projectCode={(project as any).projectCode}
         projectType="sell_project"
         onDeleted={() => window.location.reload()}
       />
