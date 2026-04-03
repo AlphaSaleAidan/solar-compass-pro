@@ -510,6 +510,15 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
           onClose={() => setShowWelcomeCall(false)}
         />
       )}
+      <DeleteProjectDialog
+        open={showDelete}
+        onOpenChange={setShowDelete}
+        projectId={project.id}
+        projectName={`${project.firstName} ${project.lastName}`}
+        projectCode={project.projectCode}
+        projectType="sell_project"
+        onDeleted={() => window.location.reload()}
+      />
     </>
   );
 };
