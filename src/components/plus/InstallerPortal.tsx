@@ -39,6 +39,7 @@ const InstallerPortal = () => {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedPayment, setExpandedPayment] = useState<number | null>(null);
   const [expandedMilestoneAction, setExpandedMilestoneAction] = useState<{ projectId: string; idx: number } | null>(null);
+  const [deleteProject, setDeleteProject] = useState<{ id: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingUpload, setPendingUpload] = useState<{ projectId: string; itemId: string } | null>(null);
   // Popup state
