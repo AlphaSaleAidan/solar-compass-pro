@@ -9,8 +9,9 @@ import {
   BarChart3, Zap, Battery, MapPin, DollarSign, Mail, Phone, Calendar,
   ChevronDown, ChevronRight, CheckCircle, XCircle, Clock, FileText, Camera,
   Shield, Eye, Send, Upload, ClipboardCheck, MessageSquare, Save, RotateCcw,
-  Pencil, UserPlus, Link2, AlertTriangle
+  Pencil, UserPlus, Link2, AlertTriangle, Trash2
 } from 'lucide-react';
+import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 
 interface OpsProjectsTabProps {
   acceptedDeals?: Project[];
