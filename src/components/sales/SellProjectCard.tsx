@@ -479,6 +479,14 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
                 <RefreshCw className="w-4 h-4" /> Resubmit for Approval
               </button>
             )}
+
+            {/* Delete Project */}
+            <button
+              onClick={() => setShowDelete(true)}
+              className="w-full py-2 mt-2 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg text-xs font-bold hover:bg-destructive/20 transition-all flex items-center justify-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete Project
+            </button>
           </div>
         )}
       </div>
