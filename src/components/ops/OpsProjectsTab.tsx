@@ -396,6 +396,12 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                           <button className="px-3 py-1.5 bg-[hsl(var(--yellow))]/10 border border-[hsl(var(--yellow))]/25 rounded-md text-xs text-[hsl(var(--yellow))] font-bold hover:bg-[hsl(var(--yellow))]/20 transition-all flex items-center gap-1.5">
                             <Send className="w-3.5 h-3.5" /> Contact Installer
                           </button>
+                          <button
+                            onClick={() => setDeleteProject({ id: p.id, name: p.customerName, code: p.id })}
+                            className="px-3 py-1.5 bg-destructive/10 border border-destructive/25 rounded-md text-xs text-destructive font-bold hover:bg-destructive/20 transition-all flex items-center gap-1.5"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete Project
+                          </button>
                         </div>
                       </div>
                     )}
