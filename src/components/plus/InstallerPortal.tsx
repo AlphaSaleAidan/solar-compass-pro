@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink } from 'lucide-react';
+import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2 } from 'lucide-react';
+import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const INSTALLER_MILESTONES = [
@@ -38,6 +39,7 @@ const InstallerPortal = () => {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedPayment, setExpandedPayment] = useState<number | null>(null);
   const [expandedMilestoneAction, setExpandedMilestoneAction] = useState<{ projectId: string; idx: number } | null>(null);
+  const [deleteProject, setDeleteProject] = useState<{ id: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingUpload, setPendingUpload] = useState<{ projectId: string; itemId: string } | null>(null);
   // Popup state
@@ -120,6 +122,12 @@ const InstallerPortal = () => {
               <div className="text-xs text-muted-foreground">{p.id} · {p.stage} · {p.systemSize}</div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setDeleteProject({ id: p.id, name: p.customerName })}
+                className="px-3 py-1.5 bg-destructive/10 border border-destructive/25 rounded-lg text-[10px] font-bold text-destructive hover:bg-destructive/20 transition-all flex items-center gap-1"
+              >
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
               <button
                 onClick={() => setShowTicketModal(true)}
                 className="px-3 py-1.5 bg-[hsl(var(--red))]/10 border border-[hsl(var(--red))]/25 rounded-lg text-[10px] font-bold text-[hsl(var(--red))] hover:bg-[hsl(var(--red))]/20 transition-all flex items-center gap-1"
@@ -1169,6 +1177,16 @@ const InstallerPortal = () => {
 
       {renderSection()}
       {selectedProjectData && renderProjectDetail()}
+      {deleteProject && (
+        <DeleteProjectDialog
+          open={!!deleteProject}
+          onOpenChange={(v) => { if (!v) setDeleteProject(null); }}
+          projectId={deleteProject.id}
+          projectName={deleteProject.name}
+          projectType="project"
+          onDeleted={() => { setDeleteProject(null); setSelectedProject(null); window.location.reload(); }}
+        />
+      )}
     </div>
   );
 };

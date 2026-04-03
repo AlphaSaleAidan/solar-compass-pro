@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2 } from 'lucide-react';
+import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ESCROW_MILESTONES = [
@@ -51,6 +52,7 @@ const FinancierPortal = () => {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
   const [flaggedProjects, setFlaggedProjects] = useState<Set<string>>(new Set());
+  const [deleteProject, setDeleteProject] = useState<{ id: string; name: string } | null>(null);
   const [flagNotes, setFlagNotes] = useState<Record<string, string>>({});
   // Popup state
   const [popupTab, setPopupTab] = useState<'details' | 'milestones' | 'uploads' | 'chat' | 'updates'>('details');
@@ -95,7 +97,15 @@ const FinancierPortal = () => {
               <h2 className="text-lg font-black text-card-foreground">{p.customerName}</h2>
               <div className="text-xs text-muted-foreground">{p.id} · {p.stage}</div>
             </div>
-            <button onClick={() => setSelectedProject(null)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80"><X className="w-4 h-4 text-muted-foreground" /></button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setDeleteProject({ id: p.id, name: p.customerName })}
+                className="px-3 py-1.5 bg-destructive/10 border border-destructive/25 rounded-lg text-[10px] font-bold text-destructive hover:bg-destructive/20 transition-all flex items-center gap-1"
+              >
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
+              <button onClick={() => setSelectedProject(null)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80"><X className="w-4 h-4 text-muted-foreground" /></button>
+            </div>
           </div>
           <div className="p-6 space-y-5">
             {/* Financial Summary */}
@@ -926,6 +936,16 @@ const FinancierPortal = () => {
 
       {renderSection()}
       {selectedProjectData && renderProjectDetail()}
+      {deleteProject && (
+        <DeleteProjectDialog
+          open={!!deleteProject}
+          onOpenChange={(v) => { if (!v) setDeleteProject(null); }}
+          projectId={deleteProject.id}
+          projectName={deleteProject.name}
+          projectType="project"
+          onDeleted={() => { setDeleteProject(null); setSelectedProject(null); window.location.reload(); }}
+        />
+      )}
     </div>
   );
 };

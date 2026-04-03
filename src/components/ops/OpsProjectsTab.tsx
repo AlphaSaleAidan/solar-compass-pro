@@ -9,8 +9,9 @@ import {
   BarChart3, Zap, Battery, MapPin, DollarSign, Mail, Phone, Calendar,
   ChevronDown, ChevronRight, CheckCircle, XCircle, Clock, FileText, Camera,
   Shield, Eye, Send, Upload, ClipboardCheck, MessageSquare, Save, RotateCcw,
-  Pencil, UserPlus, Link2, AlertTriangle
+  Pencil, UserPlus, Link2, AlertTriangle, Trash2
 } from 'lucide-react';
+import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 
 interface OpsProjectsTabProps {
   acceptedDeals?: Project[];
@@ -28,6 +29,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
   const [editedFields, setEditedFields] = useState<Record<string, Record<string, string>>>({});
   const [savedProjects, setSavedProjects] = useState<string[]>([]);
   const [auroraAccounts, setAuroraAccounts] = useState<Record<string, { email: string; status: string }>>({});
+  const [deleteProject, setDeleteProject] = useState<{ id: string; name: string; code?: string } | null>(null);
   const [showAuroraModal, setShowAuroraModal] = useState<string | null>(null);
   const [auroraEmail, setAuroraEmail] = useState('');
 
@@ -200,6 +202,13 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                       >
                         <Pencil className="w-3 h-3" /> Edit Project
                         {hasChanges(p.id) && <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--yellow))]" />}
+                      </button>
+                      <div className="flex-1" />
+                      <button
+                        onClick={() => setDeleteProject({ id: p.id, name: p.customerName, code: p.id })}
+                        className="px-3 py-1.5 rounded-md text-xs font-bold text-destructive hover:bg-destructive/10 transition-all flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" /> Delete
                       </button>
                     </div>
 
@@ -536,6 +545,17 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
           </div>
         )}
       </div>
+      {deleteProject && (
+        <DeleteProjectDialog
+          open={!!deleteProject}
+          onOpenChange={(v) => { if (!v) setDeleteProject(null); }}
+          projectId={deleteProject.id}
+          projectName={deleteProject.name}
+          projectCode={deleteProject.code}
+          projectType="project"
+          onDeleted={() => { setDeleteProject(null); window.location.reload(); }}
+        />
+      )}
     </TooltipProvider>
   );
 };
