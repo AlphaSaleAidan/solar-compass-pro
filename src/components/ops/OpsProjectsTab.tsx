@@ -203,6 +203,13 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                         <Pencil className="w-3 h-3" /> Edit Project
                         {hasChanges(p.id) && <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--yellow))]" />}
                       </button>
+                      <div className="flex-1" />
+                      <button
+                        onClick={() => setDeleteProject({ id: p.id, name: p.customerName, code: p.id })}
+                        className="px-3 py-1.5 rounded-md text-xs font-bold text-destructive hover:bg-destructive/10 transition-all flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" /> Delete
+                      </button>
                     </div>
 
                     {/* Milestones Section */}
