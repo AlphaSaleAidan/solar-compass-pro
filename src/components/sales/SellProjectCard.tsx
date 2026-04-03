@@ -7,7 +7,8 @@ import ConvertToSaleDialog from './ConvertToSaleDialog';
 import SiteSurveyDialog from './SiteSurveyDialog';
 import WelcomeCall from './WelcomeCall';
 import type { WelcomeCallAnswer } from './WelcomeCall';
-import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, ClipboardCheck, AlertTriangle, RefreshCw, Video, XCircle, Loader2, Clock, ShieldCheck } from 'lucide-react';
+import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, ClipboardCheck, AlertTriangle, RefreshCw, Video, XCircle, Loader2, Clock, ShieldCheck, Trash2 } from 'lucide-react';
+import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { toast } from 'sonner';
 import { resolveAuroraData } from '@/lib/auroraDataResolver';
 
