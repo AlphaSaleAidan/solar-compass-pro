@@ -29,6 +29,7 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
   const [expanded, setExpanded] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
   const [showSiteSurvey, setShowSiteSurvey] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const [showWelcomeCall, setShowWelcomeCall] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncFailed, setSyncFailed] = useState(false);
