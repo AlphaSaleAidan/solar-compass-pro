@@ -52,6 +52,7 @@ const FinancierPortal = () => {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
   const [flaggedProjects, setFlaggedProjects] = useState<Set<string>>(new Set());
+  const [deleteProject, setDeleteProject] = useState<{ id: string; name: string } | null>(null);
   const [flagNotes, setFlagNotes] = useState<Record<string, string>>({});
   // Popup state
   const [popupTab, setPopupTab] = useState<'details' | 'milestones' | 'uploads' | 'chat' | 'updates'>('details');
