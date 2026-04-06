@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Zap, LogOut, User, Crown, ArrowLeftRight, Wifi, WifiOff } from 'lucide-react';
 import type { UserRole } from '@/contexts/AuthContext';
 import UserSettingsModal from '@/components/settings/UserSettingsModal';
+import NotificationCenter from '@/components/shared/NotificationCenter';
 
 interface AppHeaderProps {
   activeTab: string;
@@ -141,6 +142,9 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
             ))}
           </div>
         )}
+
+        {/* Notification bell — The Wave */}
+        {!user.isDemo && <NotificationCenter />}
 
         {roleBadge()}
         {user.isDemo && (

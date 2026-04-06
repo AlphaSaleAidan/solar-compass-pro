@@ -17,6 +17,7 @@ import SuperSupport from '@/components/ops/SuperSupport';
 import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
 import PlusPortal from '@/components/plus/PlusPortal';
 import ActivityFeed from '@/components/shared/ActivityFeed';
+import PageTransition from '@/components/shared/PageTransition';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 
 const Dashboard = () => {
@@ -103,7 +104,9 @@ const Dashboard = () => {
       <div className="min-h-screen bg-background">
         <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="mt-[58px] p-6">
-          {renderContent()}
+          <PageTransition pageKey={activeTab} variant="slideUp">
+            {renderContent()}
+          </PageTransition>
         </main>
       </div>
     </div>
