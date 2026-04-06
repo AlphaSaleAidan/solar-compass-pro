@@ -206,6 +206,12 @@ const LandingPage = () => {
 
       {/* ─── Hero Section ───────────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-16">
+        {/* Background image with dark overlay */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: 'url(/images/hero-bg.webp)' }}
+        />
+        <div className="absolute inset-0 bg-[hsl(220,30%,4%)]/70" />
         <ParticleField />
         <GlowOrb className="w-[600px] h-[600px] bg-primary/20 -top-40 -right-40" />
         <GlowOrb className="w-[400px] h-[400px] bg-blue-500/10 bottom-20 -left-20" />
@@ -293,7 +299,12 @@ const LandingPage = () => {
       </section>
 
       {/* ─── About Section ──────────────────────────────────────────── */}
-      <section id="about" className="relative py-32">
+      <section id="about" className="relative py-32 overflow-hidden">
+        {/* Background image — solar neighborhood at golden hour */}
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-[0.07]"
+          style={{ backgroundImage: 'url(/images/about-bg.webp)' }}
+        />
         <GlowOrb className="w-[500px] h-[500px] bg-blue-500/10 top-20 -left-40" />
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
@@ -357,7 +368,12 @@ const LandingPage = () => {
       </section>
 
       {/* ─── Features Section ───────────────────────────────────────── */}
-      <section id="features" className="relative py-32 bg-[hsl(222,25%,5%)]">
+      <section id="features" className="relative py-32 bg-[hsl(222,25%,5%)] overflow-hidden">
+        {/* Background image — circuit network pattern */}
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-[0.06]"
+          style={{ backgroundImage: 'url(/images/features-bg.webp)' }}
+        />
         <GlowOrb className="w-[500px] h-[500px] bg-primary/10 top-40 -right-40" />
         <div className="max-w-7xl mx-auto px-6">
           <FadeInSection className="text-center mb-20">
@@ -416,6 +432,63 @@ const LandingPage = () => {
                         {feat}
                       </span>
                     ))}
+                  </div>
+                </div>
+              </FadeInSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── How We Help Customers ─────────────────────────────────── */}
+      <section className="relative py-32 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-[0.04]"
+          style={{ backgroundImage: 'url(/images/about-bg.webp)' }}
+        />
+        <div className="max-w-7xl mx-auto px-6">
+          <FadeInSection className="text-center mb-20">
+            <div className="text-xs text-primary font-bold uppercase tracking-[0.2em] mb-4">For Homeowners</div>
+            <h2 className="text-4xl md:text-5xl font-black leading-tight mb-6">
+              Solar made{' '}
+              <span className="bg-gradient-to-r from-primary to-cyan-300 bg-clip-text text-transparent">simple & safe.</span>
+            </h2>
+            <p className="text-white/40 max-w-2xl mx-auto">
+              Going solar shouldn't feel like a gamble. ASP protects your investment at every step.
+            </p>
+          </FadeInSection>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Shield,
+                title: 'Your Investment Is Protected',
+                desc: 'Funds are held in milestone-gated escrow. Your installer only gets paid when verified work is completed — not before.',
+                highlight: 'Zero risk of project abandonment',
+              },
+              {
+                icon: Star,
+                title: 'Vetted, Ranked Installers',
+                desc: 'Every ASP installer is performance-scored. We route your project to top-performing crews with proven track records in your area.',
+                highlight: '100% battery storage on every system',
+              },
+              {
+                icon: Phone,
+                title: '5-Year Service Contract',
+                desc: 'After your system goes live, ASP stays with you. Panel cleaning, monitoring, utility rate optimization, and dedicated support — included.',
+                highlight: 'Post-PTO care, not just installation',
+              },
+            ].map((item, i) => (
+              <FadeInSection key={item.title} delay={i * 0.15}>
+                <div className="relative p-8 rounded-2xl bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 hover:border-primary/20 transition-all duration-300 h-full group">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <item.icon className="w-7 h-7 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-3">{item.title}</h3>
+                  <p className="text-sm text-white/40 leading-relaxed mb-4">{item.desc}</p>
+                  <div className="flex items-center gap-2 text-xs font-bold text-primary/80">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    {item.highlight}
                   </div>
                 </div>
               </FadeInSection>
