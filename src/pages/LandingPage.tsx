@@ -4,8 +4,15 @@ import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import {
   Zap, Shield, TrendingUp, Users, CheckCircle, ArrowRight,
   Sun, BarChart3, FileText, Phone, Star, ChevronDown,
-  Building2, Handshake, Clock, DollarSign, Eye, Lock
+  Building2, Handshake, Clock, DollarSign, Eye, Lock,
+  Activity, Percent
 } from 'lucide-react';
+
+/* ─── Smooth scroll helper ────────────────────────────────────────────── */
+const scrollTo = (id: string) => (e: React.MouseEvent) => {
+  e.preventDefault();
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 
 /* ─── Animated Section Wrapper ────────────────────────────────────────── */
 const FadeInSection = ({ children, className = '', delay = 0 }: {
@@ -182,10 +189,11 @@ const LandingPage = () => {
             </span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/60">
-            <a href="#about" className="hover:text-white transition-colors">About</a>
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#portals" className="hover:text-white transition-colors">Portals</a>
-            <a href="#milestones" className="hover:text-white transition-colors">Process</a>
+            <a href="#about" onClick={scrollTo('about')} className="hover:text-white transition-colors">About</a>
+            <a href="#features" onClick={scrollTo('features')} className="hover:text-white transition-colors">Features</a>
+            <a href="#portals" onClick={scrollTo('portals')} className="hover:text-white transition-colors">Portals</a>
+            <a href="#customers" onClick={scrollTo('customers')} className="hover:text-white transition-colors">Customers</a>
+            <a href="#milestones" onClick={scrollTo('milestones')} className="hover:text-white transition-colors">Process</a>
           </div>
           <div className="flex items-center gap-3">
             <Link
@@ -268,6 +276,7 @@ const LandingPage = () => {
             </Link>
             <a
               href="#features"
+              onClick={scrollTo('features')}
               className="px-8 py-3.5 border border-white/10 text-white/70 font-bold rounded-xl text-sm hover:bg-white/5 transition-all"
             >
               See How It Works
@@ -441,7 +450,7 @@ const LandingPage = () => {
       </section>
 
       {/* ─── How We Help Customers ─────────────────────────────────── */}
-      <section className="relative py-32 overflow-hidden">
+      <section id="customers" className="relative py-32 overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-[0.04]"
           style={{ backgroundImage: 'url(/images/about-bg.webp)' }}
@@ -548,6 +557,104 @@ const LandingPage = () => {
                   </div>
                   <h3 className="text-lg font-bold text-white mb-1">Customer Satisfaction</h3>
                   <p className="text-sm text-white/40">30-day post-PTO review. Clean project = bonus release. Everyone is incentivized for quality.</p>
+                </div>
+              </div>
+            </FadeInSection>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Financier Value Prop (Enfin-relevant) ──────────────────── */}
+      <section className="relative py-32 overflow-hidden">
+        <GlowOrb className="w-[500px] h-[500px] bg-emerald-500/10 top-20 -right-40" />
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <FadeInSection>
+              <div className="text-xs text-emerald-400 font-bold uppercase tracking-[0.2em] mb-4">For Financiers</div>
+              <h2 className="text-4xl md:text-5xl font-black leading-tight mb-6">
+                Fund solar with{' '}
+                <span className="bg-gradient-to-r from-emerald-400 to-primary bg-clip-text text-transparent">
+                  confidence.
+                </span>
+              </h2>
+              <p className="text-white/50 leading-relaxed mb-6">
+                The industry average default rate on residential solar loans is ~18%.
+                ASP's milestone-gated escrow system, mandatory battery storage,
+                installer performance scoring, and 5-year service contracts
+                are engineered to reduce defaults by up to 30%.
+              </p>
+              <p className="text-white/50 leading-relaxed mb-8">
+                As a financier on the ASP+ portal, you get real-time visibility into every
+                funded project — from permit filing to PTO — with milestone-by-milestone
+                fund release controls and a full audit trail.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { value: '30%', label: 'Default Reduction Target', icon: Shield },
+                  { value: '100%', label: 'Battery Attachment Rate', icon: Sun },
+                  { value: '7', label: 'Milestone Checkpoints', icon: CheckCircle },
+                  { value: '5yr', label: 'Post-PTO Service Coverage', icon: Clock },
+                ].map((stat, i) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 + i * 0.1 }}
+                    className="p-4 rounded-xl bg-white/[0.02] border border-white/5"
+                  >
+                    <stat.icon className="w-4 h-4 text-emerald-400 mb-2" />
+                    <div className="text-2xl font-black text-white">{stat.value}</div>
+                    <div className="text-[10px] text-white/40 font-medium uppercase tracking-wider">{stat.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </FadeInSection>
+
+            <FadeInSection delay={0.2}>
+              <div className="relative p-8 rounded-2xl bg-gradient-to-br from-emerald-500/5 to-transparent border border-emerald-500/10">
+                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-emerald-400" />
+                  Fund Release Flow
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { milestone: 'M1 — SOW Confirmed', pct: '15%', desc: 'Contract signed, installer assigned' },
+                    { milestone: 'M2 — Permit + Materials', pct: '20%', desc: 'Permits filed, materials ordered' },
+                    { milestone: 'M3 — Install Scheduled', pct: '15%', desc: 'Installation date locked' },
+                    { milestone: 'M4 — Install Complete', pct: '20%', desc: 'Panels installed, photos verified' },
+                    { milestone: 'M5 — Inspection Passed', pct: '20%', desc: 'Utility inspection approved' },
+                    { milestone: 'M6 — PTO Granted', pct: '10%', desc: 'System live and generating' },
+                  ].map((m, i) => (
+                    <motion.div
+                      key={m.milestone}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.3 + i * 0.08 }}
+                      className="flex items-center gap-4 group"
+                    >
+                      <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/20 transition-colors">
+                        <span className="text-xs font-black text-emerald-400">{m.pct}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-white">{m.milestone}</div>
+                        <div className="text-xs text-white/35">{m.desc}</div>
+                      </div>
+                      {i < 5 && (
+                        <div className="absolute left-[31px] mt-14 w-px h-4 bg-emerald-500/20" style={{ position: 'relative', left: 0, marginTop: 0 }} />
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="mt-6 pt-4 border-t border-emerald-500/10 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-amber-500/20 to-primary/20 flex items-center justify-center shrink-0">
+                    <Star className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-amber-400">M7 — Speed Bonus (+5%)</div>
+                    <div className="text-xs text-white/35">PTO within 35 days = bonus release (paid by ASP)</div>
+                  </div>
                 </div>
               </div>
             </FadeInSection>
