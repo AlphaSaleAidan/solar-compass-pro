@@ -4,9 +4,12 @@ import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { MILESTONE_NAMES } from '@/data/mockData';
 import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
 import { CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, Zap, FileText, Camera, Send, Flag, Eye, Upload, ClipboardCheck, Clock, MessageSquare } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { cascadeMilestoneVerified } from '@/lib/notificationCascade';
 
 const MilestoneVerification = () => {
   const store = useDataSource();
+  const { user } = useAuth();
   const { projects } = store;
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [expandedMilestone, setExpandedMilestone] = useState<{ projectId: string; idx: number } | null>(null);
@@ -313,7 +316,15 @@ const MilestoneVerification = () => {
                                     </div>
                                     <button
                                       disabled={!allReady}
-                                      onClick={() => store.approveMilestone(p.id, milestoneIdx)}
+                                      onClick={() => {
+                                        store.approveMilestone(p.id, milestoneIdx);
+                                        // Wave → Financier + Installer notified
+                                        if (user && !user.isDemo) {
+                                          const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
+                                          const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
+                                          cascadeMilestoneVerified(p.id, user.id, p.customerName || `Project ${p.id}`, mNames[milestoneIdx] || `M${milestoneIdx+1}`, pcts[milestoneIdx] || '');
+                                        }
+                                      }}
                                       className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5"
                                     >
                                       <ClipboardCheck className="w-3.5 h-3.5" /> Approve M{milestoneIdx + 1} & Queue Fund Release

@@ -4,9 +4,12 @@ import type { SellProject } from '@/data/mockData';
 import { Zap, CheckCircle, ShieldCheck, XCircle, AlertTriangle, ChevronDown, ChevronUp, Sun, User, Mail, Phone, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { resolveAuroraData } from '@/lib/auroraDataResolver';
+import { useAuth } from '@/contexts/AuthContext';
+import { cascadeQCApproved, cascadeQCRejected } from '@/lib/notificationCascade';
 
 const QCReview = () => {
   const { sellProjects, updateSellProject } = useDataSource();
+  const { user } = useAuth();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [dirtyNotes, setDirtyNotes] = useState<Record<string, string>>({});
 
@@ -33,6 +36,10 @@ const QCReview = () => {
       ],
     });
     toast.success(`QC Approved — ASP documents sent to ${project.firstName} ${project.lastName}`);
+    // Trigger wave notification cascade → SR + Installer + Financier
+    if (user && !user.isDemo) {
+      cascadeQCApproved(project.id, user.id, `${project.firstName} ${project.lastName}`);
+    }
   };
 
   const handleRejectInitialQC = (project: SellProject) => {
@@ -44,6 +51,10 @@ const QCReview = () => {
       convertedToSale: false, // Reset back so rep can fix and re-convert
     });
     toast.error(`Deal returned to ${project.firstName} ${project.lastName} — marked dirty`);
+    // Trigger wave notification cascade → SR gets notified
+    if (user && !user.isDemo) {
+      cascadeQCRejected(project.id, user.id, `${project.firstName} ${project.lastName}`, notes);
+    }
   };
 
   return (

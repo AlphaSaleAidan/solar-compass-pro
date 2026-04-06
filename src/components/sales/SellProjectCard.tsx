@@ -11,6 +11,7 @@ import { Sun, Battery, CheckCircle, FileText, Camera, Phone, Mail, Zap, Send, Cl
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { toast } from 'sonner';
 import { resolveAuroraData } from '@/lib/auroraDataResolver';
+import { cascadeDealSubmitted } from '@/lib/notificationCascade';
 
 interface SellProjectCardProps {
   project: SellProject;
@@ -154,6 +155,10 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
       approvalStatus: 'pending',
     });
     toast.success('Project submitted for Final Approval');
+    // Trigger wave → Backend Ops gets notified
+    if (user && !user.isDemo) {
+      cascadeDealSubmitted(project.id, user.id, `${project.firstName} ${project.lastName}`);
+    }
   };
 
   const allDocsSigned = project.documentsSigned || project.documents.every(d => d.signed);
