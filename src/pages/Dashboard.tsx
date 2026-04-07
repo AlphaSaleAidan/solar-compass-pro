@@ -104,7 +104,7 @@ const Dashboard = () => {
       <div className="min-h-screen bg-background">
         <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="mt-[58px] p-6">
-          <PageTransition pageKey={activeTab} variant="slideUp">
+          <PageTransition pageKey={activeTab} variant="wave">
             {renderContent()}
           </PageTransition>
         </main>

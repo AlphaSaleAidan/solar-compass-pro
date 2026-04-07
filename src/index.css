@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Nunito+Sans:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Nunito:wght@400;500;600;700;800;900&family=Nunito+Sans:wght@400;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -278,4 +278,84 @@
   height: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  PORTAL SLEEKNESS — Global card + interaction polish                   */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+/* Smooth hover lift for all portal cards */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Skeleton loading shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--bg3)) 25%,
+    hsl(var(--bg4)) 50%,
+    hsl(var(--bg3)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.asp-plus .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(210 20% 96%) 25%,
+    hsl(210 15% 93%) 50%,
+    hsl(210 20% 96%) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Portal card hover glow */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 200, 0); }
+  50% { box-shadow: 0 0 20px 2px rgba(0, 212, 200, 0.06); }
+}
+
+/* Smooth entrance for portal sections */
+@keyframes portal-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.portal-section-enter {
+  animation: portal-section-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.portal-section-enter.stagger-1 { animation-delay: 50ms; }
+.portal-section-enter.stagger-2 { animation-delay: 100ms; }
+.portal-section-enter.stagger-3 { animation-delay: 150ms; }
+.portal-section-enter.stagger-4 { animation-delay: 200ms; }
+.portal-section-enter.stagger-5 { animation-delay: 250ms; }
+.portal-section-enter.stagger-6 { animation-delay: 300ms; }
+
+/* Improved focus ring for interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Smooth body scroll behavior */
+html {
+  scroll-behavior: smooth;
 }

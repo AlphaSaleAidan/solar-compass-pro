@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap, LogOut, User, Crown, ArrowLeftRight, Wifi, WifiOff } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { UserRole } from '@/contexts/AuthContext';
 import UserSettingsModal from '@/components/settings/UserSettingsModal';
 import NotificationCenter from '@/components/shared/NotificationCenter';
@@ -18,6 +19,10 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const [showSettings, setShowSettings] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(true);
+
+  // Animated tab indicator
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
 
   useEffect(() => {
     if (user && !user.isDemo) {
@@ -41,6 +46,20 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
       });
     return () => { supabase.removeChannel(channel); };
   }, [user]);
+
+  // Update tab indicator position
+  useLayoutEffect(() => {
+    if (!tabsRef.current) return;
+    const activeBtn = tabsRef.current.querySelector<HTMLElement>(`[data-tab="${activeTab}"]`);
+    if (activeBtn) {
+      const containerRect = tabsRef.current.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      setIndicator({
+        left: btnRect.left - containerRect.left,
+        width: btnRect.width,
+      });
+    }
+  }, [activeTab]);
 
   if (!user) return null;
 
@@ -87,7 +106,11 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-[58px] flex items-center px-6 gap-2 border-b border-border backdrop-blur-xl" style={{ background: isPlus ? 'rgba(255,255,255,0.97)' : 'rgba(7,9,13,0.97)' }}>
+    <header
+      className="fixed top-0 left-0 right-0 z-50 h-[58px] flex items-center px-6 gap-2 border-b border-border backdrop-blur-xl"
+      style={{ background: isPlus ? 'rgba(255,255,255,0.97)' : 'rgba(7,9,13,0.97)' }}
+    >
+      {/* Logo */}
       <div className="flex items-center gap-2.5 mr-3 shrink-0">
         <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center">
           <Zap className="w-4 h-4 text-primary-foreground" />
@@ -97,15 +120,24 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         </span>
       </div>
 
-      <nav className="flex items-center gap-0.5 flex-1">
+      {/* Tab navigation with animated indicator */}
+      <nav ref={tabsRef} className="relative flex items-center gap-0.5 flex-1">
+        {/* Sliding indicator pill */}
+        <motion.div
+          className="absolute top-1/2 -translate-y-1/2 h-[30px] rounded-md"
+          style={{ background: isPlus ? 'rgba(0,212,200,0.08)' : 'rgba(0,212,200,0.1)' }}
+          animate={{ left: indicator.left, width: indicator.width }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+        />
         {tabs.map((tab) => (
           <button
             key={tab}
+            data-tab={tab}
             onClick={() => onTabChange(tab)}
-            className={`px-3 py-1.5 text-[13px] font-semibold rounded-md transition-all duration-150 whitespace-nowrap ${
+            className={`relative z-10 px-3 py-1.5 text-[13px] font-semibold rounded-md transition-colors duration-200 whitespace-nowrap ${
               activeTab === tab
-                ? 'text-primary bg-primary/10'
-                : isPlus ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' : 'text-muted-foreground hover:text-foreground hover:bg-bg3'
+                ? 'text-primary'
+                : isPlus ? 'text-gray-500 hover:text-gray-900' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {getTabDisplay(tab)}
@@ -113,10 +145,16 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         ))}
       </nav>
 
+      {/* Right side controls */}
       <div className="flex items-center gap-3 ml-auto">
         {/* Live sync indicator */}
         {!user.isDemo && (
-          <div className="flex items-center gap-1">
+          <motion.div
+            className="flex items-center gap-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
             {realtimeConnected ? (
               <Wifi className="w-3 h-3 text-asp-green" />
             ) : (
@@ -125,14 +163,14 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
             <span className={`text-[9px] font-bold uppercase ${realtimeConnected ? 'text-asp-green' : 'text-asp-red'}`}>
               {realtimeConnected ? 'Synced' : 'Offline'}
             </span>
-          </div>
+          </motion.div>
         )}
         {isMaster && (
           <div className="flex items-center gap-1">
             <ArrowLeftRight className="w-3 h-3 text-gray-500" />
             {(['sales_rep', 'backend_ops', 'installer', 'financier'] as UserRole[]).map(r => (
               <button key={r} onClick={() => handleRoleSwitch(r)}
-                className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${
+                className={`px-2 py-1 text-[10px] font-bold rounded transition-all duration-200 ${
                   user.role === r
                     ? 'bg-primary/10 text-primary'
                     : isPlus ? 'text-gray-400 hover:text-gray-700' : 'text-gray-500 hover:text-gray-300'
@@ -143,7 +181,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
           </div>
         )}
 
-        {/* Notification bell — The Wave */}
+        {/* Notification bell */}
         {!user.isDemo && <NotificationCenter />}
 
         {roleBadge()}
@@ -152,7 +190,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         )}
         <button
           onClick={() => setShowSettings(true)}
-          className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-sm border-2 transition-all hover:border-primary ${isPlus ? 'bg-gray-100 border-gray-200' : 'bg-bg4 border-border2'}`}
+          className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-sm border-2 transition-all duration-200 hover:border-primary hover:scale-105 ${isPlus ? 'bg-gray-100 border-gray-200' : 'bg-bg4 border-border2'}`}
           title="Settings"
         >
           {avatarUrl ? (
@@ -164,7 +202,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         <span className={`text-xs font-bold ${isPlus ? 'text-gray-700' : 'text-gray-300'}`}>{user.name}</span>
         <button
           onClick={handleLogout}
-          className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-all duration-150 flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-all duration-200 flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] ${
             isPlus ? 'bg-gray-50 border-gray-200 text-gray-500 hover:border-red-300 hover:text-red-500' : 'bg-bg3 border-border text-muted-foreground hover:border-asp-red hover:text-asp-red'
           }`}
         >

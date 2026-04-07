@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2 } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -1147,10 +1148,35 @@ const InstallerPortal = () => {
     }
   };
 
+  const sectionNavRef = useRef<HTMLDivElement>(null);
+  const [sectionIndicator, setSectionIndicator] = useState({ left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    if (!sectionNavRef.current) return;
+    const activeBtn = sectionNavRef.current.querySelector<HTMLElement>(`[data-section="${activeSection}"]`);
+    if (activeBtn) {
+      const containerRect = sectionNavRef.current.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      setSectionIndicator({ left: btnRect.left - containerRect.left, width: btnRect.width });
+    }
+  }, [activeSection]);
+
   return (
-    <div className="space-y-5 animate-fade-in-up">
+    <motion.div
+      className="space-y-5"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
       <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
-      <div className="flex gap-1.5">
+      <div ref={sectionNavRef} className="relative flex gap-1.5">
+        {/* Animated background pill */}
+        <motion.div
+          className="absolute top-0 h-full rounded-xl bg-primary"
+          style={{ zIndex: 0 }}
+          animate={{ left: sectionIndicator.left, width: sectionIndicator.width }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+        />
         {([
           { key: 'overview', label: 'Overview', icon: TrendingUp },
           { key: 'milestones', label: 'Milestones', icon: ClipboardCheck },
@@ -1160,22 +1186,33 @@ const InstallerPortal = () => {
         ] as const).map(s => (
           <button
             key={s.key}
+            data-section={s.key}
             onClick={() => setActiveSection(s.key)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+            className={`relative z-10 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 ${
               activeSection === s.key
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-muted text-muted-foreground hover:text-card-foreground hover:bg-muted/80'
+                ? 'text-primary-foreground'
+                : 'bg-transparent text-muted-foreground hover:text-card-foreground'
             }`}
           >
             <s.icon className="w-3.5 h-3.5" /> {s.label}
             {s.key === 'milestones' && pendingActions > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-[hsl(var(--yellow))] text-black rounded-full text-[8px] font-extrabold">{pendingActions}</span>
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold ${activeSection === s.key ? 'bg-white/20 text-white' : 'bg-[hsl(var(--yellow))] text-black'}`}>{pendingActions}</span>
             )}
           </button>
         ))}
       </div>
 
-      {renderSection()}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeSection}
+          initial={{ opacity: 0, y: 12, filter: 'blur(3px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -6, filter: 'blur(2px)' }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {renderSection()}
+        </motion.div>
+      </AnimatePresence>
       {selectedProjectData && renderProjectDetail()}
       {deleteProject && (
         <DeleteProjectDialog
@@ -1187,7 +1224,7 @@ const InstallerPortal = () => {
           onDeleted={() => { setDeleteProject(null); setSelectedProject(null); }}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 
