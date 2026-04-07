@@ -4,9 +4,9 @@
  * Inspired by akari.lusion.co — immersive, interactive, cinematic.
  */
 
-import { useEffect, useRef, useState, useCallback, useMemo, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
+import { useEffect, useRef, useState, useMemo, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Float, MeshDistortMaterial, MeshTransmissionMaterial, Environment, Stars } from '@react-three/drei';
+import { Float, MeshDistortMaterial, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 
 /* ═══════════════════════════════════════════════════════════════════════ */
