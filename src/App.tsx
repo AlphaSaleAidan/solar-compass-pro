@@ -82,7 +82,7 @@ const AppContent = () => {
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename="/solar-compass-pro">
         <AuthProvider>
           <DataSourceProvider>
             <TooltipProvider>
