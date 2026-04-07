@@ -18,6 +18,7 @@ import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
 import PlusPortal from '@/components/plus/PlusPortal';
 import ActivityFeed from '@/components/shared/ActivityFeed';
 import PageTransition from '@/components/shared/PageTransition';
+import PortalAmbient3D from '@/components/shared/PortalAmbient3D';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 
 const Dashboard = () => {
@@ -101,9 +102,11 @@ const Dashboard = () => {
 
   return (
     <div className={isPlus ? 'asp-plus' : ''}>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background relative">
+        {/* 3D ambient background */}
+        <PortalAmbient3D theme={isPlus ? 'light' : 'dark'} />
         <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
-        <main className="mt-[58px] p-6">
+        <main className="relative mt-[58px] p-6">
           <PageTransition pageKey={activeTab} variant="wave">
             {renderContent()}
           </PageTransition>
