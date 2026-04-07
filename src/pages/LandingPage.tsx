@@ -7,6 +7,7 @@ import {
   Building2, Handshake, Clock, DollarSign, Eye, Lock,
   Activity, Percent
 } from 'lucide-react';
+import UnderwaterBackground from '@/components/landing/UnderwaterBackground';
 
 /* ─── Smooth scroll helper ────────────────────────────────────────────── */
 const scrollTo = (id: string) => (e: React.MouseEvent) => {
@@ -170,14 +171,16 @@ const LandingPage = () => {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   return (
-    <div className="min-h-screen bg-[hsl(220,30%,4%)] text-white overflow-x-hidden">
+    <div className="min-h-screen text-white overflow-x-hidden font-['Inter',sans-serif]">
+      {/* Underwater scroll-reactive background */}
+      <UnderwaterBackground />
 
       {/* ─── Navigation ─────────────────────────────────────────────── */}
       <motion.nav
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-[hsl(220,30%,4%)]/80 border-b border-white/5"
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/30 border-b border-white/5"
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -214,15 +217,6 @@ const LandingPage = () => {
 
       {/* ─── Hero Section ───────────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center pt-16">
-        {/* Background image with dark overlay */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: 'url(/images/hero-bg.webp)' }}
-        />
-        <div className="absolute inset-0 bg-[hsl(220,30%,4%)]/70" />
-        <ParticleField />
-        <GlowOrb className="w-[600px] h-[600px] bg-primary/20 -top-40 -right-40" />
-        <GlowOrb className="w-[400px] h-[400px] bg-blue-500/10 bottom-20 -left-20" />
 
         <motion.div
           style={{ y: heroY, opacity: heroOpacity }}
@@ -295,7 +289,7 @@ const LandingPage = () => {
       </section>
 
       {/* ─── Stats Bar ──────────────────────────────────────────────── */}
-      <section className="relative border-y border-white/5 bg-[hsl(222,25%,6%)]">
+      <section className="relative border-y border-white/5 bg-black/10">
         <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s, i) => (
             <FadeInSection key={s.label} delay={i * 0.1} className="text-center">
@@ -309,12 +303,6 @@ const LandingPage = () => {
 
       {/* ─── About Section ──────────────────────────────────────────── */}
       <section id="about" className="relative py-32 overflow-hidden">
-        {/* Background image — solar neighborhood at golden hour */}
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.07]"
-          style={{ backgroundImage: 'url(/images/about-bg.webp)' }}
-        />
-        <GlowOrb className="w-[500px] h-[500px] bg-blue-500/10 top-20 -left-40" />
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <FadeInSection>
@@ -377,13 +365,7 @@ const LandingPage = () => {
       </section>
 
       {/* ─── Features Section ───────────────────────────────────────── */}
-      <section id="features" className="relative py-32 bg-[hsl(222,25%,5%)] overflow-hidden">
-        {/* Background image — circuit network pattern */}
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.06]"
-          style={{ backgroundImage: 'url(/images/features-bg.webp)' }}
-        />
-        <GlowOrb className="w-[500px] h-[500px] bg-primary/10 top-40 -right-40" />
+      <section id="features" className="relative py-32 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <FadeInSection className="text-center mb-20">
             <div className="text-xs text-primary font-bold uppercase tracking-[0.2em] mb-4">What We Do</div>
@@ -451,10 +433,6 @@ const LandingPage = () => {
 
       {/* ─── How We Help Customers ─────────────────────────────────── */}
       <section id="customers" className="relative py-32 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.04]"
-          style={{ backgroundImage: 'url(/images/about-bg.webp)' }}
-        />
         <div className="max-w-7xl mx-auto px-6">
           <FadeInSection className="text-center mb-20">
             <div className="text-xs text-primary font-bold uppercase tracking-[0.2em] mb-4">For Homeowners</div>
@@ -507,8 +485,7 @@ const LandingPage = () => {
       </section>
 
       {/* ─── Milestone Process ──────────────────────────────────────── */}
-      <section id="milestones" className="relative py-32 bg-[hsl(222,25%,5%)]">
-        <GlowOrb className="w-[600px] h-[600px] bg-primary/10 -bottom-40 left-1/2 -translate-x-1/2" />
+      <section id="milestones" className="relative py-32 bg-black/5">
         <div className="max-w-5xl mx-auto px-6">
           <FadeInSection className="text-center mb-20">
             <div className="text-xs text-primary font-bold uppercase tracking-[0.2em] mb-4">How We Help</div>
@@ -566,7 +543,6 @@ const LandingPage = () => {
 
       {/* ─── Financier Value Prop (Enfin-relevant) ──────────────────── */}
       <section className="relative py-32 overflow-hidden">
-        <GlowOrb className="w-[500px] h-[500px] bg-emerald-500/10 top-20 -right-40" />
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <FadeInSection>
@@ -664,7 +640,6 @@ const LandingPage = () => {
 
       {/* ─── CTA Section ────────────────────────────────────────────── */}
       <section className="relative py-32">
-        <GlowOrb className="w-[800px] h-[400px] bg-primary/15 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <FadeInSection>
             <h2 className="text-4xl md:text-6xl font-black leading-tight mb-6">
@@ -697,7 +672,7 @@ const LandingPage = () => {
       </section>
 
       {/* ─── Footer ─────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 bg-[hsl(222,25%,3%)]">
+      <footer className="border-t border-white/5 bg-black/20">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
