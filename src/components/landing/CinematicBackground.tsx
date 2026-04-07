@@ -4,7 +4,7 @@
  * Inspired by akari.lusion.co — immersive, interactive, cinematic.
  */
 
-import { useEffect, useRef, useState, useCallback, useMemo, Suspense } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, MeshDistortMaterial, MeshTransmissionMaterial, Environment, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -422,29 +422,126 @@ function Overlays({ scrollProgress }: { scrollProgress: number }) {
 /*                         MAIN COMPONENT                                 */
 /* ═══════════════════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  CSS FALLBACK — shows if WebGL/R3F fails to load or crashes            */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+function CSSFallbackBackground({ scrollProgress }: { scrollProgress: number }) {
+  return (
+    <>
+      {/* Aurora gradient */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `
+            radial-gradient(ellipse at 30% 20%, rgba(0,212,200,0.08) 0%, transparent 60%),
+            radial-gradient(ellipse at 70% 60%, rgba(59,130,246,0.06) 0%, transparent 60%),
+            radial-gradient(ellipse at 50% 100%, rgba(139,92,246,0.04) 0%, transparent 50%),
+            #040612
+          `,
+        }}
+      />
+      {/* Subtle moving glow */}
+      <div
+        className="absolute top-[-10%] left-[25%] w-[50%] h-[50%] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(0,212,200,0.06) 0%, transparent 70%)',
+          transform: `translateY(${scrollProgress * -100}px)`,
+          transition: 'transform 0.3s ease-out',
+        }}
+      />
+      {/* Dot grid */}
+      <div
+        className="absolute inset-0 opacity-[0.015]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
+      />
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  ERROR BOUNDARY — Catches WebGL crashes, shows CSS fallback            */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+interface WebGLErrorBoundaryProps {
+  fallback: ReactNode;
+  children: ReactNode;
+}
+
+interface WebGLErrorBoundaryState {
+  hasError: boolean;
+}
+
+class WebGLErrorBoundary extends Component<WebGLErrorBoundaryProps, WebGLErrorBoundaryState> {
+  constructor(props: WebGLErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn('[CinematicBackground] WebGL error, falling back to CSS:', error.message);
+  }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  CHECK WebGL SUPPORT                                                   */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+function isWebGLAvailable(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext('webgl2') || canvas.getContext('webgl'))
+    );
+  } catch {
+    return false;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*                         MAIN COMPONENT                                 */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
 export default function CinematicBackground() {
   const scrollProgress = useScrollProgress();
   const mouse = useMousePosition();
+  const [webglSupported] = useState(() => isWebGLAvailable());
 
   return (
     <div className="fixed inset-0 -z-10" style={{ background: '#040612' }}>
-      {/* WebGL Canvas — full screen 3D scene */}
-      <Canvas
-        dpr={[1, 1.5]}
-        camera={{ position: [0, 1, 6], fov: 60, near: 0.1, far: 100 }}
-        gl={{
-          antialias: true,
-          alpha: false,
-          powerPreference: 'high-performance',
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.2,
-        }}
-        style={{ position: 'absolute', inset: 0 }}
-      >
-        <Suspense fallback={null}>
-          <SceneContent scrollProgress={scrollProgress} mouse={mouse} />
-        </Suspense>
-      </Canvas>
+      {webglSupported ? (
+        <WebGLErrorBoundary fallback={<CSSFallbackBackground scrollProgress={scrollProgress} />}>
+          {/* WebGL Canvas — full screen 3D scene */}
+          <Canvas
+            dpr={[1, 1.5]}
+            camera={{ position: [0, 1, 6], fov: 60, near: 0.1, far: 100 }}
+            gl={{
+              antialias: true,
+              alpha: false,
+              powerPreference: 'high-performance',
+              toneMapping: THREE.ACESFilmicToneMapping,
+              toneMappingExposure: 1.2,
+            }}
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            <Suspense fallback={null}>
+              <SceneContent scrollProgress={scrollProgress} mouse={mouse} />
+            </Suspense>
+          </Canvas>
+        </WebGLErrorBoundary>
+      ) : (
+        <CSSFallbackBackground scrollProgress={scrollProgress} />
+      )}
 
       {/* 2D overlays on top of 3D */}
       <Overlays scrollProgress={scrollProgress} />

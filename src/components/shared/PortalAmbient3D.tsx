@@ -4,10 +4,30 @@
  * Much lighter than landing page — optimized for dashboard performance.
  */
 
-import { useRef, useMemo, Suspense } from 'react';
+import { useRef, useMemo, useState, Suspense, Component, type ReactNode, type ErrorInfo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
 import * as THREE from 'three';
+
+/* ─── Error Boundary for WebGL ───────────────────────────────────────── */
+class WebGLBoundary extends Component<{ children: ReactNode; fallbackBg: string }, { err: boolean }> {
+  state = { err: false };
+  static getDerivedStateFromError() { return { err: true }; }
+  componentDidCatch(e: Error, info: ErrorInfo) {
+    console.warn('[PortalAmbient3D] WebGL error:', e.message);
+  }
+  render() {
+    if (this.state.err) return <div className="fixed inset-0 -z-10" style={{ background: this.props.fallbackBg }} />;
+    return this.props.children;
+  }
+}
+
+function isWebGLAvailable(): boolean {
+  try {
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
+  } catch { return false; }
+}
 
 /* ─── Soft particle field ────────────────────────────────────────────── */
 function AmbientParticles({ color, count = 400 }: { color: string; count?: number }) {
@@ -84,33 +104,38 @@ export default function PortalAmbient3D({ theme = 'dark' }: PortalAmbient3DProps
   const isDark = theme === 'dark';
   const accentColor = isDark ? '#00d4c8' : '#00b8a9';
   const bgColor = isDark ? '#060811' : '#f8fafc';
+  const [webgl] = useState(() => isWebGLAvailable());
 
   return (
     <div
       className="fixed inset-0 -z-10 pointer-events-none"
       style={{ background: bgColor }}
     >
-      <Canvas
-        dpr={[1, 1.2]}
-        camera={{ position: [0, 0, 5], fov: 50 }}
-        gl={{
-          antialias: false,
-          alpha: false,
-          powerPreference: 'low-power',
-        }}
-        style={{ position: 'absolute', inset: 0 }}
-        frameloop="always"
-      >
-        <Suspense fallback={null}>
-          <ambientLight intensity={isDark ? 0.1 : 0.5} />
-          <pointLight position={[3, 3, 3]} intensity={0.2} color={accentColor} />
+      {webgl && (
+        <WebGLBoundary fallbackBg={bgColor}>
+          <Canvas
+            dpr={[1, 1.2]}
+            camera={{ position: [0, 0, 5], fov: 50 }}
+            gl={{
+              antialias: false,
+              alpha: false,
+              powerPreference: 'low-power',
+            }}
+            style={{ position: 'absolute', inset: 0 }}
+            frameloop="always"
+          >
+            <Suspense fallback={null}>
+              <ambientLight intensity={isDark ? 0.1 : 0.5} />
+              <pointLight position={[3, 3, 3]} intensity={0.2} color={accentColor} />
 
-          <AmbientParticles color={accentColor} count={isDark ? 400 : 250} />
-          <AmbientShape color={accentColor} />
+              <AmbientParticles color={accentColor} count={isDark ? 400 : 250} />
+              <AmbientShape color={accentColor} />
 
-          <fog attach="fog" args={[bgColor, 3, 15]} />
-        </Suspense>
-      </Canvas>
+              <fog attach="fog" args={[bgColor, 3, 15]} />
+            </Suspense>
+          </Canvas>
+        </WebGLBoundary>
+      )}
 
       {/* Soft vignette overlay */}
       <div
