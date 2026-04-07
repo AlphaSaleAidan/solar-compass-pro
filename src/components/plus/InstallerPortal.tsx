@@ -114,8 +114,8 @@ const InstallerPortal = () => {
     const projectMsgs = store.projectMessages[p.id] || [];
 
     return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center pb-4 sm:items-center sm:pb-0" onClick={() => { setSelectedProject(null); setPopupTab('details'); setPopupExpandedM(null); }}>
-        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-3xl max-h-[75vh] overflow-hidden m-4 shadow-lg flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 z-50 flex items-end justify-center pb-4 sm:items-center sm:pb-0 modal-backdrop-enter" onClick={() => { setSelectedProject(null); setPopupTab('details'); setPopupExpandedM(null); }}>
+        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-3xl max-h-[75vh] overflow-hidden m-4 shadow-lg flex flex-col modal-content-enter" onClick={e => e.stopPropagation()}>
           {/* Header */}
           <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
             <div>

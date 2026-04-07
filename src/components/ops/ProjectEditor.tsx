@@ -216,7 +216,7 @@ const ProjectEditor = () => {
 
       {/* Aurora Account Creation Modal */}
       {showAuroraModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center" onClick={() => setShowAuroraModal(null)}>
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center modal-backdrop-enter" onClick={() => setShowAuroraModal(null)}>
           <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-6 w-[400px] animate-scale-in" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-black text-foreground mb-1 flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-[hsl(var(--blue))]" />

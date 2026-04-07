@@ -381,7 +381,7 @@ const MilestoneVerification = () => {
 
       {/* Report Writing Modal */}
       {reportModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center" onClick={() => setReportModal(null)}>
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center modal-backdrop-enter" onClick={() => setReportModal(null)}>
           <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-6 w-[500px] animate-scale-in" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-black text-foreground mb-1 flex items-center gap-2">
               <FileText className="w-4 h-4 text-[hsl(var(--blue))]" />

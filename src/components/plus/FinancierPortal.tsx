@@ -91,8 +91,8 @@ const FinancierPortal = () => {
     const sowReport = ms.textEntries['m4-sow-report'];
 
     return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center pb-6 sm:items-center sm:pb-0" onClick={() => setSelectedProject(null)}>
-        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-2xl max-h-[55vh] overflow-y-auto m-4 shadow-lg" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 z-50 flex items-end justify-center pb-6 sm:items-center sm:pb-0 modal-backdrop-enter" onClick={() => setSelectedProject(null)}>
+        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-2xl max-h-[55vh] overflow-y-auto m-4 shadow-lg modal-content-enter" onClick={e => e.stopPropagation()}>
           <div className="px-6 py-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
             <div>
               <h2 className="text-lg font-black text-card-foreground">{p.customerName}</h2>
