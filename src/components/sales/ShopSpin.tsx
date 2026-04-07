@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect, useLayoutEffect } from 'react';
 import { Dices, Ticket, Sparkles, Package, DollarSign, QrCode, Palmtree, ShoppingBag, Trash2, Star } from 'lucide-react';
 import { SPIN_PRIZES, SPIN_TIERS, TICKET_EARNING_RULES } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,14 +13,14 @@ const ShopSpin = () => {
   const [demoTickets, setDemoTickets] = useState(7);
   const [demoAlphaCash, setDemoAlphaCash] = useState(2450);
   const [demoCashBonuses, setDemoCashBonuses] = useState([
-    { id: 1, amount: 85, redeemed: false, label: 'Cash Bonus $85' },
-    { id: 2, amount: 50, redeemed: false, label: 'Cash Bonus $50' },
+    { id: 1, amount: 85, redeemed: false, label: 'Cash Drop $85' },
+    { id: 2, amount: 50, redeemed: false, label: 'Cash Drop $50' },
   ]);
   const [demoInventory, setDemoInventory] = useState([
-    { id: 'd1', name: 'ASP T-Shirt', icon: '👕', value: 40, tier: 'normal', sellValue: 25 },
-    { id: 'd2', name: 'ASP Hat', icon: '🧢', value: 25, tier: 'normal', sellValue: 15 },
-    { id: 'd3', name: 'AirPods', icon: '🎧', value: 120, tier: 'golden', sellValue: 80 },
-    { id: 'd4', name: 'ASP Hoodie', icon: '🧥', value: 65, tier: 'normal', sellValue: 40 },
+    { id: 'd1', name: 'ASP Stealth Tee', icon: '🖤', value: 40, tier: 'normal', sellValue: 25 },
+    { id: 'd2', name: 'ASP Snapback', icon: '⚡', value: 25, tier: 'normal', sellValue: 15 },
+    { id: 'd3', name: 'AirPods Pro', icon: '🎯', value: 150, tier: 'golden', sellValue: 100 },
+    { id: 'd4', name: 'ASP Elite Hoodie', icon: '👑', value: 65, tier: 'normal', sellValue: 40 },
   ]);
 
   const tickets = isDemo ? demoTickets : gamification.state.tickets;
@@ -34,8 +34,16 @@ const ShopSpin = () => {
   const [spinning, setSpinning] = useState(false);
   const [wonPrize, setWonPrize] = useState<typeof SPIN_PRIZES[0] | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const trackItemsRef = useRef<typeof SPIN_PRIZES>([]);
-  const [trackKey, setTrackKey] = useState(0);
+
+  // ── Deterministic track state ──────────────────────────────────────
+  // Instead of using a ref + key remount (which causes race conditions),
+  // we use state for the track items and a separate trigger for animation.
+  const [trackItems, setTrackItems] = useState<typeof SPIN_PRIZES>([]);
+  const [animationTarget, setAnimationTarget] = useState<{
+    offset: number;
+    triggered: boolean;
+  } | null>(null);
+  const chosenPrizeRef = useRef<typeof SPIN_PRIZES[0] | null>(null);
 
   const tierMap: Record<string, string[]> = {
     'Normal Spin': ['normal'],
@@ -56,16 +64,58 @@ const ShopSpin = () => {
     });
   }, [tier.name, eligiblePrizes]);
 
-  const buildTrackItems = useCallback(() => {
+  // Build initial track when tier changes
+  useEffect(() => {
     const items: typeof SPIN_PRIZES = [];
     for (let i = 0; i < 60; i++) {
       items.push(eligiblePrizes[i % eligiblePrizes.length]);
     }
-    trackItemsRef.current = items;
-    return items;
-  }, [eligiblePrizes]);
+    setTrackItems(items);
+    // Reset track position when tier changes
+    if (trackRef.current) {
+      trackRef.current.style.transition = 'none';
+      trackRef.current.style.transform = 'translateX(0)';
+    }
+  }, [selectedTier]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const trackItems = useMemo(() => buildTrackItems(), [buildTrackItems]);
+  // ── Animation effect — fires AFTER React renders the new track items ──
+  useLayoutEffect(() => {
+    if (!animationTarget || animationTarget.triggered) return;
+
+    const track = trackRef.current;
+    if (!track) return;
+    const container = track.parentElement;
+    if (!container) return;
+
+    const LANDING_INDEX = 40;
+    const children = track.children;
+    const targetEl = children[LANDING_INDEX] as HTMLElement | undefined;
+    if (!targetEl) return;
+
+    const containerWidth = container.clientWidth;
+    const pointerX = containerWidth / 2;
+    const targetCenter = targetEl.offsetLeft + targetEl.offsetWidth / 2;
+    const offset = targetCenter - pointerX;
+
+    // Reset position instantly
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(0)';
+
+    // Force layout recalc then animate
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    track.offsetHeight;
+
+    requestAnimationFrame(() => {
+      if (trackRef.current) {
+        trackRef.current.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
+        trackRef.current.style.transform = `translateX(-${offset}px)`;
+      }
+    });
+
+    setAnimationTarget(prev => prev ? { ...prev, triggered: true } : null);
+  }, [animationTarget, trackItems]);
+
+  const LANDING_INDEX = 40;
 
   const spin = useCallback(async () => {
     if (spinning || tickets < tier.tickets) return;
@@ -80,73 +130,68 @@ const ShopSpin = () => {
     setSpinning(true);
     setWonPrize(null);
 
+    // Pick the winning prize
     const weightedPrizes = getWeightedPrizes();
     const chosenPrize = weightedPrizes[Math.floor(Math.random() * weightedPrizes.length)];
-    const landingIndex = 40;
+    chosenPrizeRef.current = chosenPrize;
 
-    const newTrackItems = [...trackItemsRef.current];
-    newTrackItems[landingIndex] = chosenPrize;
-    trackItemsRef.current = newTrackItems;
-    setTrackKey(k => k + 1);
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!trackRef.current) return;
-        const container = trackRef.current.parentElement;
-        if (!container) return;
-
-        const children = trackRef.current.children;
-        const targetEl = children[landingIndex] as HTMLElement | undefined;
-        if (!targetEl) return;
-
-        const containerWidth = container.clientWidth;
-        const pointerX = containerWidth / 2;
-        const targetLeft = targetEl.offsetLeft;
-        const targetCenter = targetLeft + targetEl.offsetWidth / 2;
-        const offset = targetCenter - pointerX;
-
-        trackRef.current.style.transition = 'none';
-        trackRef.current.style.transform = 'translateX(0)';
-
-        requestAnimationFrame(() => {
-          if (trackRef.current) {
-            trackRef.current.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
-            trackRef.current.style.transform = `translateX(-${offset}px)`;
-          }
-        });
-      });
+    // Build a new randomised track with the winning prize placed at LANDING_INDEX
+    const newItems: typeof SPIN_PRIZES = [];
+    for (let i = 0; i < 60; i++) {
+      if (i === LANDING_INDEX) {
+        newItems.push(chosenPrize);
+      } else {
+        // Randomise surrounding items for visual variety (exclude the chosen prize's neighbors)
+        const pool = eligiblePrizes.filter(p => p.name !== chosenPrize.name);
+        newItems.push(pool.length > 0 ? pool[i % pool.length] : eligiblePrizes[i % eligiblePrizes.length]);
+      }
+    }
+    // Place some copies of the winning prize nearby so it doesn't look suspicious
+    const nearbySlots = [LANDING_INDEX - 7, LANDING_INDEX - 3, LANDING_INDEX + 4, LANDING_INDEX + 8];
+    nearbySlots.forEach(slot => {
+      if (slot >= 0 && slot < 60 && slot !== LANDING_INDEX) {
+        newItems[slot] = chosenPrize;
+      }
     });
 
+    // Set the track items (triggers re-render), then trigger animation
+    setTrackItems(newItems);
+    setAnimationTarget({ offset: 0, triggered: false });
+
+    // Award prize after animation completes
     setTimeout(async () => {
+      const prize = chosenPrizeRef.current;
+      if (!prize) return;
+
       setSpinning(false);
-      setWonPrize(chosenPrize);
+      setWonPrize(prize);
 
       // Add to inventory
       if (isDemo) {
         setDemoInventory(prev => [...prev, {
           id: `d-${Date.now()}`,
-          name: chosenPrize.name,
-          icon: chosenPrize.icon,
-          value: chosenPrize.value,
-          tier: chosenPrize.tier,
-          sellValue: Math.round(chosenPrize.value * 0.6),
+          name: prize.name,
+          icon: prize.icon,
+          value: prize.value,
+          tier: prize.tier,
+          sellValue: Math.round(prize.value * 0.6),
         }]);
-        if (chosenPrize.name.startsWith('Cash Bonus')) {
+        if (prize.name.includes('Cash Drop')) {
           setDemoCashBonuses(prev => [...prev, {
             id: Date.now(),
-            amount: chosenPrize.value,
+            amount: prize.value,
             redeemed: false,
-            label: chosenPrize.name,
+            label: prize.name,
           }]);
         }
       } else {
-        await gamification.addInventoryItem(chosenPrize.name, chosenPrize.value);
-        if (chosenPrize.name.startsWith('Cash Bonus')) {
-          await gamification.addCashBonus(chosenPrize.value);
+        await gamification.addInventoryItem(prize.name, prize.value);
+        if (prize.name.includes('Cash Drop') || prize.name.startsWith('Cash Bonus')) {
+          await gamification.addCashBonus(prize.value);
         }
       }
     }, 4200);
-  }, [spinning, tickets, tier, getWeightedPrizes, isDemo, gamification]);
+  }, [spinning, tickets, tier, getWeightedPrizes, eligiblePrizes, isDemo, gamification]);
 
   const sellItem = async (itemId: string, sellValue: number) => {
     if (isDemo) {
@@ -173,8 +218,6 @@ const ShopSpin = () => {
     alpha: 'bg-primary/12 border-primary/30',
     super_alpha: 'bg-asp-purple/12 border-asp-purple/30',
   };
-
-  const displayTrackItems = trackItemsRef.current.length > 0 ? [...trackItemsRef.current] : trackItems;
 
   // Streak boost display
   const boostPct = isDemo ? 0 : Math.round(gamification.getStreakBoost() * 100);
@@ -207,7 +250,7 @@ const ShopSpin = () => {
         ))}
       </div>
 
-      {/* Redesigned Spin Track */}
+      {/* Spin Track */}
       <div className="relative overflow-hidden rounded-xl border-2 border-primary/30 bg-gradient-to-b from-bg3 to-bg2 h-[120px]">
         {/* Gradient edges */}
         <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-r from-bg3 to-transparent" />
@@ -217,10 +260,10 @@ const ShopSpin = () => {
           <span className="absolute -top-1 left-1/2 -translate-x-1/2 text-primary text-sm">▼</span>
           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-primary text-sm">▲</span>
         </div>
-        <div ref={trackRef} key={trackKey} className="flex items-center gap-2 h-full py-2 will-change-transform">
-          {displayTrackItems.map((item, i) => (
+        <div ref={trackRef} className="flex items-center gap-2 h-full py-2 will-change-transform">
+          {trackItems.map((item, i) => (
             <div
-              key={`${i}-${item.name}-${trackKey}`}
+              key={`${i}-${item.name}`}
               className={`shrink-0 w-[100px] h-[100px] rounded-xl flex flex-col items-center justify-center gap-1.5 border-2 backdrop-blur-sm ${itemTierColors[item.tier]} hover:scale-105 transition-transform`}
             >
               <span className="text-3xl leading-none drop-shadow-lg">{item.icon}</span>
@@ -310,17 +353,17 @@ const ShopSpin = () => {
               </div>
             </div>
             <div className="text-[10px] text-muted-foreground text-right">
-              Earn by selling items<br/>or winning cash bonuses
+              Earn by selling items<br/>or winning cash drops
             </div>
           </div>
         </div>
 
-        {/* Cash Bonuses (demo only shows stored ones) */}
+        {/* Cash Bonuses */}
         {cashBonuses.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center gap-1.5 mb-2">
               <QrCode className="w-3.5 h-3.5 text-asp-yellow" />
-              <span className="text-[10px] font-bold text-asp-yellow tracking-wider uppercase">Cash Bonuses</span>
+              <span className="text-[10px] font-bold text-asp-yellow tracking-wider uppercase">Cash Drops</span>
             </div>
             <div className="space-y-1.5">
               {cashBonuses.map((cb: any) => (
