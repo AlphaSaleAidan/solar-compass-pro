@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import {
@@ -7,7 +7,11 @@ import {
   Building2, Handshake, Clock, DollarSign, Eye, Lock,
   Activity, Percent, ArrowUpRight
 } from 'lucide-react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import CinematicBackground from '@/components/landing/CinematicBackground';
+
+gsap.registerPlugin(ScrollTrigger);
 
 /* ─── Smooth scroll helper ────────────────────────────────────────────── */
 const scrollTo = (id: string) => (e: React.MouseEvent) => {
@@ -169,15 +173,105 @@ const portals = [
 /*                           LANDING PAGE                                 */
 /* ═══════════════════════════════════════════════════════════════════════ */
 
+/* ─── Animated counter hook ───────────────────────────────────────────── */
+function useCountUp(target: string, duration = 1.5) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
+  useEffect(() => {
+    if (!isInView || !ref.current) return;
+    const isNum = /^\d+$/.test(target);
+    if (!isNum) {
+      ref.current.textContent = target;
+      return;
+    }
+    const end = parseInt(target);
+    const obj = { val: 0 };
+    gsap.to(obj, {
+      val: end,
+      duration,
+      ease: 'power2.out',
+      onUpdate: () => {
+        if (ref.current) ref.current.textContent = Math.round(obj.val).toString();
+      },
+    });
+  }, [isInView, target, duration]);
+
+  return ref;
+}
+
+/* ─── Counter stat display ────────────────────────────────────────────── */
+const CounterStat = ({ value, suffix, label }: { value: string; suffix: string; label: string }) => {
+  const ref = useCountUp(value);
+  return (
+    <div className="text-center">
+      <div className="text-[clamp(2rem,4vw,3.5rem)] font-black text-white tracking-tight leading-none mb-1">
+        <span ref={ref}>0</span><span className="text-primary">{suffix}</span>
+      </div>
+      <div className="text-[11px] text-white/30 font-medium uppercase tracking-[0.15em]">{label}</div>
+    </div>
+  );
+};
+
 const LandingPage = () => {
   const heroRef = useRef(null);
+  const landingRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 200]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.7], [1, 0.95]);
 
+  /* ─── GSAP ScrollTrigger animations ──────────────────────────────── */
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Parallax text reveals for section headers
+      gsap.utils.toArray<HTMLElement>('.gsap-section-title').forEach((el) => {
+        gsap.fromTo(el,
+          { y: 60, opacity: 0, filter: 'blur(8px)' },
+          {
+            y: 0, opacity: 1, filter: 'blur(0px)',
+            duration: 1.2,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: el, start: 'top 85%', end: 'top 50%', toggleActions: 'play none none none' },
+          }
+        );
+      });
+
+      // Staggered card reveals
+      gsap.utils.toArray<HTMLElement>('.gsap-stagger-container').forEach((container) => {
+        const cards = container.querySelectorAll('.gsap-stagger-item');
+        gsap.fromTo(cards,
+          { y: 50, opacity: 0, scale: 0.95 },
+          {
+            y: 0, opacity: 1, scale: 1,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: container, start: 'top 80%', toggleActions: 'play none none none' },
+          }
+        );
+      });
+
+      // Horizontal progress line across milestones
+      const milestoneLine = document.querySelector('.gsap-milestone-line') as HTMLElement;
+      if (milestoneLine) {
+        gsap.fromTo(milestoneLine,
+          { scaleX: 0 },
+          {
+            scaleX: 1,
+            duration: 1.5,
+            ease: 'power2.inOut',
+            scrollTrigger: { trigger: milestoneLine, start: 'top 75%', toggleActions: 'play none none none' },
+          }
+        );
+      }
+    }, landingRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="min-h-screen text-white overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div ref={landingRef} className="min-h-screen text-white overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Cinematic scroll-reactive background */}
       <CinematicBackground />
 
@@ -326,20 +420,16 @@ const LandingPage = () => {
       <section className="relative">
         <div className="border-y border-white/[0.04]">
           <div className="max-w-[1400px] mx-auto px-6">
-            <StaggerReveal className="grid grid-cols-2 md:grid-cols-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gsap-stagger-container">
               {stats.map((s, i) => (
-                <motion.div
+                <div
                   key={s.label}
-                  variants={staggerChild}
-                  className={`py-12 text-center ${i < 3 ? 'md:border-r border-white/[0.04]' : ''}`}
+                  className={`py-12 gsap-stagger-item ${i < 3 ? 'md:border-r border-white/[0.04]' : ''}`}
                 >
-                  <div className="text-[clamp(2rem,4vw,3.5rem)] font-black text-white tracking-tight leading-none mb-1">
-                    {s.value}<span className="text-primary">{s.suffix}</span>
-                  </div>
-                  <div className="text-[11px] text-white/30 font-medium uppercase tracking-[0.15em]">{s.label}</div>
-                </motion.div>
+                  <CounterStat value={s.value} suffix={s.suffix} label={s.label} />
+                </div>
               ))}
-            </StaggerReveal>
+            </div>
           </div>
         </div>
       </section>
@@ -350,7 +440,7 @@ const LandingPage = () => {
           <div className="grid lg:grid-cols-2 gap-20 items-center">
             <RevealSection>
               <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">Who We Are</div>
-              <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] mb-8">
+              <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-8">
                 Built for the{' '}
                 <span className="bg-gradient-to-r from-primary to-cyan-300 bg-clip-text text-transparent">
                   solar ecosystem
@@ -409,7 +499,7 @@ const LandingPage = () => {
         <div className="max-w-[1400px] mx-auto px-6">
           <RevealSection className="text-center mb-20">
             <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">What We Do</div>
-            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] mb-6">
+            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-6">
               Everything solar teams need.
               <br className="hidden sm:block" />
               <span className="bg-gradient-to-r from-primary to-cyan-300 bg-clip-text text-transparent">
@@ -421,7 +511,7 @@ const LandingPage = () => {
             </p>
           </RevealSection>
 
-          <StaggerReveal className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <StaggerReveal className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 gsap-stagger-container">
             {features.map((f) => (
               <motion.div key={f.title} variants={staggerChild}>
                 <GlassCard className="p-7 h-full group">
@@ -442,7 +532,7 @@ const LandingPage = () => {
         <div className="max-w-[1400px] mx-auto px-6">
           <RevealSection className="text-center mb-20">
             <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">Platform Architecture</div>
-            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] mb-6">
+            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-6">
               Four portals.{' '}
               <span className="bg-gradient-to-r from-primary to-cyan-300 bg-clip-text text-transparent">One ecosystem.</span>
             </h2>
@@ -451,7 +541,7 @@ const LandingPage = () => {
             </p>
           </RevealSection>
 
-          <StaggerReveal className="grid md:grid-cols-2 gap-5">
+          <StaggerReveal className="grid md:grid-cols-2 gap-5 gsap-stagger-container">
             {portals.map((p) => (
               <motion.div key={p.name} variants={staggerChild}>
                 <GlassCard className={`relative p-8 overflow-hidden ${p.border}`}>
@@ -488,7 +578,7 @@ const LandingPage = () => {
         <div className="max-w-[1400px] mx-auto px-6">
           <RevealSection className="text-center mb-20">
             <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">For Homeowners</div>
-            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] mb-6">
+            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-6">
               Solar made{' '}
               <span className="bg-gradient-to-r from-primary to-cyan-300 bg-clip-text text-transparent">simple & safe.</span>
             </h2>
@@ -544,7 +634,7 @@ const LandingPage = () => {
         <div className="max-w-[1400px] mx-auto px-6">
           <RevealSection className="text-center mb-20">
             <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">The Process</div>
-            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] mb-6">
+            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-6">
               Milestone-gated.{' '}
               <span className="bg-gradient-to-r from-primary to-cyan-300 bg-clip-text text-transparent">Risk-eliminated.</span>
             </h2>
@@ -555,8 +645,8 @@ const LandingPage = () => {
 
           {/* Timeline */}
           <div className="relative max-w-4xl mx-auto">
-            {/* Vertical line */}
-            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-primary/30 via-primary/10 to-transparent md:-translate-x-px" />
+            {/* Vertical line — GSAP animated */}
+            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-primary/30 via-primary/10 to-transparent md:-translate-x-px gsap-milestone-line origin-top" />
 
             {milestones.map((m, i) => (
               <RevealSection key={m.id} delay={i * 0.08}>
@@ -601,7 +691,7 @@ const LandingPage = () => {
           <div className="grid lg:grid-cols-2 gap-20 items-center">
             <RevealSection>
               <div className="text-[11px] text-emerald-400 font-bold uppercase tracking-[0.25em] mb-6">For Financiers</div>
-              <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] mb-8">
+              <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-8">
                 Fund solar with{' '}
                 <span className="bg-gradient-to-r from-emerald-400 to-primary bg-clip-text text-transparent">
                   confidence.
