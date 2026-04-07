@@ -359,3 +359,74 @@ select:focus-visible {
 html {
   scroll-behavior: smooth;
 }
+
+/* Global card hover effects */
+.bg-card,
+.bg-bg2,
+.bg-muted,
+[class*="bg-[hsl(var(--bg2))]"],
+[class*="bg-[hsl(var(--card))]"] {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Floating modal backdrop animation */
+@keyframes modal-backdrop-in {
+  from { background-color: rgba(0, 0, 0, 0); }
+  to { background-color: rgba(0, 0, 0, 0.6); }
+}
+
+@keyframes modal-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.modal-backdrop-enter {
+  animation: modal-backdrop-in 0.3s ease forwards;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content-enter {
+  animation: modal-content-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Number counter animation utility */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.count-up {
+  animation: count-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Subtle hover lift for interactive stat cards */
+.stat-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px hsl(var(--border));
+}
+
+.asp-plus .stat-card-hover:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), 0 0 0 1px hsl(var(--border));
+}
+
+/* Toast notification enhancement */
+[data-sonner-toast] {
+  font-family: var(--font-main) !important;
+}
+
+/* Progress bar animation */
+@keyframes progress-fill {
+  from { width: 0; }
+}
+
+.progress-animate {
+  animation: progress-fill 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
