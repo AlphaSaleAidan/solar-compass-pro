@@ -24,7 +24,7 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="space-y-4 animate-fade-in-up">
+      <div className="space-y-4 portal-section-enter">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />

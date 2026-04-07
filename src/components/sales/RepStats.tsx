@@ -78,7 +78,7 @@ const RepStats = () => {
   const activeStage = streak >= 3 ? 2 : streak >= 2 ? 1 : streak >= 1 ? 0 : -1;
 
   return (
-    <div className="space-y-3 animate-fade-in-up stagger-1">
+    <div className="space-y-3 portal-section-enter stagger-1">
       {/* Streak Bar */}
       <div className="bg-bg2 border border-border rounded-xl p-4">
         <div className="flex items-center gap-2.5 mb-3">

@@ -95,7 +95,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="space-y-4 animate-fade-in-up">
+      <div className="space-y-4 portal-section-enter">
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
 
         <div className="flex items-center justify-between">

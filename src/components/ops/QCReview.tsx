@@ -58,7 +58,7 @@ const QCReview = () => {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in-up">
+    <div className="space-y-5 portal-section-enter">
       <h2 className="text-lg font-black text-white flex items-center gap-2">
         <Zap className="w-5 h-5 text-primary" /> Action ASAP
       </h2>

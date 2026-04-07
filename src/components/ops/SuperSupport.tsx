@@ -54,7 +54,7 @@ const SuperSupport = () => {
   };
 
   return (
-    <div className="animate-fade-in-up" style={{ height: 'calc(100vh - 180px)' }}>
+    <div className="portal-section-enter" style={{ height: 'calc(100vh - 180px)' }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-black text-foreground flex items-center gap-2">
           <Shield className="w-5 h-5 text-[hsl(var(--red))]" />
