@@ -794,12 +794,14 @@ const InstallerPortal = () => {
                 { label: 'On-Time Rate', value: `${onTimeRate}%`, icon: TrendingUp, color: 'text-primary' },
                 { label: 'Pending Actions', value: pendingActions.toString(), icon: AlertTriangle, color: pendingActions > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]' },
               ].map((s, i) => (
-                <div key={i} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
+                <div key={i} className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-5 stat-card-hover transition-all duration-300 portal-section-enter" style={{ animationDelay: `${i * 60}ms` }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <s.icon className={`w-4 h-4 ${s.color}`} />
+                    <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                      <s.icon className={`w-4 h-4 ${s.color}`} />
+                    </div>
                     <span className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">{s.label}</span>
                   </div>
-                  <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
+                  <div className={`text-3xl font-black ${s.color} tracking-tight`}>{s.value}</div>
                 </div>
               ))}
             </div>

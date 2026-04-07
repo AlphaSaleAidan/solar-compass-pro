@@ -80,7 +80,7 @@ const RepStats = () => {
   return (
     <div className="space-y-3 portal-section-enter stagger-1">
       {/* Streak Bar */}
-      <div className="bg-bg2 border border-border rounded-xl p-4">
+      <div className="bg-bg2/80 backdrop-blur-sm border border-border rounded-xl p-4">
         <div className="flex items-center gap-2.5 mb-3">
           <div className="relative">
             <Flame className="w-7 h-7 text-asp-blue" fill="hsl(var(--blue))" />
@@ -111,7 +111,7 @@ const RepStats = () => {
       </div>
 
       {/* Yearly Paid Out */}
-      <div className="bg-bg2 border border-border rounded-xl p-4 flex items-center gap-3">
+      <div className="bg-bg2/80 backdrop-blur-sm border border-border rounded-xl p-4 flex items-center gap-3 stat-card-hover transition-all duration-300">
         <DollarSign className="w-5 h-5 text-asp-green" />
         <div className="flex-1">
           <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Yearly Paid Out</div>
@@ -120,7 +120,7 @@ const RepStats = () => {
       </div>
 
       {/* Pending Pipeline — with dropdown */}
-      <div className="bg-bg2 border border-border rounded-xl overflow-hidden">
+      <div className="bg-bg2/80 backdrop-blur-sm border border-border rounded-xl overflow-hidden stat-card-hover transition-all duration-300">
         <div
           className="p-4 flex items-center gap-3 cursor-pointer hover:bg-bg3/30 transition-colors"
           onClick={() => setShowPipelineBreakdown(!showPipelineBreakdown)}
@@ -162,7 +162,7 @@ const RepStats = () => {
       </div>
 
       {/* Installs */}
-      <div className="bg-bg2 border border-border rounded-xl p-4 flex items-center gap-3">
+      <div className="bg-bg2/80 backdrop-blur-sm border border-border rounded-xl p-4 flex items-center gap-3 stat-card-hover transition-all duration-300">
         <Wrench className="w-5 h-5 text-asp-yellow" />
         <div className="flex-1">
           <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Installs</div>
@@ -171,7 +171,7 @@ const RepStats = () => {
       </div>
 
       {/* Monthly Appointments */}
-      <div className="bg-bg2 border border-border rounded-xl p-4">
+      <div className="bg-bg2/80 backdrop-blur-sm border border-border rounded-xl p-4">
         <div className="flex items-center gap-2 mb-1">
           <Calendar className="w-4 h-4 text-muted-foreground" />
           <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Monthly Appointments</div>
@@ -192,7 +192,7 @@ const RepStats = () => {
       </div>
 
       {/* Next Incoming Appointments Today */}
-      <div className="bg-bg2 border border-border rounded-xl p-4">
+      <div className="bg-bg2/80 backdrop-blur-sm border border-border rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Calendar className="w-4 h-4 text-primary" />
           <div className="text-[10px] text-primary font-bold tracking-[1.5px] uppercase">Next Appointments Today</div>
@@ -264,7 +264,7 @@ const RepStats = () => {
       </div>
 
       {/* Closing Metrics */}
-      <div className="bg-bg2 border border-border rounded-xl p-4">
+      <div className="bg-bg2/80 backdrop-blur-sm border border-border rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <TrendingUp className="w-4 h-4 text-primary" />
           <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">Performance Metrics</div>

@@ -301,13 +301,15 @@ const FinancierPortal = () => {
                 { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, valueSuffix: '', icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / Math.max(totalPortfolioContract, 1)) * 100)}% margin` },
                 { label: 'Pending Releases', value: pendingReleases.length.toString(), valueSuffix: '', icon: Clock, color: pendingReleases.length > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]', sub: pendingReleases.length > 0 ? 'Action required' : 'All clear' },
               ].map((s, i) => (
-                <div key={i} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
+                <div key={i} className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-5 stat-card-hover transition-all duration-300 portal-section-enter" style={{ animationDelay: `${i * 60}ms` }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <s.icon className={`w-4 h-4 ${s.color}`} />
+                    <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                      <s.icon className={`w-4 h-4 ${s.color}`} />
+                    </div>
                     <span className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">{s.label}</span>
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className={`text-2xl font-black ${s.color}`}>{s.value}</span>
+                    <span className={`text-3xl font-black ${s.color} tracking-tight`}>{s.value}</span>
                     {s.valueSuffix && <span className="text-xs text-muted-foreground font-medium">{s.valueSuffix}</span>}
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-1">{s.sub}</div>
