@@ -12,6 +12,8 @@ export interface ProjectMilestoneState {
   opsNotes: Record<number, string>;
   /** Installer marks milestone as submitted for QC review */
   installerSubmitted: Record<number, boolean>;
+  /** Ops approval tracking per milestone */
+  opsApproved: Record<number, boolean>;
   /** Dual approval tracking for fund releases above $10K */
   dualApproval: Record<number, { firstApprover?: string; firstApprovedAt?: string; secondApprover?: string; secondApprovedAt?: string; required: boolean }>;
 }
@@ -133,6 +135,7 @@ const createDefaultMilestoneState = (): ProjectMilestoneState => ({
   fundStatus: {},
   opsNotes: {},
   installerSubmitted: {},
+  opsApproved: {},
   dualApproval: {},
 });
 

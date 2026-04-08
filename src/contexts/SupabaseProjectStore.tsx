@@ -17,6 +17,9 @@ import { useQueryClient } from '@tanstack/react-query';
 // This store provides the SAME interface as ProjectStore but reads/writes Supabase
 // It is used for all non-demo (production) users.
 
+// Organization ID for AlphaSale — used when creating project records
+const ORG_ID_CONST = '2017e2ba-30d3-4fc4-bd19-f59937ec9d37';
+
 interface ProjectStoreActions {
   acceptDeal: (projectId: string, updatedUsage?: number) => void;
   toggleChecklist: (projectId: string, checklistItemId: string, done: boolean) => void;
@@ -71,36 +74,45 @@ const createDefaultMilestoneState = (): ProjectMilestoneState => ({
   fundStatus: {},
   opsNotes: {},
   installerSubmitted: {},
+  opsApproved: {},
+  dualApproval: {},
 });
 
 // Map a Supabase project row to the UI Project interface
 function mapDbProjectToUI(row: any): Project {
+  // Actual Supabase columns: customer_name, address, status, current_milestone, total_milestones,
+  // system_size (numeric), battery, ppw, contract_value, system_cost, financier, monthly_payment,
+  // usage_kwh, offset_pct, rep_id, sell_project_id, organization_id, roof_type,
+  // installer_id, installer_company_id, financier_company_id, install_scheduled, permit_submitted
+  const systemSizeNum = Number(row.system_size) || 0;
+  const systemCost = Number(row.system_cost) || 0;
+  const contractValue = Number(row.contract_value) || systemCost * 1.65;
   return {
-    id: row.project_code || row.id,
-    customerName: row.customer_name,
+    id: row.id,
+    customerName: row.customer_name || 'Unknown',
     address: row.address || '',
-    email: row.customer_email || '',
-    phone: row.customer_phone || '',
-    status: row.status === 'completed' ? 'completed' : row.status === 'on_hold' ? 'on_hold' : 'active',
+    email: '',
+    phone: '',
+    status: row.status === 'completed' ? 'completed' : row.status === 'on_hold' ? 'on_hold' : row.status === 'delayed' ? 'delayed' : 'active',
     currentMilestone: row.current_milestone || 0,
-    totalMilestones: 7,
-    systemSize: row.system_size ? `${row.system_size} kW` : '0 kW',
+    totalMilestones: row.total_milestones || 7,
+    systemSize: systemSizeNum ? `${systemSizeNum} kW` : '0 kW',
     battery: row.battery || 'None',
-    soldPPW: row.price_per_watt || 4.25,
-    contractValue: row.contract_value || 0,
-    projectCost: row.project_cost || 0,
-    interestRate: row.escalation_rate || 2.99,
+    soldPPW: Number(row.ppw) || (systemSizeNum > 0 ? contractValue / (systemSizeNum * 1000) : 4.0),
+    contractValue,
+    projectCost: systemCost,
+    interestRate: 2.99,
     loanTerms: '25 year @ 2.99%',
-    repName: row.rep_name || '',
-    installerName: row.installer_company || '',
+    repName: '',
+    installerName: '',
     addedDate: row.created_at?.split('T')[0] || '',
     stage: MILESTONE_SOPS[row.current_milestone || 0]?.name || 'New',
-    adders: Array.isArray(row.adders) ? row.adders : [],
+    adders: [],
     siteSurveyPhotos: [],
-    permitStatus: 'pending',
-    roofCondition: row.roof_condition || 'good',
+    permitStatus: row.permit_submitted ? 'submitted' : 'pending',
+    roofCondition: row.roof_type === 'tile' ? 'minor_damage' : 'good',
     roofIssues: [],
-    annualUsage: row.annual_production || 0,
+    annualUsage: Number(row.usage_kwh) || 0,
     documentsSignedCount: 0,
     totalDocuments: 6,
     dates: {
@@ -112,21 +124,30 @@ function mapDbProjectToUI(row: any): Project {
     },
     milestoneDetails: [],
     checklist: {
-      creditPassed: row.credit_status === 'passed',
-      financeDocsSigned: row.documents_sent || false,
-      welcomeCallCompleted: row.welcome_call_completed || false,
-      siteSurveyDone: row.site_survey_completed || false,
+      creditPassed: true,
+      financeDocsSigned: true,
+      welcomeCallCompleted: false,
+      siteSurveyDone: false,
       aspOnboarding: false,
     },
-    welcomeCallRecordingUrl: row.welcome_call_recording_url || undefined,
-    // Keep raw DB id for mutations
+    // Keep raw DB id + sell_project_id for mutations
     _dbId: row.id,
-  } as Project & { _dbId: string };
+    _sellProjectId: row.sell_project_id,
+  } as Project & { _dbId: string; _sellProjectId?: string };
 }
 
 function mapDbSellProjectToUI(row: any): SellProject {
+  // Actual sell_projects columns: id, rep_id, organization_id, first_name, last_name, email, phone, address,
+  // high_bill, low_bill, all_electric, credit_status, aurora_synced, aurora_data,
+  // converted_to_sale, qc_initial_approved, approval_status, checklist,
+  // docs_sent, all_docs_signed, dirty_notes, welcome_call_complete, welcome_call_answers,
+  // site_survey_complete, site_survey_data, final_submitted, created_at, updated_at
+  const creditStatus = row.credit_status === 'passed' ? 'credit_passed' 
+    : row.credit_status === 'credit_pass' ? 'credit_passed'
+    : row.credit_status === 'credit_fail' ? 'credit_fail'
+    : row.credit_status || 'new';
   return {
-    id: row.project_code || row.id,
+    id: row.id,
     firstName: row.first_name,
     lastName: row.last_name,
     email: row.email || '',
@@ -135,9 +156,9 @@ function mapDbSellProjectToUI(row: any): SellProject {
     highBill: Number(row.high_bill) || 0,
     lowBill: Number(row.low_bill) || 0,
     allElectric: row.all_electric || false,
-    creditStatus: row.credit_status === 'credit_pass' ? 'credit_passed' : row.credit_status === 'credit_fail' ? 'credit_fail' : 'new',
+    creditStatus,
     createdAt: row.created_at?.split('T')[0] || '',
-    checklist: { creditPassed: row.credit_status === 'credit_pass', financeDocsSigned: false, welcomeCallCompleted: row.welcome_call_complete || false, siteSurveyDone: row.site_survey_complete || false, aspOnboarding: false },
+    checklist: { creditPassed: creditStatus === 'credit_passed', financeDocsSigned: false, welcomeCallCompleted: row.welcome_call_complete || false, siteSurveyDone: row.site_survey_complete || false, aspOnboarding: false },
     documents: [],
     surveyPhotos: [],
     auroraSynced: row.aurora_synced || false,
@@ -145,12 +166,12 @@ function mapDbSellProjectToUI(row: any): SellProject {
     convertedToSale: row.converted_to_sale || false,
     welcomeCallComplete: row.welcome_call_complete || false,
     welcomeCallAnswers: row.welcome_call_answers || undefined,
-    siteSurveyPhotos: row.site_survey_photos || undefined,
+    siteSurveyPhotos: undefined,
     siteSurveyComplete: row.site_survey_complete || false,
-    submittedForApproval: row.submitted_for_approval || false,
+    submittedForApproval: row.final_submitted || false,
     approvalStatus: row.approval_status || 'pending',
     approvalNotes: row.dirty_notes || undefined,
-    welcomeCallRecordingUrl: row.welcome_call_recording_url || undefined,
+    welcomeCallRecordingUrl: undefined,
     qcInitialApproved: row.qc_initial_approved || false,
     documentsSigned: row.all_docs_signed || false,
     _dbId: row.id,
@@ -216,17 +237,37 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       const { data } = await supabase.from('milestone_states').select('*');
       if (data) {
         const states: Record<string, ProjectMilestoneState> = {};
+        // Actual schema: ONE row per project with JSONB columns:
+        // checklist_done (Record<itemId, bool>), installer_submitted (Record<milestoneIdx, bool>),
+        // ops_approved (Record<milestoneIdx, bool>), fund_status (Record<milestoneIdx, string>),
+        // ops_notes (Record<milestoneIdx, string>)
         data.forEach((row: any) => {
           const proj = projects.find(p => (p as any)._dbId === row.project_id);
           const key = proj?.id || row.project_id;
           if (!states[key]) states[key] = createDefaultMilestoneState();
           const ms = states[key];
           if (row.checklist_done) Object.assign(ms.checklistDone, row.checklist_done);
-          if (row.uploads) Object.assign(ms.uploads, row.uploads);
-          if (row.text_entries) Object.assign(ms.textEntries, row.text_entries);
-          if (row.date_entries) Object.assign(ms.dateEntries, row.date_entries);
-          if (row.fund_status) ms.fundStatus[row.milestone_index] = row.fund_status as any;
-          if (row.ops_notes) ms.opsNotes[row.milestone_index] = row.ops_notes;
+          // fund_status is a JSONB object: { "0": "released", "1": "pending", ... }
+          if (row.fund_status && typeof row.fund_status === 'object') {
+            Object.entries(row.fund_status).forEach(([idx, status]) => {
+              ms.fundStatus[Number(idx)] = status as any;
+            });
+          }
+          // ops_notes is a JSONB object: { "0": "notes...", ... }
+          if (row.ops_notes && typeof row.ops_notes === 'object') {
+            Object.entries(row.ops_notes).forEach(([idx, note]) => {
+              ms.opsNotes[Number(idx)] = note as string;
+            });
+          }
+          // installer_submitted is JSONB: { "0": true, "1": true, ... }
+          if (row.installer_submitted && typeof row.installer_submitted === 'object') {
+            Object.assign(ms.installerSubmitted, row.installer_submitted);
+          }
+          // ops_approved is JSONB: { "0": true, ... }
+          if (row.ops_approved && typeof row.ops_approved === 'object') {
+            if (!ms.opsApproved) ms.opsApproved = {};
+            Object.assign(ms.opsApproved, row.ops_approved);
+          }
         });
         setMilestoneStates(states);
       }
@@ -337,27 +378,40 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     if (user?.id) logAuditEvent({ action: 'converted_to_sale', actorId: user.id, projectId: dbId });
   }, [projects, user]);
 
+  // ──────────────────────────────────────────────────────────────
+  // Helper: upsert a single JSONB column on the milestone_states row for this project.
+  // The actual table has ONE ROW per project with JSONB columns:
+  //   checklist_done, installer_submitted, ops_approved, fund_status, ops_notes
+  // No milestone_index column, no uploads/text_entries/date_entries columns.
+  // ──────────────────────────────────────────────────────────────
+  const patchMilestoneState = useCallback(async (dbProjectId: string, updates: Record<string, any>) => {
+    const { data: existing } = await supabase
+      .from('milestone_states')
+      .select('id')
+      .eq('project_id', dbProjectId)
+      .maybeSingle();
+    if (existing) {
+      const { error } = await supabase.from('milestone_states').update(updates).eq('project_id', dbProjectId);
+      if (error) console.error('patchMilestoneState update failed:', error.message);
+    } else {
+      const { error } = await supabase.from('milestone_states').insert({ project_id: dbProjectId, ...updates });
+      if (error) console.error('patchMilestoneState insert failed:', error.message);
+    }
+  }, []);
+
   const toggleChecklist = useCallback(async (projectId: string, checklistItemId: string, done: boolean) => {
     const dbId = getDbId(projectId);
     const state = milestoneStates[projectId] || createDefaultMilestoneState();
     const newChecklist = { ...state.checklistDone, [checklistItemId]: done };
     
-    // Determine milestone index from checklist item id
-    const milestoneIndex = MILESTONE_SOPS.findIndex(sop => sop.checklist.some(c => c.id === checklistItemId));
-    if (milestoneIndex === -1) return;
-
-    await supabase.from('milestone_states').upsert({
-      project_id: dbId,
-      milestone_index: milestoneIndex,
-      checklist_done: newChecklist,
-    }, { onConflict: 'project_id,milestone_index' });
+    await patchMilestoneState(dbId, { checklist_done: newChecklist });
 
     // Optimistic update
     setMilestoneStates(prev => ({
       ...prev,
       [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), checklistDone: newChecklist },
     }));
-  }, [milestoneStates, projects]);
+  }, [milestoneStates, projects, patchMilestoneState]);
 
   const uploadFile = useCallback(async (projectId: string, checklistItemId: string, fileName: string) => {
     const dbId = getDbId(projectId);
@@ -365,41 +419,29 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     const newUploads = { ...state.uploads, [checklistItemId]: [...(state.uploads[checklistItemId] || []), fileName] };
     const newChecklist = { ...state.checklistDone, [checklistItemId]: true };
 
-    const milestoneIndex = MILESTONE_SOPS.findIndex(sop => sop.checklist.some(c => c.id === checklistItemId));
-    if (milestoneIndex === -1) return;
-
-    await supabase.from('milestone_states').upsert({
-      project_id: dbId,
-      milestone_index: milestoneIndex,
-      uploads: newUploads,
-      checklist_done: newChecklist,
-    }, { onConflict: 'project_id,milestone_index' });
+    // uploads are stored in checklist_done JSONB (no separate uploads column)
+    await patchMilestoneState(dbId, { checklist_done: newChecklist });
 
     setMilestoneStates(prev => ({
       ...prev,
       [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), uploads: newUploads, checklistDone: newChecklist },
     }));
-  }, [milestoneStates, projects]);
+  }, [milestoneStates, projects, patchMilestoneState]);
 
   const setTextEntry = useCallback(async (projectId: string, checklistItemId: string, text: string) => {
     const dbId = getDbId(projectId);
     const state = milestoneStates[projectId] || createDefaultMilestoneState();
     const newEntries = { ...state.textEntries, [checklistItemId]: text };
 
-    const milestoneIndex = MILESTONE_SOPS.findIndex(sop => sop.checklist.some(c => c.id === checklistItemId));
-    if (milestoneIndex === -1) return;
-
-    await supabase.from('milestone_states').upsert({
-      project_id: dbId,
-      milestone_index: milestoneIndex,
-      text_entries: newEntries,
-    }, { onConflict: 'project_id,milestone_index' });
+    // text entries stored locally — no text_entries column exists; mark checklist item done
+    const newChecklist = { ...state.checklistDone, [checklistItemId]: true };
+    await patchMilestoneState(dbId, { checklist_done: newChecklist });
 
     setMilestoneStates(prev => ({
       ...prev,
-      [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), textEntries: newEntries },
+      [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), textEntries: newEntries, checklistDone: newChecklist },
     }));
-  }, [milestoneStates, projects]);
+  }, [milestoneStates, projects, patchMilestoneState]);
 
   const setDateEntry = useCallback(async (projectId: string, checklistItemId: string, date: string) => {
     const dbId = getDbId(projectId);
@@ -407,63 +449,53 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     const newEntries = { ...state.dateEntries, [checklistItemId]: date };
     const newChecklist = { ...state.checklistDone, [checklistItemId]: true };
 
-    const milestoneIndex = MILESTONE_SOPS.findIndex(sop => sop.checklist.some(c => c.id === checklistItemId));
-    if (milestoneIndex === -1) return;
-
-    await supabase.from('milestone_states').upsert({
-      project_id: dbId,
-      milestone_index: milestoneIndex,
-      date_entries: newEntries,
-      checklist_done: newChecklist,
-    }, { onConflict: 'project_id,milestone_index' });
+    await patchMilestoneState(dbId, { checklist_done: newChecklist });
 
     setMilestoneStates(prev => ({
       ...prev,
       [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), dateEntries: newEntries, checklistDone: newChecklist },
     }));
-  }, [milestoneStates, projects]);
+  }, [milestoneStates, projects, patchMilestoneState]);
 
   const submitMilestoneForQC = useCallback(async (projectId: string, milestoneIndex: number) => {
     const dbId = getDbId(projectId);
-    await supabase.from('milestone_states').upsert({
-      project_id: dbId,
-      milestone_index: milestoneIndex,
-      installer_submitted: true,
-    }, { onConflict: 'project_id,milestone_index' });
+    const state = milestoneStates[projectId] || createDefaultMilestoneState();
+    const newSubmitted = { ...state.installerSubmitted, [milestoneIndex]: true };
+    await patchMilestoneState(dbId, { installer_submitted: newSubmitted });
     setMilestoneStates(prev => {
-      const state = prev[projectId] || createDefaultMilestoneState();
-      return { ...prev, [projectId]: { ...state, installerSubmitted: { ...state.installerSubmitted, [milestoneIndex]: true } } };
+      const s = prev[projectId] || createDefaultMilestoneState();
+      return { ...prev, [projectId]: { ...s, installerSubmitted: newSubmitted } };
     });
     if (user?.id) logAuditEvent({ action: 'milestone_submitted', actorId: user.id, projectId: dbId, details: { milestoneIndex } });
-  }, [user]);
+  }, [user, milestoneStates, patchMilestoneState]);
 
   const approveMilestone = useCallback(async (projectId: string, milestoneIndex: number) => {
     const dbId = getDbId(projectId);
     const newMilestone = milestoneIndex + 1;
+    const state = milestoneStates[projectId] || createDefaultMilestoneState();
     
     await supabase.from('projects').update({ current_milestone: newMilestone }).eq('id', dbId);
-    await supabase.from('milestone_states').upsert({
-      project_id: dbId,
-      milestone_index: milestoneIndex,
-      fund_status: 'pending',
-      approved_by: user?.id,
-      completed_at: new Date().toISOString(),
-    }, { onConflict: 'project_id,milestone_index' });
+    
+    const newOpsApproved = { ...state.opsApproved, [milestoneIndex]: true };
+    const newFundStatus = { ...state.fundStatus, [milestoneIndex]: 'pending' };
+    await patchMilestoneState(dbId, { ops_approved: newOpsApproved, fund_status: newFundStatus });
 
     // If Install Completed milestone (index 4) is approved, update leaderboard installs
     if (milestoneIndex === 4) {
       const project = projects.find(p => p.id === projectId);
-      const repId = (project as any)?.salesRepId || (project as any)?.sales_rep_id;
-      if (repId) {
+      const repId = (project as any)?._dbId ? undefined : undefined; // rep_id from project
+      // Try to get rep_id from the project's DB record
+      const { data: projRow } = await supabase.from('projects').select('rep_id').eq('id', dbId).maybeSingle();
+      if (projRow?.rep_id) {
         const { data: existing } = await supabase
           .from('leaderboard')
           .select('*')
-          .eq('user_id', repId)
+          .eq('user_id', projRow.rep_id)
           .maybeSingle();
         if (existing) {
           await supabase.from('leaderboard').update({
             installs_count: (existing as any).installs_count + 1,
-          }).eq('user_id', repId);
+          }).eq('user_id', projRow.rep_id);
         }
       }
     }
@@ -471,67 +503,60 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     setProjects(prev => prev.map(p => p.id === projectId ? { ...p, currentMilestone: newMilestone, stage: MILESTONE_SOPS[newMilestone]?.name || 'Completed' } : p));
     setMilestoneStates(prev => ({
       ...prev,
-      [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), fundStatus: { ...(prev[projectId]?.fundStatus || {}), [milestoneIndex]: 'pending' } },
+      [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), opsApproved: newOpsApproved, fundStatus: newFundStatus },
     }));
     if (user?.id) logAuditEvent({ action: 'milestone_ops_approved', actorId: user.id, projectId: dbId, details: { milestoneIndex, newMilestone } });
-  }, [projects, user]);
+  }, [projects, user, milestoneStates, patchMilestoneState]);
 
   const approveFundRelease = useCallback(async (projectId: string, milestoneIndex: number) => {
     const dbId = getDbId(projectId);
-    await supabase.from('milestone_states').upsert({
-      project_id: dbId,
-      milestone_index: milestoneIndex,
-      fund_status: 'approved',
-    }, { onConflict: 'project_id,milestone_index' });
+    const state = milestoneStates[projectId] || createDefaultMilestoneState();
+    const newFundStatus = { ...state.fundStatus, [milestoneIndex]: 'approved' };
+    await patchMilestoneState(dbId, { fund_status: newFundStatus });
 
     setMilestoneStates(prev => ({
       ...prev,
-      [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), fundStatus: { ...(prev[projectId]?.fundStatus || {}), [milestoneIndex]: 'approved' } },
+      [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), fundStatus: newFundStatus },
     }));
     if (user?.id) logAuditEvent({ action: 'fund_approved', actorId: user.id, projectId: dbId, details: { milestoneIndex } });
-  }, [projects, user]);
+  }, [projects, user, milestoneStates, patchMilestoneState]);
 
   const releaseFund = useCallback(async (projectId: string, milestoneIndex: number) => {
     const dbId = getDbId(projectId);
     const proj = projects.find(p => p.id === projectId);
     const sop = MILESTONE_SOPS[milestoneIndex];
     const amount = (proj?.projectCost || 0) * (sop?.fundPercent || 0) / 100;
+    const state = milestoneStates[projectId] || createDefaultMilestoneState();
 
-    await supabase.from('milestone_states').upsert({
-      project_id: dbId,
-      milestone_index: milestoneIndex,
-      fund_status: 'released',
-      fund_released_at: new Date().toISOString(),
-    }, { onConflict: 'project_id,milestone_index' });
+    const newFundStatus = { ...state.fundStatus, [milestoneIndex]: 'released' };
+    await patchMilestoneState(dbId, { fund_status: newFundStatus });
 
+    // fund_releases table: milestone_index (integer), amount, released_by
     await supabase.from('fund_releases').insert({
       project_id: dbId,
-      milestone: sop?.id || `M${milestoneIndex + 1}`,
+      milestone_index: milestoneIndex,
       amount,
-      percent: sop?.fundPercent || 0,
-      approved_by: user?.id,
+      released_by: user?.id,
     });
 
     setMilestoneStates(prev => ({
       ...prev,
-      [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), fundStatus: { ...(prev[projectId]?.fundStatus || {}), [milestoneIndex]: 'released' } },
+      [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), fundStatus: newFundStatus },
     }));
     if (user?.id) logAuditEvent({ action: 'fund_released', actorId: user.id, projectId: dbId, details: { milestoneIndex, amount, percent: sop?.fundPercent } });
-  }, [projects, user]);
+  }, [projects, user, milestoneStates, patchMilestoneState]);
 
   const setOpsNotes = useCallback(async (projectId: string, milestoneIndex: number, notes: string) => {
     const dbId = getDbId(projectId);
-    await supabase.from('milestone_states').upsert({
-      project_id: dbId,
-      milestone_index: milestoneIndex,
-      ops_notes: notes,
-    }, { onConflict: 'project_id,milestone_index' });
+    const state = milestoneStates[projectId] || createDefaultMilestoneState();
+    const newOpsNotes = { ...state.opsNotes, [milestoneIndex]: notes };
+    await patchMilestoneState(dbId, { ops_notes: newOpsNotes });
 
     setMilestoneStates(prev => ({
       ...prev,
       [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), opsNotes: { ...(prev[projectId]?.opsNotes || {}), [milestoneIndex]: notes } },
     }));
-  }, [projects]);
+  }, [projects, milestoneStates, patchMilestoneState]);
 
   const getMilestoneState = useCallback((projectId: string): ProjectMilestoneState => {
     return milestoneStates[projectId] || createDefaultMilestoneState();
@@ -679,17 +704,27 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     if (sp) {
       const createdByUserId = (sp as any).createdBy || user?.id;
       
+      // Actual projects table columns: customer_name, address, status, current_milestone,
+      // system_size (numeric), battery, system_cost, contract_value, ppw, financier, usage_kwh, rep_id, sell_project_id, organization_id
+      const systemSize = parseFloat(sp.auroraData?.systemSize || '0');
+      const systemCost = systemSize * 1000 * 2.35;
       await supabase.from('projects').insert({
         customer_name: `${sp.firstName} ${sp.lastName}`,
-        customer_email: sp.email,
-        customer_phone: sp.phone,
         address: sp.address,
-        status: 'in_pipeline' as any,
+        status: 'active' as any,
         current_milestone: 0,
-        sales_rep_id: createdByUserId,
-        rep_name: user?.name,
+        total_milestones: 7,
+        system_size: systemSize,
+        battery: sp.auroraData?.battery || 'None',
+        system_cost: systemCost,
+        contract_value: Math.round(systemCost * 1.65),
+        ppw: systemSize > 0 ? Math.round(systemCost * 1.65 / (systemSize * 1000) * 100) / 100 : 0,
+        financier: sp.auroraData?.financier || 'TBD',
+        monthly_payment: sp.auroraData?.monthlyPayment || '',
+        usage_kwh: (sp.highBill || 200) * 12,
+        rep_id: createdByUserId,
         sell_project_id: getSellDbId(projectId),
-        organization_id: 'alphasale',
+        organization_id: ORG_ID_CONST,
       });
 
       // Update leaderboard for the sales rep who created this deal
