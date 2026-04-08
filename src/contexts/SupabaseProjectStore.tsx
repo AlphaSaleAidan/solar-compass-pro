@@ -158,11 +158,11 @@ function mapDbSellProjectToUI(row: any): SellProject {
 export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [qcQueue] = useState<Project[]>([]);
+  const [qcQueue, setQcQueue] = useState<Project[]>([]);
   const [milestoneStates, setMilestoneStates] = useState<Record<string, ProjectMilestoneState>>({});
   const [tickets, setTickets] = useState<SharedTicket[]>([]);
   const [financierUpdates, setFinancierUpdates] = useState<Record<string, FinancierUpdate[]>>({});
-  const [financierUploads] = useState<Record<string, FinancierUpload[]>>({});
+  const [financierUploads, setFinancierUploads] = useState<Record<string, FinancierUpload[]>>({});
   const [projectMessages, setProjectMessages] = useState<Record<string, ProjectMessage[]>>({});
   const [sellProjects, setSellProjects] = useState<SellProject[]>([]);
 
