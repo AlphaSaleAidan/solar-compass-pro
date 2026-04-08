@@ -44,24 +44,94 @@ function useMousePosition() {
 /*  PARTICLE FIELD                                                        */
 /* ═══════════════════════════════════════════════════════════════════════ */
 
+/* Create a soft circular sprite texture for particles (avoids default WebGL squares) */
+function useCircleTexture() {
+  return useMemo(() => {
+    const size = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    // Radial gradient: bright center fading to transparent edge → soft glow dot
+    const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.15, 'rgba(255,255,255,0.8)');
+    gradient.addColorStop(0.4, 'rgba(255,255,255,0.3)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    return tex;
+  }, []);
+}
+
+/* Create a 4-point star/sparkle sprite texture */
+function useSparkleTexture() {
+  return useMemo(() => {
+    const size = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    const cx = size / 2;
+    const cy = size / 2;
+    // Draw a soft 4-point star
+    ctx.clearRect(0, 0, size, size);
+    // Horizontal and vertical spikes
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 2) {
+      const grad = ctx.createLinearGradient(
+        cx, cy,
+        cx + Math.cos(angle) * size * 0.48, cy + Math.sin(angle) * size * 0.48
+      );
+      grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+      grad.addColorStop(0.3, 'rgba(255,255,255,0.3)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(angle - 0.15) * size * 0.5, cy + Math.sin(angle - 0.15) * size * 0.5);
+      ctx.lineTo(cx + Math.cos(angle + 0.15) * size * 0.5, cy + Math.sin(angle + 0.15) * size * 0.5);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.restore();
+    }
+    // Bright center glow
+    const cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.12);
+    cGrad.addColorStop(0, 'rgba(255,255,255,1)');
+    cGrad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = cGrad;
+    ctx.fillRect(0, 0, size, size);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    return tex;
+  }, []);
+}
+
 function ParticleField({ scrollProgress, mouse }: {
   scrollProgress: number;
   mouse: React.MutableRefObject<{ x: number; y: number }>;
 }) {
   const count = 2000;
   const meshRef = useRef<THREE.Points>(null);
+  const circleMap = useCircleTexture();
+  const sparkleMap = useSparkleTexture();
 
-  const [positions, basePositions] = useMemo(() => {
+  const [positions, basePositions, sizes] = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const base = new Float32Array(count * 3);
+    const sz = new Float32Array(count);
     for (let i = 0; i < count; i++) {
       const x = (Math.random() - 0.5) * 30;
       const y = (Math.random() - 0.5) * 30;
       const z = (Math.random() - 0.5) * 20 - 5;
       pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
       base[i * 3] = x; base[i * 3 + 1] = y; base[i * 3 + 2] = z;
+      // Vary sizes: most small, occasional bigger sparkle
+      sz[i] = Math.random() < 0.08 ? 0.08 + Math.random() * 0.06 : 0.02 + Math.random() * 0.03;
     }
-    return [pos, base];
+    return [pos, base, sz];
   }, []);
 
   useFrame((state) => {
@@ -78,12 +148,25 @@ function ParticleField({ scrollProgress, mouse }: {
   });
 
   return (
-    <points ref={meshRef}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
-      </bufferGeometry>
-      <pointsMaterial size={0.04} color="#00d4c8" transparent opacity={0.5} sizeAttenuation depthWrite={false} blending={THREE.AdditiveBlending} />
-    </points>
+    <>
+      {/* Main particle field — soft glowing dots */}
+      <points ref={meshRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
+        </bufferGeometry>
+        <pointsMaterial
+          size={0.05}
+          map={circleMap}
+          color="#00d4c8"
+          transparent
+          opacity={0.6}
+          sizeAttenuation
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          alphaTest={0.01}
+        />
+      </points>
+    </>
   );
 }
 

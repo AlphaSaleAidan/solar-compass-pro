@@ -10,9 +10,7 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import { Trash2, AlertTriangle } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useDataSource } from '@/contexts/DataSourceProvider';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 interface DeleteProjectDialogProps {
@@ -37,7 +35,6 @@ const DeleteProjectDialog = ({
 }: DeleteProjectDialogProps) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [deleting, setDeleting] = useState(false);
-  const { user } = useAuth();
   const store = useDataSource();
 
   const handleClose = (val: boolean) => {
@@ -52,47 +49,12 @@ const DeleteProjectDialog = ({
   const handleFinalDelete = async () => {
     setDeleting(true);
     try {
-      const isDemo = user?.isDemo;
-
-      if (isDemo) {
-        // Demo mode: delete from in-memory store (syncs across ALL portals instantly)
-        if (projectType === 'project') {
-          store.deleteProject(projectId);
-        } else {
-          store.deleteSellProject(projectId);
-        }
+      // Use the unified store which handles both demo (in-memory) and production (Supabase) modes.
+      // The DataSourceProvider routes to the correct implementation automatically.
+      if (projectType === 'project') {
+        await Promise.resolve(store.deleteProject(projectId));
       } else {
-        // Production mode: delete from Supabase
-        if (projectType === 'project') {
-          const tables = [
-            'milestone_states',
-            'project_milestones',
-            'project_messages',
-            'project_documents',
-            'project_checklist_items',
-            'project_activity_log',
-            'financier_updates',
-            'site_surveys',
-            'fund_releases',
-          ] as const;
-
-          for (const table of tables) {
-            await supabase.from(table).delete().eq('project_id', projectId);
-          }
-
-          const { error } = await supabase.from('projects').delete().eq('id', projectId);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from('sell_projects').delete().eq('id', projectId);
-          if (error) throw error;
-        }
-
-        // Also update the in-memory store to sync the UI immediately
-        if (projectType === 'project') {
-          store.deleteProject(projectId);
-        } else {
-          store.deleteSellProject(projectId);
-        }
+        await Promise.resolve(store.deleteSellProject(projectId));
       }
 
       toast({
@@ -102,9 +64,10 @@ const DeleteProjectDialog = ({
       onDeleted?.();
       handleClose(false);
     } catch (err: any) {
+      console.error('Delete project error:', err);
       toast({
         title: 'Delete Failed',
-        description: err.message || 'Could not delete the project.',
+        description: err?.message || 'Could not delete the project.',
         variant: 'destructive',
       });
     } finally {
