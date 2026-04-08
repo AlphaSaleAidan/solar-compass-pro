@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
+import { type OrgRole, hasPermission, type Permission, getRoleLabel } from '@/lib/rbac';
+
 export type UserRole = 'sales_rep' | 'backend_ops' | 'installer' | 'financier' | 'master';
 export type PortalMode = 'asp' | 'asp_plus';
 
@@ -17,6 +19,7 @@ interface AppUser {
   platformAccess: string[];
   organizationId?: string;
   companyName?: string;
+  orgRole?: OrgRole;
 }
 
 interface AuthContextType {
@@ -29,6 +32,8 @@ interface AuthContextType {
   setPortalMode: (mode: PortalMode) => void;
   switchRole: (role: UserRole) => void;
   session: Session | null;
+  /** RBAC: check if current user has a specific permission */
+  can: (permission: Permission) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -135,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         portalMode: mode,
         isDemo: true,
         platformAccess: ['sales_rep', 'backend_ops', 'installer', 'financier'],
+        orgRole: 'master_admin', // Demo users get full access
       });
       setPortalMode(mode);
       return true;
@@ -174,8 +180,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPortalMode(mode);
   };
 
+  /** RBAC permission check — maps UserRole → OrgRole for the hierarchy system */
+  const can = (permission: Permission): boolean => {
+    if (!user) return false;
+    // Map legacy UserRole to OrgRole
+    const orgRole: OrgRole = user.role === 'master' ? 'master_admin'
+      : user.role === 'backend_ops' ? 'regional' // Ops users get regional-level access
+      : user.role as OrgRole;
+    return hasPermission(orgRole, permission);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithEmail, logout, portalMode, setPortalMode, switchRole, session }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithEmail, logout, portalMode, setPortalMode, switchRole, session, can }}>
       {children}
     </AuthContext.Provider>
   );
