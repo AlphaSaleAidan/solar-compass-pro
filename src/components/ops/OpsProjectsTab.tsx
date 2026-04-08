@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { toast } from 'sonner';
 import type { Project } from '@/data/mockData';
+import { getActiveSellProjects } from '@/lib/deriveSellProject';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
 import {
@@ -19,7 +20,14 @@ interface OpsProjectsTabProps {
 
 const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
   const store = useDataSource();
-  const allProjects = [...store.projects, ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id))];
+  // Merge store.projects + accepted deals + NTP-approved sell projects (SOP wave function)
+  const existingIds = useMemo(() => new Set(store.projects.map(p => p.id)), [store.projects]);
+  const sellDerivedProjects = useMemo(() => getActiveSellProjects(store.sellProjects, existingIds), [store.sellProjects, existingIds]);
+  const allProjects = useMemo(() => [
+    ...store.projects,
+    ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id)),
+    ...sellDerivedProjects.filter(d => !store.projects.some(p => p.id === d.id) && !acceptedDeals.some(a => a.id === d.id)),
+  ], [store.projects, acceptedDeals, sellDerivedProjects]);
 
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<Record<string, 'milestones' | 'edit'>>({});

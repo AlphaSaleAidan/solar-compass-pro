@@ -1,8 +1,9 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useMemo } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import { getActiveSellProjects } from '@/lib/deriveSellProject';
 import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2, XCircle, RefreshCw, Lock } from 'lucide-react';
@@ -45,10 +46,12 @@ const InstallerPortal = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
-  // For demo: show all projects (demo data is already scoped)
-  // For production: RLS handles filtering — show all projects from the store
+  // Merge store.projects with NTP-approved sell projects (SOP wave function)
+  // This ensures active deals are visible on the installer portal for M1-M7 workflow
   const installerName = user?.companyName || user?.name || 'Installer';
-  const installerProjects = store.projects;
+  const existingIds = useMemo(() => new Set(store.projects.map(p => p.id)), [store.projects]);
+  const sellDerivedProjects = useMemo(() => getActiveSellProjects(store.sellProjects, existingIds), [store.sellProjects, existingIds]);
+  const installerProjects = useMemo(() => [...store.projects, ...sellDerivedProjects], [store.projects, sellDerivedProjects]);
   const completedCount = installerProjects.filter(p => p.currentMilestone >= 5).length;
   const activeCount = installerProjects.filter(p => p.status !== 'completed').length;
   // Compute avg days to PTO from real project data

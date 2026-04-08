@@ -1,8 +1,9 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useMemo } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
 import { toast } from 'sonner';
+import { getActiveSellProjects } from '@/lib/deriveSellProject';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2, XCircle, RefreshCw, Zap, ArrowRight, Building } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
@@ -728,38 +729,12 @@ const FinancierPortal = () => {
       }
 
       case 'portfolio': {
-        // Merge store.projects with NTP-approved sell projects
-        const ntpApprovedSellProjects = store.sellProjects
-          .filter(sp => sp.convertedToSale && sp.qcInitialApproved && sp.documentsSigned && sp.approvalStatus !== 'rejected')
-          .map(sp => ({
-            id: sp.id,
-            customerName: `${sp.firstName} ${sp.lastName}`,
-            address: sp.address || 'Pending',
-            email: sp.email || '',
-            phone: sp.phone || '',
-            systemSize: sp.auroraData?.systemSize || '8.4 kW',
-            battery: sp.auroraData?.battery || 'None',
-            financier: sp.auroraData?.financier || 'TBD',
-            monthlyPayment: sp.auroraData?.monthlyPayment || '$0',
-            soldPPW: 3.20,
-            contractValue: (sp.highBill || 200) * 12 * 20,
-            projectCost: (sp.highBill || 200) * 12 * 15,
-            repName: 'Sales Rep',
-            installerName: 'Unassigned',
-            status: 'active' as const,
-            stage: 'Active — NTP Approved',
-            currentMilestone: 1,
-            totalMilestones: 7,
-            annualUsage: (sp.highBill || 200) * 12,
-            documentsSignedCount: 3,
-            totalDocuments: 5,
-            dates: { submitted: sp.createdAt?.slice(0, 10) || 'N/A', siteSurvey: '', sowConfirmed: '', permitSubmitted: '', lastHOContact: 'N/A' },
-            milestoneDetails: [],
-            checklist: { creditPassed: sp.creditStatus === 'credit_passed', financeDocsSigned: true, welcomeCallCompleted: !!sp.welcomeCallComplete, siteSurveyDone: !!sp.siteSurveyComplete, aspOnboarding: false },
-          })) as typeof projects;
+        // Merge store.projects with NTP-approved sell projects via shared SOP wave function
+        const existingIds = new Set(projects.map(p => p.id));
+        const ntpApprovedSellProjects = getActiveSellProjects(store.sellProjects, existingIds);
         const portfolioProjects = [
           ...projects,
-          ...ntpApprovedSellProjects.filter(sp => !projects.some(p => p.id === sp.id)),
+          ...ntpApprovedSellProjects,
         ];
         return (
           <div className="space-y-3">
