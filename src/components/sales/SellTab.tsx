@@ -146,18 +146,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
 
   return (
     <div className="relative min-h-[calc(100vh-58px)] overflow-hidden">
-      {/* Ocean video background */}
-      <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          src="/videos/crown-bg.mp4"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
-      </div>
+      {/* No local background — global CinematicBackground (3D blue sphere + planets) shows through */}
 
       {/* Quick action bar */}
       <div className="relative z-10 flex items-center gap-3 px-6 py-3 border-b border-white/[0.06]">
@@ -431,21 +420,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
         )}
       </div>
 
-      <style>{`
-        @keyframes rayShimmer {
-          0% { opacity: 0.04; transform: rotate(var(--base-rotate, 0deg)) scaleX(1); }
-          100% { opacity: 0.1; transform: rotate(var(--base-rotate, 0deg)) scaleX(1.3); }
-        }
-        @keyframes causticFloat {
-          0% { transform: translate(0, 0) scale(1); opacity: 0.08; }
-          100% { transform: translate(15px, -10px) scale(1.4); opacity: 0.15; }
-        }
-        @keyframes bubbleRise {
-          0% { transform: translateY(0) scale(1); opacity: 0.4; }
-          80% { opacity: 0.2; }
-          100% { transform: translateY(-110vh) scale(0.5); opacity: 0; }
-        }
-      `}</style>
+      {/* Old ocean CSS animations removed — now using global 3D scene */}
     </div>
   );
 };

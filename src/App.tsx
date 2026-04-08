@@ -11,6 +11,7 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import Dashboard from '@/pages/Dashboard';
+import CouncilDashboard from '@/pages/CouncilDashboard';
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -74,6 +75,7 @@ const AppContent = () => {
         <Route path="/forgot-password" element={<PublicRoute><RouteTransition><ForgotPassword /></RouteTransition></PublicRoute>} />
         <Route path="/reset-password" element={<RouteTransition><ResetPassword /></RouteTransition>} />
         <Route path="/dashboard" element={<ProtectedRoute><RouteTransition><Dashboard /></RouteTransition></ProtectedRoute>} />
+        <Route path="/council" element={<ProtectedRoute><RouteTransition><CouncilDashboard /></RouteTransition></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>

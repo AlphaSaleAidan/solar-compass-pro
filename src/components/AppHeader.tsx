@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LogOut, User, Crown, ArrowLeftRight, Wifi, WifiOff } from 'lucide-react';
+import { Zap, LogOut, User, Crown, ArrowLeftRight, Wifi, WifiOff, Brain } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { UserRole } from '@/contexts/AuthContext';
 import UserSettingsModal from '@/components/settings/UserSettingsModal';
@@ -204,6 +204,14 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
           )}
         </button>
         <span className={`text-xs font-bold ${'text-gray-300'}`}>{user.name}</span>
+        <button
+          onClick={() => navigate('/council')}
+          className="px-3 py-1.5 text-xs font-bold rounded-md border transition-all duration-200 flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] bg-primary/10 border-primary/20 text-primary hover:bg-primary/20"
+          title="LLM Council"
+        >
+          <Brain className="w-3 h-3" />
+          Council
+        </button>
         <button
           onClick={handleLogout}
           className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-all duration-200 flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] ${
