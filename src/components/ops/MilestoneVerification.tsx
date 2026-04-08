@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
 import { MILESTONE_NAMES } from '@/data/mockData';
 import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
 import { CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, Zap, FileText, Camera, Send, Flag, Eye, Upload, ClipboardCheck, Clock, MessageSquare } from 'lucide-react';
@@ -141,6 +142,10 @@ const MilestoneVerification = () => {
               {/* Expanded Detail */}
               {isExpanded && (
                 <div className="border-t border-border">
+                  {/* M1-M7 Visual Timeline */}
+                  <div className="px-5 pt-3">
+                    <MilestoneTimeline currentMilestone={p.currentMilestone} fundStatus={milestoneState.fundStatus} compact />
+                  </div>
                   {/* Project Quick Info */}
                   <div className="px-5 py-3 bg-[hsl(var(--bg3))]/50 border-b border-border grid grid-cols-5 gap-4 text-xs">
                     <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-foreground">{p.systemSize}</span></div>

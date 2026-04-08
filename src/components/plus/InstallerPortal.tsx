@@ -3,6 +3,7 @@ import { useDataSource } from '@/contexts/DataSourceProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2, XCircle, RefreshCw } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
@@ -1104,6 +1105,8 @@ const InstallerPortal = () => {
                   </div>
                   {isExpanded && (
                     <div className="border-t border-border px-5 py-4 space-y-4">
+                      {/* M1-M7 Visual Timeline */}
+                      <MilestoneTimeline currentMilestone={p.currentMilestone} fundStatus={ms.fundStatus} />
                       {/* Quick Info */}
                       <div className="grid grid-cols-7 gap-3 text-xs bg-muted/50 rounded-xl p-3">
                         <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-card-foreground">{p.systemSize}</span></div>

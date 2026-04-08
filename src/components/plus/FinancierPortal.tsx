@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2, XCircle, RefreshCw } from 'lucide-react';
@@ -125,6 +126,12 @@ const FinancierPortal = () => {
                   <div className={`text-sm font-black ${item.color}`}>{item.value}</div>
                 </div>
               ))}
+            </div>
+
+            {/* M1-M7 Visual Timeline */}
+            <div className="bg-muted/50 border border-border rounded-xl p-4">
+              <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Milestone Progress</h3>
+              <MilestoneTimeline currentMilestone={p.currentMilestone} fundStatus={ms.fundStatus} />
             </div>
 
             {/* System & Project Details */}
