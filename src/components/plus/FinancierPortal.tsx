@@ -546,22 +546,26 @@ const FinancierPortal = () => {
       }
 
       case 'incoming': {
-        // Incoming deals: QC-approved sell projects that haven't been NTP-approved by financier yet
+        // Incoming deals: QC-approved sell projects that haven't been NTP-approved or rejected
         const incomingDeals = store.sellProjects.filter(
-          sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned
+          sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned && sp.lifecycleState !== 'rejected'
         );
         const ntpApprovedDeals = store.sellProjects.filter(
           sp => sp.convertedToSale && sp.qcInitialApproved && sp.documentsSigned
         );
+        const ntpRejectedDeals = store.sellProjects.filter(
+          sp => sp.lifecycleState === 'rejected'
+        );
 
         const handleNTPApprove = (sp: any) => {
-          // Approve NTP — triggers escrow account creation
+          // Approve NTP — triggers escrow account creation, card exits via AnimatePresence
           store.updateSellProject({
             ...sp,
             documentsSigned: true,
             approvalStatus: 'clean',
+            lifecycleState: 'active',
           });
-          // Create an escrow record for this project
+          // Create/activate matching project
           const matchedProject = projects.find(p =>
             p.customerName?.toLowerCase().includes(sp.firstName?.toLowerCase()) ||
             p.customerName?.toLowerCase().includes(sp.lastName?.toLowerCase())
@@ -570,6 +574,17 @@ const FinancierPortal = () => {
             store.updateProject({ ...matchedProject, status: 'active' } as any);
           }
           toast.success(`NTP Approved for ${sp.firstName} ${sp.lastName} — Escrow account created`);
+        };
+
+        const handleNTPReject = (sp: any) => {
+          const reason = window.prompt(`Reason for rejecting ${sp.firstName} ${sp.lastName}?`);
+          if (!reason) return;
+          store.updateSellProject({
+            ...sp,
+            lifecycleState: 'rejected',
+            approvalNotes: `NTP Rejected: ${reason}`,
+          });
+          toast.error(`Deal rejected: ${sp.firstName} ${sp.lastName}`);
         };
 
         return (
@@ -590,7 +605,7 @@ const FinancierPortal = () => {
               </p>
             </div>
 
-            {/* Incoming deals list */}
+            {/* Incoming deals list — AnimatePresence so approved/rejected cards wave-out */}
             {incomingDeals.length === 0 ? (
               <div className="glass-panel p-8 text-center">
                 <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto mb-3 opacity-50" />
@@ -598,13 +613,16 @@ const FinancierPortal = () => {
                 <p className="text-xs text-muted-foreground">All incoming deals have been processed. New deals will appear here after QC approval.</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <AnimatePresence mode="popLayout">
                 {incomingDeals.map(sp => (
                   <motion.div
                     key={sp.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="glass-panel p-4"
+                    layout
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 300, scale: 0.8, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className="glass-panel p-4 mb-3"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -616,13 +634,22 @@ const FinancierPortal = () => {
                         </div>
                         <p className="text-[10px] text-muted-foreground">{sp.address || 'No address'}</p>
                       </div>
-                      <button
-                        onClick={() => handleNTPApprove(sp)}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Approve NTP
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleNTPReject(sp)}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border border-[hsl(var(--red))]/20 rounded-lg text-xs font-bold hover:bg-[hsl(var(--red))]/20 transition-all active:scale-95"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          Reject
+                        </button>
+                        <button
+                          onClick={() => handleNTPApprove(sp)}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Approve NTP
+                        </button>
+                      </div>
                     </div>
                     <div className="grid grid-cols-3 gap-3 text-center">
                       <div className="p-2 rounded-lg bg-bg2">
@@ -648,7 +675,7 @@ const FinancierPortal = () => {
                     </div>
                   </motion.div>
                 ))}
-              </div>
+              </AnimatePresence>
             )}
 
             {/* Recently NTP Approved */}
@@ -664,6 +691,29 @@ const FinancierPortal = () => {
                       </div>
                       <span className="text-[9px] px-2 py-0.5 rounded-full bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] font-bold">
                         Escrow Active
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Rejected Deals */}
+            {ntpRejectedDeals.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-muted-foreground mb-3">Rejected Deals</h3>
+                <div className="space-y-2">
+                  {ntpRejectedDeals.slice(0, 5).map(sp => (
+                    <div key={sp.id} className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--red))]/[0.03] border border-[hsl(var(--red))]/10">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="w-4 h-4 text-[hsl(var(--red))]/60" />
+                        <div>
+                          <span className="text-xs font-bold text-card-foreground">{sp.firstName} {sp.lastName}</span>
+                          {sp.approvalNotes && <p className="text-[10px] text-muted-foreground">{sp.approvalNotes}</p>}
+                        </div>
+                      </div>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] font-bold">
+                        Rejected
                       </span>
                     </div>
                   ))}

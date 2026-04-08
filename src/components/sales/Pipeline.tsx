@@ -12,7 +12,39 @@ interface PipelineProps {
 
 const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
   const store = useDataSource();
-  const allProjects = [...store.projects, ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id))];
+  // Derive pipeline entries from converted sell projects when store.projects is empty
+  const sellDerivedProjects: Project[] = store.sellProjects
+    .filter(sp => sp.convertedToSale)
+    .map(sp => ({
+      id: sp.id,
+      customerName: `${sp.firstName} ${sp.lastName}`,
+      address: sp.address || 'Pending',
+      email: sp.email || '',
+      phone: sp.phone || '',
+      systemSize: sp.auroraData?.systemSize || '8.4 kW',
+      battery: sp.auroraData?.battery || 'None',
+      financier: sp.auroraData?.financier || 'TBD',
+      monthlyPayment: sp.auroraData?.monthlyPayment || '$0',
+      soldPPW: 3.20,
+      contractValue: (sp.highBill || 200) * 12 * 20,
+      projectCost: (sp.highBill || 200) * 12 * 15,
+      repName: 'You',
+      installerName: 'Unassigned',
+      status: sp.documentsSigned ? 'active' as const : sp.lifecycleState === 'rejected' ? 'on_hold' as const : 'delayed' as const,
+      stage: !sp.qcInitialApproved ? 'QC Review' : !sp.documentsSigned ? 'Awaiting NTP' : sp.lifecycleState === 'active' ? 'Active' : 'Lead',
+      currentMilestone: sp.documentsSigned ? 1 : 0,
+      totalMilestones: 7,
+      documentsSignedCount: sp.documentsSigned ? 3 : 0,
+      totalDocuments: 5,
+      dates: { submitted: sp.createdAt?.slice(0, 10) || 'N/A', siteSurvey: sp.siteSurveyComplete ? 'Done' : '', sowConfirmed: '', permitSubmitted: '', lastHOContact: 'N/A' },
+      milestoneDetails: [],
+      checklist: sp.checklist || { creditPassed: sp.creditStatus === 'credit_passed', financeDocsSigned: !!sp.documentsSigned, welcomeCallCompleted: !!sp.welcomeCallComplete, siteSurveyDone: !!sp.siteSurveyComplete, aspOnboarding: false },
+    } as Project));
+  const allProjects = [
+    ...store.projects,
+    ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id)),
+    ...sellDerivedProjects.filter(d => !store.projects.some(p => p.id === d.id) && !acceptedDeals.some(a => a.id === d.id)),
+  ];
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
   const statusColors: Record<string, string> = {

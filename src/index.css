@@ -659,3 +659,15 @@ html {
 .asp-plus .glow-divider {
   background: linear-gradient(90deg, transparent, rgba(0, 180, 169, 0.12), transparent);
 }
+
+/* Celebration animation keyframes */
+@keyframes celebration-fall {
+  0% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+  100% { opacity: 0; transform: translateY(120px) rotate(720deg) scale(0.3); }
+}
+
+@keyframes celebration-glow {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(3); }
+}
