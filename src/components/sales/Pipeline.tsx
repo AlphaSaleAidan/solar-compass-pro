@@ -42,9 +42,11 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
             return (
               <div
                 key={p.id}
-                className="bg-bg2 border border-border rounded-xl overflow-hidden hover:border-border2 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                className="group relative bg-bg2 border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-[0_8px_32px_rgba(0,212,200,0.08),0_2px_8px_rgba(0,0,0,0.4)] hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-pointer card-press"
                 onClick={() => setExpandedProject(expandedProject === p.id ? null : p.id)}
               >
+                {/* Glass reflection on hover */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="flex gap-px h-1">
                   {Array.from({ length: p.totalMilestones }).map((_, i) => (
                     <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : i === p.currentMilestone ? 'bg-primary/40' : 'bg-border'}`} />

@@ -517,6 +517,27 @@ const LandingPage = () => {
 
       {/* Portals section removed — competitive sensitivity */}
 
+      {/* ─── Social Proof Metrics ──────────────────────────────────── */}
+      <section className="relative py-16 overflow-hidden border-y border-white/[0.04]">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: '2,400+', label: 'Projects Processed', suffix: '' },
+              { value: '$18M', label: 'Funds Released', suffix: '+' },
+              { value: '94%', label: 'On-Time Installation', suffix: '' },
+              { value: '67%', label: 'Fewer QC Failures', suffix: '' },
+            ].map((stat) => (
+              <RevealSection key={stat.label}>
+                <div className="text-[clamp(2rem,3.5vw,2.8rem)] font-black tracking-tight text-white">
+                  {stat.value}<span className="text-primary">{stat.suffix}</span>
+                </div>
+                <div className="text-xs text-white/30 font-medium mt-1 tracking-wide uppercase">{stat.label}</div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── How We Help Customers ─────────────────────────────────── */}
       <section id="customers" className="relative py-32 lg:py-40 overflow-hidden">
         <div className="max-w-[1400px] mx-auto px-6">

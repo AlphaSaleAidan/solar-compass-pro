@@ -142,6 +142,16 @@ const QCReview = () => {
                     </div>
                   </div>
 
+                  {/* QC Review Summary — quick snapshot before action */}
+                  <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
+                    <div className="text-[10px] text-primary font-bold tracking-wider uppercase mb-2">⚡ QC Review Summary</div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div><span className="text-muted-foreground">Customer:</span> <span className="text-white font-bold">{p.firstName} {p.lastName}</span></div>
+                      <div><span className="text-muted-foreground">System:</span> <span className="text-white font-bold">{resolved?.systemSize || '—'} kW</span></div>
+                      <div><span className="text-muted-foreground">Financier:</span> <span className="text-primary font-bold">{resolved?.financier || '—'}</span></div>
+                    </div>
+                  </div>
+
                   {/* Dirty notes input */}
                   <div>
                     <textarea
@@ -153,17 +163,17 @@ const QCReview = () => {
                     />
                   </div>
 
-                  {/* Action buttons */}
+                  {/* Action buttons — prominent with glow states */}
                   <div className="flex gap-3">
                     <button
                       onClick={() => handleApproveInitialQC(p)}
-                      className="flex-1 py-2.5 bg-[hsl(150,60%,50%)] text-black rounded-lg text-xs font-black transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                      className="flex-1 py-3 bg-[hsl(150,60%,50%)] text-black rounded-xl text-xs font-black transition-all duration-200 active:scale-[0.96] hover:shadow-[0_0_20px_rgba(34,197,94,0.4),0_0_60px_rgba(34,197,94,0.15)] hover:scale-[1.02] flex items-center justify-center gap-2"
                     >
                       <ShieldCheck className="w-4 h-4" /> Approve & Send Docs
                     </button>
                     <button
                       onClick={() => handleRejectInitialQC(p)}
-                      className="flex-1 py-2.5 bg-[hsl(0,70%,55%)]/15 text-[hsl(0,70%,55%)] border border-[hsl(0,70%,55%)]/30 rounded-lg text-xs font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                      className="flex-1 py-3 bg-[hsl(0,70%,55%)]/15 text-[hsl(0,70%,55%)] border border-[hsl(0,70%,55%)]/30 rounded-xl text-xs font-bold transition-all duration-200 active:scale-[0.96] hover:bg-[hsl(0,70%,55%)]/25 hover:shadow-[0_0_20px_rgba(239,68,68,0.3),0_0_60px_rgba(239,68,68,0.1)] hover:scale-[1.02] hover:border-[hsl(0,70%,55%)]/50 flex items-center justify-center gap-2 animate-pulse-subtle"
                     >
                       <XCircle className="w-4 h-4" /> Mark Dirty
                     </button>

@@ -170,7 +170,8 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
   const qcApproved = !!project.qcInitialApproved;
   const waitingForQC = !!project.convertedToSale && !qcApproved && project.approvalStatus === 'pending';
   
-  const canConvert = !!project.auroraSynced;
+  const hasRequiredData = !!(project.firstName?.trim() && project.lastName?.trim());
+  const canConvert = !!project.auroraSynced && hasRequiredData;
   const canSendDocs = qcApproved;
   const canWelcomeCall = isProduction ? (qcApproved && allDocsSigned) : qcApproved;
   const canSiteSurvey = isProduction ? (!!project.welcomeCallComplete) : qcApproved;
