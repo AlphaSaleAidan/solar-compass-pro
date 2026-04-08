@@ -15,9 +15,11 @@ import MilestoneVerification from '@/components/ops/MilestoneVerification';
 import OpsProjectsTab from '@/components/ops/OpsProjectsTab';
 import SuperSupport from '@/components/ops/SuperSupport';
 import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
+import ExecutiveDashboard from '@/components/ops/ExecutiveDashboard';
 import PlusPortal from '@/components/plus/PlusPortal';
 import ActivityFeed from '@/components/shared/ActivityFeed';
 import PageTransition from '@/components/shared/PageTransition';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 // PortalAmbient3D removed — CinematicBackground is now global in App.tsx
 import { useDataSource } from '@/contexts/DataSourceProvider';
 
@@ -77,6 +79,8 @@ const Dashboard = () => {
 
     // Backend Ops
     switch (activeTab) {
+      case 'Executive':
+        return <ExecutiveDashboard />;
       case 'QC Review':
         return <QCReview />;
       case 'Final Approval':
@@ -106,9 +110,11 @@ const Dashboard = () => {
         {/* 3D background is now global in App.tsx */}
         <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="relative mt-[58px] p-6">
-          <PageTransition pageKey={activeTab} variant="wave">
-            {renderContent()}
-          </PageTransition>
+          <ErrorBoundary section={activeTab}>
+            <PageTransition pageKey={activeTab} variant="wave">
+              {renderContent()}
+            </PageTransition>
+          </ErrorBoundary>
         </main>
       </div>
     </div>

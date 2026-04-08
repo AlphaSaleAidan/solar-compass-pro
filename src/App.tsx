@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { Suspense, useState, useEffect } from 'react';
 import { useAuth, AuthProvider } from '@/contexts/AuthContext';
 import { DataSourceProvider } from '@/contexts/DataSourceProvider';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LandingPage from '@/pages/LandingPage';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
