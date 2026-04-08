@@ -149,10 +149,10 @@ function mapDbSellProjectToUI(row: any): SellProject {
     siteSurveyComplete: row.site_survey_complete || false,
     submittedForApproval: row.submitted_for_approval || false,
     approvalStatus: row.approval_status || 'pending',
-    approvalNotes: row.rejection_reason || undefined,
+    approvalNotes: row.dirty_notes || undefined,
     welcomeCallRecordingUrl: row.welcome_call_recording_url || undefined,
     qcInitialApproved: row.qc_initial_approved || false,
-    documentsSigned: row.documents_signed || false,
+    documentsSigned: row.all_docs_signed || false,
     _dbId: row.id,
     lifecycleState: inferState({
       firstName: row.first_name,
@@ -645,7 +645,8 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
 
   const updateSellProject = useCallback(async (project: SellProject) => {
     const dbId = getSellDbId(project.id);
-    await supabase.from('sell_projects').update({
+    // Column names must match the actual Supabase schema exactly
+    const { error } = await supabase.from('sell_projects').update({
       first_name: project.firstName,
       last_name: project.lastName,
       email: project.email,
@@ -659,16 +660,14 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       converted_to_sale: project.convertedToSale,
       welcome_call_complete: project.welcomeCallComplete,
       welcome_call_answers: project.welcomeCallAnswers as any,
-      site_survey_photos: project.siteSurveyPhotos as any,
       site_survey_complete: project.siteSurveyComplete,
-      submitted_for_approval: project.submittedForApproval,
-      documents_sent: project.checklist?.financeDocsSigned || false,
+      docs_sent: project.checklist?.financeDocsSigned || false,
+      all_docs_signed: project.documentsSigned || false,
       approval_status: project.approvalStatus,
-      rejection_reason: project.approvalNotes,
+      dirty_notes: project.approvalNotes || null,
       qc_initial_approved: project.qcInitialApproved,
-      documents_signed: project.documentsSigned,
-      welcome_call_recording_url: project.welcomeCallRecordingUrl,
     }).eq('id', dbId);
+    if (error) console.error('updateSellProject failed:', error.message, 'dbId:', dbId);
   }, [sellProjects]);
 
   const markSellProjectClean = useCallback(async (projectId: string) => {
@@ -733,7 +732,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
 
   const markSellProjectDirty = useCallback(async (projectId: string, notes: string) => {
     const dbId = getSellDbId(projectId);
-    await supabase.from('sell_projects').update({ approval_status: 'dirty', rejection_reason: notes }).eq('id', dbId);
+    await supabase.from('sell_projects').update({ approval_status: 'dirty', dirty_notes: notes }).eq('id', dbId);
     setSellProjects(prev => prev.map(p => p.id === projectId ? { ...p, approvalStatus: 'dirty' as const, approvalNotes: notes } : p));
     if (user?.id) logAuditEvent({ action: 'qc_marked_dirty', actorId: user.id, sellProjectId: dbId, details: { notes } });
   }, [sellProjects, user]);
