@@ -45,6 +45,17 @@ export interface FinancierUpload {
   uploadedBy: string;
 }
 
+// Rejected project with routing metadata
+export interface RejectedProject {
+  project: Project;
+  reason: string;
+  rejectedBy: string;
+  rejectedByRole: 'installer' | 'financier' | 'ops';
+  rejectedAt: string;
+  originalInstaller: string;
+  originalFinancier: string;
+}
+
 // Per-project communication message
 export interface ProjectMessage {
   sender: string;
@@ -62,6 +73,7 @@ interface ProjectStoreState {
   financierUploads: Record<string, FinancierUpload[]>;
   projectMessages: Record<string, ProjectMessage[]>;
   sellProjects: SellProject[];
+  rejectedProjects: RejectedProject[];
 }
 
 interface ProjectStoreActions {
@@ -89,6 +101,12 @@ interface ProjectStoreActions {
   addFinancierUpdate: (projectId: string, text: string, author: string) => void;
   addFinancierUpload: (projectId: string, fileName: string, type: 'document' | 'photo', uploadedBy: string) => void;
   addProjectMessage: (projectId: string, message: ProjectMessage) => void;
+  // Reject & Reassign
+  rejectProject: (projectId: string, reason: string, rejectedBy: string, rejectedByRole: 'installer' | 'financier' | 'ops') => void;
+  reassignProject: (projectId: string, field: 'installer' | 'financier', newValue: string) => void;
+  getRejectedProjects: () => RejectedProject[];
+  // Milestone lock check
+  isMilestoneLocked: (projectId: string, milestoneIndex: number) => boolean;
   // Delete actions (cross-portal sync)
   deleteProject: (projectId: string) => void;
   deleteSellProject: (projectId: string) => void;
@@ -175,6 +193,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const [financierUploads, setFinancierUploads] = useState<Record<string, FinancierUpload[]>>({});
   const [projectMessages, setProjectMessages] = useState<Record<string, ProjectMessage[]>>(INITIAL_PROJECT_MESSAGES);
   const [sellProjects, setSellProjects] = useState<SellProject[]>([...SELL_PROJECTS]);
+  const [rejectedProjects, setRejectedProjects] = useState<RejectedProject[]>([]);
 
   const getMilestoneState = useCallback((projectId: string): ProjectMilestoneState => {
     return milestoneStates[projectId] || createDefaultMilestoneState();
@@ -256,9 +275,12 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
         stage: sop ? sop.name : 'Completed',
       };
     }));
+    // Auto-fund: ops approval triggers automatic fund release (per ASP workflow)
     updateMilestoneState(projectId, prev => ({
       ...prev,
-      fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'pending' },
+      fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'released' },
+      // Clear installer submitted flag for next milestone
+      installerSubmitted: { ...prev.installerSubmitted, [milestoneIndex]: false },
     }));
   }, [updateMilestoneState]);
 
@@ -358,6 +380,52 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       [projectId]: [...(prev[projectId] || []), message],
     }));
   }, []);
+
+  // ─── Reject & Reassign ───────────────────────────────────────────
+  const rejectProject = useCallback((projectId: string, reason: string, rejectedBy: string, rejectedByRole: 'installer' | 'financier' | 'ops') => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    const rejected: RejectedProject = {
+      project: { ...project },
+      reason,
+      rejectedBy,
+      rejectedByRole,
+      rejectedAt: new Date().toISOString(),
+      originalInstaller: project.installerName,
+      originalFinancier: 'ASP Capital',
+    };
+    setRejectedProjects(prev => [rejected, ...prev]);
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+  }, [projects]);
+
+  const reassignProject = useCallback((projectId: string, field: 'installer' | 'financier', newValue: string) => {
+    // Find in rejected list, reassign, and move back to active
+    const rejIdx = rejectedProjects.findIndex(r => r.project.id === projectId);
+    if (rejIdx === -1) return;
+    const rejected = rejectedProjects[rejIdx];
+    const updatedProject = {
+      ...rejected.project,
+      ...(field === 'installer' ? { installerName: newValue } : {}),
+    };
+    setRejectedProjects(prev => prev.filter((_, i) => i !== rejIdx));
+    setProjects(prev => [...prev, updatedProject]);
+    // Re-create milestone state
+    setMilestoneStates(prev => ({
+      ...prev,
+      [projectId]: prev[projectId] || createDefaultMilestoneState(),
+    }));
+  }, [rejectedProjects]);
+
+  const getRejectedProjects = useCallback(() => {
+    return rejectedProjects;
+  }, [rejectedProjects]);
+
+  // Milestone lock: milestone is locked if its index > current project milestone
+  const isMilestoneLocked = useCallback((projectId: string, milestoneIndex: number): boolean => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return true;
+    return milestoneIndex > project.currentMilestone;
+  }, [projects]);
 
   // ─── Delete actions (cross-portal sync) ───────────────────────────
   const deleteProject = useCallback((projectId: string) => {
@@ -490,6 +558,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     financierUploads,
     projectMessages,
     sellProjects,
+    rejectedProjects,
     acceptDeal,
     toggleChecklist,
     uploadFile,
@@ -512,6 +581,10 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     addFinancierUpdate,
     addFinancierUpload,
     addProjectMessage,
+    rejectProject,
+    reassignProject,
+    getRejectedProjects,
+    isMilestoneLocked,
     deleteProject,
     deleteSellProject,
     addSellProject,

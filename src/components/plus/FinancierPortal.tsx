@@ -3,7 +3,7 @@ import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2 } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2, XCircle, RefreshCw } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -48,7 +48,7 @@ const RISK_FLAGS = [
 const FinancierPortal = () => {
   const store = useDataSource();
   const { projects } = store;
-  const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk' | 'pending'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk' | 'pending' | 'rejected'>('overview');
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [expandedMilestone, setExpandedMilestone] = useState<{ projectId: string; idx: number } | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -66,6 +66,8 @@ const FinancierPortal = () => {
   const [ticketPriority, setTicketPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('high');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   const totalPortfolioContract = projects.reduce((s, p) => s + p.contractValue, 0);
   const totalSystemCost = projects.reduce((s, p) => s + p.projectCost, 0);
@@ -265,8 +267,14 @@ const FinancierPortal = () => {
               </div>
             )}
 
-            {/* Flag button */}
-            <div className="flex justify-end">
+            {/* Flag & Reject buttons */}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowRejectModal(true)}
+                className="px-3 py-1.5 bg-[hsl(var(--yellow))]/10 border border-[hsl(var(--yellow))]/25 rounded-lg text-xs text-[hsl(var(--yellow))] font-bold hover:bg-[hsl(var(--yellow))]/20 transition-all active:scale-95 flex items-center gap-1.5"
+              >
+                <XCircle className="w-3.5 h-3.5" /> Reject Deal
+              </button>
               {!flaggedProjects.has(p.id) ? (
                 <button
                   onClick={() => {
@@ -285,6 +293,49 @@ const FinancierPortal = () => {
               )}
             </div>
           </div>
+
+          {/* Reject Deal Modal */}
+          {showRejectModal && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center" onClick={() => setShowRejectModal(false)}>
+              <div className="bg-card border-2 border-muted rounded-xl p-6 w-[440px] shadow-lg" onClick={e => e.stopPropagation()}>
+                <h3 className="text-base font-black text-card-foreground mb-2 flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-[hsl(var(--yellow))]" />
+                  Reject Deal — {p.customerName}
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">This deal will be moved to the rejected queue for reassignment to another financier or installer.</p>
+                <div>
+                  <label className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase block mb-1">Rejection Reason</label>
+                  <textarea
+                    value={rejectReason}
+                    onChange={e => setRejectReason(e.target.value)}
+                    placeholder="e.g., Credit risk too high, insufficient collateral, area not serviceable..."
+                    rows={3}
+                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-card-foreground outline-none focus:border-primary resize-none"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end mt-4">
+                  <button onClick={() => { setShowRejectModal(false); setRejectReason(''); }} className="px-4 py-2 bg-muted border border-border rounded-lg text-xs font-bold text-muted-foreground hover:text-card-foreground transition-all">
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (rejectReason.trim()) {
+                        store.rejectProject(p.id, rejectReason.trim(), 'ASP Capital', 'financier');
+                        toast.success(`${p.customerName} rejected — routed to reassignment queue`);
+                        setShowRejectModal(false);
+                        setRejectReason('');
+                        setSelectedProject(null);
+                      }
+                    }}
+                    disabled={!rejectReason.trim()}
+                    className="px-4 py-2 bg-[hsl(var(--yellow))]/15 border border-[hsl(var(--yellow))]/30 rounded-lg text-xs font-bold text-[hsl(var(--yellow))] hover:bg-[hsl(var(--yellow))]/25 transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-30"
+                  >
+                    <XCircle className="w-3.5 h-3.5" /> Confirm Rejection
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -318,19 +369,35 @@ const FinancierPortal = () => {
               ))}
             </div>
 
-            {/* Pending Fund Release Alert */}
-            {pendingReleases.length > 0 && (
+            {/* Auto-Fund Status Banner */}
+            <div className="bg-[hsl(var(--green))]/5 border border-[hsl(var(--green))]/20 rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-[hsl(var(--green))]" />
+                  <div>
+                    <div className="text-sm font-bold text-card-foreground">Auto-Fund Active</div>
+                    <div className="text-xs text-muted-foreground">Milestone funds release automatically after Backend Ops verification. Your role: approve incoming deals.</div>
+                  </div>
+                </div>
+                <button onClick={() => setActiveSection('pending')} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:bg-primary/90 transition-all">
+                  View Release Log →
+                </button>
+              </div>
+            </div>
+
+            {/* Rejected projects alert */}
+            {store.getRejectedProjects().length > 0 && (
               <div className="bg-[hsl(var(--yellow))]/5 border border-[hsl(var(--yellow))]/20 rounded-2xl p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 text-[hsl(var(--yellow))]" />
                     <div>
-                      <div className="text-sm font-bold text-card-foreground">{pendingReleases.length} fund release(s) awaiting approval</div>
-                      <div className="text-xs text-muted-foreground">Backend Ops has verified these milestones. Review and release funds.</div>
+                      <div className="text-sm font-bold text-card-foreground">{store.getRejectedProjects().length} rejected project(s) need reassignment</div>
+                      <div className="text-xs text-muted-foreground">Route these to a different installer or financier.</div>
                     </div>
                   </div>
-                  <button onClick={() => setActiveSection('pending')} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:bg-primary/90 transition-all">
-                    Review Now →
+                  <button onClick={() => setActiveSection('rejected')} className="px-4 py-2 bg-[hsl(var(--yellow))] text-black rounded-lg text-xs font-bold hover:opacity-90 transition-all">
+                    Manage →
                   </button>
                 </div>
               </div>
@@ -410,33 +477,43 @@ const FinancierPortal = () => {
           </div>
         );
 
-      case 'pending':
+      case 'pending': {
+        // Auto-fund log: show all released milestones across projects
+        const releasedMilestones = projects.flatMap(p => {
+          const ms = store.getMilestoneState(p.id);
+          return MILESTONE_SOPS.map((sop, i) => ({ project: p, milestoneIdx: i, sop, fundStatus: ms.fundStatus[i] || 'none' }))
+            .filter(item => item.fundStatus === 'released');
+        });
+
         return (
           <div className="space-y-4">
+            {/* Auto-fund explanation */}
+            <div className="bg-[hsl(var(--green))]/5 border border-[hsl(var(--green))]/20 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
+                <span className="text-xs font-bold text-card-foreground">Auto-Fund System Active</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Milestone funds are automatically released after Backend Ops verifies and approves each milestone. No manual fund approval needed.</p>
+            </div>
+
             <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-1 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Pending Fund Releases
+                <DollarSign className="w-4 h-4 text-[hsl(var(--green))]" /> Fund Release Log
               </h3>
-              <p className="text-xs text-muted-foreground mb-4">These milestones have been verified by Backend Ops. Review and approve fund release.</p>
+              <p className="text-xs text-muted-foreground mb-4">Milestones auto-funded after Ops verification.</p>
 
-              {pendingReleases.length === 0 && (
+              {releasedMilestones.length === 0 ? (
                 <div className="text-center py-8">
-                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto" />
-                  <p className="text-xs text-muted-foreground mt-2">No pending releases — all caught up!</p>
+                  <Clock className="w-8 h-8 text-muted-foreground mx-auto" />
+                  <p className="text-xs text-muted-foreground mt-2">No milestones released yet</p>
                 </div>
-              )}
-
-              {pendingReleases.map((item, i) => {
+              ) : releasedMilestones.map((item, i) => {
                 const amount = Math.round(item.project.projectCost * (item.sop.fundPercent / 100));
-                const ms = store.getMilestoneState(item.project.id);
-                const installerReview = ms.textEntries['m4-installer-review'];
-                const sowReport = ms.textEntries['m4-sow-report'];
-
                 return (
                   <div key={i} className="bg-muted rounded-xl border border-border p-4 mb-3">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[hsl(var(--yellow))]/15 flex items-center justify-center text-xs font-extrabold text-[hsl(var(--yellow))]">
+                        <div className="w-8 h-8 rounded-lg bg-[hsl(var(--green))]/15 flex items-center justify-center text-xs font-extrabold text-[hsl(var(--green))]">
                           M{item.milestoneIdx + 1}
                         </div>
                         <div>
@@ -445,73 +522,36 @@ const FinancierPortal = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-black text-[hsl(var(--yellow))]">${amount.toLocaleString()}</div>
-                        <div className="text-[10px] text-muted-foreground">{item.sop.fundPercent}% of system cost</div>
+                        <div className="text-lg font-black text-[hsl(var(--green))]">${amount.toLocaleString()}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.sop.fundPercent}% · Auto-released ✓</div>
                       </div>
-                    </div>
-
-                    {/* Show reports if M4 */}
-                    {item.milestoneIdx === 3 && installerReview && (
-                      <div className="mb-2 bg-card rounded-lg p-3 border border-border">
-                        <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Installer Review</div>
-                        <div className="text-xs text-card-foreground">{installerReview}</div>
-                      </div>
-                    )}
-                    {item.milestoneIdx === 3 && sowReport && (
-                      <div className="mb-2 bg-card rounded-lg p-3 border border-border">
-                        <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">SOW vs Cost Report</div>
-                        <div className="text-xs text-card-foreground">{sowReport}</div>
-                      </div>
-                    )}
-
-                    {/* Fund Amount Breakdown */}
-                    <div className="mb-3 bg-card/50 rounded-lg p-3 border border-border">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Release Amount</div>
-                          <div className="text-lg font-extrabold text-card-foreground">${amount.toLocaleString()}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">% of Contract</div>
-                          <div className="text-lg font-extrabold text-primary">{item.sop.fundPercent}%</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Contract Value</div>
-                          <div className="text-sm font-bold text-card-foreground">${item.project.projectCost.toLocaleString()}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2 justify-end">
-                      {item.fundStatus === 'pending' && (
-                        <button
-                          onClick={() => {
-                            store.approveFundRelease(item.project.id, item.milestoneIdx);
-                            toast.success(`M${item.milestoneIdx + 1} fund release approved — $${amount.toLocaleString()} (${item.sop.fundPercent}%)`);
-                          }}
-                          className="px-4 py-2 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-95 flex items-center gap-1.5"
-                        >
-                          <CheckCircle className="w-3.5 h-3.5" /> Approve ${amount.toLocaleString()} Release
-                        </button>
-                      )}
-                      {item.fundStatus === 'approved' && (
-                        <button
-                          onClick={() => {
-                            store.releaseFund(item.project.id, item.milestoneIdx);
-                            toast.success(`$${amount.toLocaleString()} released for M${item.milestoneIdx + 1}`);
-                          }}
-                          className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 flex items-center gap-1.5"
-                        >
-                          <DollarSign className="w-3.5 h-3.5" /> Release ${amount.toLocaleString()}
-                        </button>
-                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            {/* Historical fund releases */}
+            <div className="glass-panel overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-border text-sm font-extrabold text-card-foreground flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary" /> Release History
+              </div>
+              {FUNDS_RELEASE_HISTORY.slice(0, 6).map((h, i) => (
+                <div key={i} className="px-5 py-3 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setExpandedHistory(expandedHistory === i ? null : i)}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded bg-[hsl(var(--green))]/10 flex items-center justify-center text-[9px] font-extrabold text-[hsl(var(--green))]">✓</div>
+                    <div>
+                      <div className="text-xs font-bold text-card-foreground">{h.customer} — {h.milestone}</div>
+                      <div className="text-[10px] text-muted-foreground">{h.project} · {h.fundedDate} · {h.approvedBy}</div>
+                    </div>
+                  </div>
+                  <span className="text-sm font-black text-[hsl(var(--green))]">${h.amount.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
           </div>
         );
+      }
 
       case 'portfolio':
         return (
@@ -930,6 +970,72 @@ const FinancierPortal = () => {
           </div>
         );
 
+      case 'rejected': {
+        const rejected = store.getRejectedProjects();
+        return (
+          <div className="space-y-4">
+            <div className="glass-panel p-5">
+              <h3 className="text-sm font-extrabold text-card-foreground mb-1 flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-[hsl(var(--red))]" /> Rejected Projects
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">Deals rejected by an installer or financier. Reassign to route to a new party.</p>
+
+              {rejected.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto" />
+                  <p className="text-xs text-muted-foreground mt-2">No rejected projects — portfolio is clean</p>
+                </div>
+              ) : rejected.map((r) => (
+                <div key={r.project.id} className="bg-muted rounded-xl border border-border p-4 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-sm font-bold text-card-foreground">{r.project.customerName}</div>
+                      <div className="text-[10px] text-muted-foreground">{r.project.id} · {r.project.systemSize} · ${r.project.projectCost.toLocaleString()}</div>
+                    </div>
+                    <span className="px-2 py-0.5 bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] rounded text-[9px] font-bold uppercase">
+                      Rejected by {r.rejectedByRole}
+                    </span>
+                  </div>
+                  <div className="bg-card/50 border border-border rounded-lg p-3 mb-3">
+                    <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Rejection Reason</div>
+                    <div className="text-xs text-card-foreground">{r.reason}</div>
+                    <div className="text-[10px] text-muted-foreground mt-1">By {r.rejectedBy} · {new Date(r.rejectedAt).toLocaleDateString()}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-3 text-[10px]">
+                    <div className="bg-card/30 border border-border rounded-lg p-2">
+                      <span className="text-muted-foreground">Original Installer:</span> <span className="font-bold text-card-foreground">{r.originalInstaller}</span>
+                    </div>
+                    <div className="bg-card/30 border border-border rounded-lg p-2">
+                      <span className="text-muted-foreground">Original Financier:</span> <span className="font-bold text-card-foreground">{r.originalFinancier}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => {
+                        store.reassignProject(r.project.id, 'installer', 'SunPeak Installations');
+                        toast.success(`${r.project.customerName} reassigned to SunPeak Installations`);
+                      }}
+                      className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[10px] font-bold hover:bg-primary/20 transition-all flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reassign Installer
+                    </button>
+                    <button
+                      onClick={() => {
+                        store.reassignProject(r.project.id, 'financier', 'ASP Capital');
+                        toast.success(`${r.project.customerName} reassigned to ASP Capital`);
+                      }}
+                      className="px-3 py-1.5 bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] border border-[hsl(var(--green))]/20 rounded-lg text-[10px] font-bold hover:bg-[hsl(var(--green))]/20 transition-all flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reassign Financier
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
       default:
         return null;
     }
@@ -969,6 +1075,7 @@ const FinancierPortal = () => {
           { key: 'portfolio', label: 'Portfolio', icon: TrendingUp },
           { key: 'escrow', label: 'Escrow', icon: Lock },
           { key: 'risk', label: 'Risk Stack', icon: Shield },
+          { key: 'rejected', label: 'Rejected', icon: XCircle },
         ] as const).map(s => (
           <button
             key={s.key}

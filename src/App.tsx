@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useAuth, AuthProvider } from '@/contexts/AuthContext';
 import { DataSourceProvider } from '@/contexts/DataSourceProvider';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import CinematicBackground from '@/components/shared/CinematicBackground';
 import LandingPage from '@/pages/LandingPage';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -15,6 +15,21 @@ import CouncilDashboard from '@/pages/CouncilDashboard';
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+// Lazy-load Three.js background — clean fade-in, no skeleton
+const CinematicBackground = React.lazy(() => import('@/components/shared/CinematicBackground'));
+
+const FadeInCanvas = () => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 50); return () => clearTimeout(t); }, []);
+  return (
+    <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.8s ease-in-out' }}>
+      <Suspense fallback={null}>
+        <CinematicBackground />
+      </Suspense>
+    </div>
+  );
+};
 
 const queryClient = new QueryClient();
 
@@ -89,8 +104,8 @@ const App = () => (
         <AuthProvider>
           <DataSourceProvider>
             <TooltipProvider>
-              {/* Global 3D background — persists across ALL pages */}
-              <CinematicBackground />
+              {/* Global 3D background — lazy-loaded with fade-in */}
+              <FadeInCanvas />
               <Toaster />
               <Sonner />
               <AppContent />

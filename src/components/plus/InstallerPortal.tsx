@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2 } from 'lucide-react';
+import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2, XCircle, RefreshCw } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -37,7 +37,7 @@ const InstallerPortal = () => {
   const { user } = useAuth();
   const isDemo = user?.isDemo;
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones' | 'rejected'>('overview');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedPayment, setExpandedPayment] = useState<number | null>(null);
   const [expandedMilestoneAction, setExpandedMilestoneAction] = useState<{ projectId: string; idx: number } | null>(null);
@@ -54,6 +54,8 @@ const InstallerPortal = () => {
   const [ticketPriority, setTicketPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('high');
   const docInputRef = useRef<HTMLInputElement>(null);
   const photoUploadRef = useRef<HTMLInputElement>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   // For demo: show all projects (demo data is already scoped)
   // For production: RLS handles filtering — show all projects from the store
@@ -129,6 +131,12 @@ const InstallerPortal = () => {
                 className="px-3 py-1.5 bg-destructive/10 border border-destructive/25 rounded-lg text-[10px] font-bold text-destructive hover:bg-destructive/20 transition-all flex items-center gap-1"
               >
                 <Trash2 className="w-3 h-3" /> Delete
+              </button>
+              <button
+                onClick={() => setShowRejectModal(true)}
+                className="px-3 py-1.5 bg-[hsl(var(--yellow))]/10 border border-[hsl(var(--yellow))]/25 rounded-lg text-[10px] font-bold text-[hsl(var(--yellow))] hover:bg-[hsl(var(--yellow))]/20 transition-all flex items-center gap-1"
+              >
+                <Flag className="w-3 h-3" /> Reject
               </button>
               <button
                 onClick={() => setShowTicketModal(true)}
@@ -351,9 +359,20 @@ const InstallerPortal = () => {
                         </div>
                       </div>
 
-                      {isExpM && (
+                      {isExpM && (() => {
+                        const isLocked = i > p.currentMilestone;
+                        return (
                         <div className="border-t border-border px-4 py-3">
-                          <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                          {/* Soft-lock: future milestones show checklist read-only */}
+                          {isLocked && (
+                            <div className="flex items-center gap-2 px-3 py-2.5 mb-3 bg-muted/70 border border-border rounded-lg">
+                              <Shield className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <span className="text-[10px] text-muted-foreground font-bold">
+                                🔒 Locked — Complete M{p.currentMilestone + 1} ({MILESTONE_SOPS[p.currentMilestone]?.name}) and get Ops approval first
+                              </span>
+                            </div>
+                          )}
+                          <div className={`bg-muted/50 rounded-lg p-3 space-y-2 ${isLocked ? 'opacity-50 pointer-events-none select-none' : ''}`}>
                             <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">
                               Checklist — {sop.description}
                             </div>
@@ -395,7 +414,7 @@ const InstallerPortal = () => {
                                       <div className="mt-1.5 text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1"><Calendar className="w-3 h-3" /> {dateEntry}</div>
                                     )}
                                     {!isDone && !uploads.length && !textEntry && !dateEntry && (
-                                      <div className="mt-1 text-[10px] text-muted-foreground italic">Awaiting completion...</div>
+                                      <div className="mt-1 text-[10px] text-muted-foreground italic">{isLocked ? 'Locked' : 'Awaiting completion...'}</div>
                                     )}
                                   </div>
                                 </div>
@@ -439,7 +458,8 @@ const InstallerPortal = () => {
                             );
                           })()}
                         </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -648,6 +668,49 @@ const InstallerPortal = () => {
                   className="px-4 py-2 bg-[hsl(var(--red))]/15 border border-[hsl(var(--red))]/30 rounded-lg text-xs font-bold text-[hsl(var(--red))] hover:bg-[hsl(var(--red))]/25 transition-all active:scale-95 flex items-center gap-1.5"
                 >
                   <Send className="w-3.5 h-3.5" /> Submit Ticket
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reject Project Modal */}
+        {showRejectModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center" onClick={() => setShowRejectModal(false)}>
+            <div className="bg-card border-2 border-muted rounded-xl p-6 w-[440px] shadow-lg" onClick={e => e.stopPropagation()}>
+              <h3 className="text-base font-black text-card-foreground mb-2 flex items-center gap-2">
+                <Flag className="w-4 h-4 text-[hsl(var(--yellow))]" />
+                Reject Project
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">This project will be moved to the Rejected queue and can be routed to a different installer.</p>
+              <div>
+                <label className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase block mb-1">Reason for Rejection</label>
+                <textarea
+                  value={rejectReason}
+                  onChange={e => setRejectReason(e.target.value)}
+                  placeholder="e.g., Cannot service this area, scheduling conflict, roof issues..."
+                  rows={3}
+                  className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-card-foreground outline-none focus:border-primary resize-none"
+                />
+              </div>
+              <div className="flex gap-2 justify-end mt-4">
+                <button onClick={() => { setShowRejectModal(false); setRejectReason(''); }} className="px-4 py-2 bg-muted border border-border rounded-lg text-xs font-bold text-muted-foreground hover:text-card-foreground transition-all">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (rejectReason.trim()) {
+                      store.rejectProject(p.id, rejectReason.trim(), installerName, 'installer');
+                      toast.success(`${p.customerName} rejected — routed to reassignment queue`);
+                      setShowRejectModal(false);
+                      setRejectReason('');
+                      setSelectedProject(null);
+                    }
+                  }}
+                  disabled={!rejectReason.trim()}
+                  className="px-4 py-2 bg-[hsl(var(--yellow))]/15 border border-[hsl(var(--yellow))]/30 rounded-lg text-xs font-bold text-[hsl(var(--yellow))] hover:bg-[hsl(var(--yellow))]/25 transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-30"
+                >
+                  <Flag className="w-3.5 h-3.5" /> Confirm Rejection
                 </button>
               </div>
             </div>
@@ -1203,6 +1266,62 @@ const InstallerPortal = () => {
           </div>
         );
 
+      case 'rejected': {
+        const rejected = store.getRejectedProjects();
+        return (
+          <div className="space-y-4">
+            <div className="glass-panel p-5">
+              <h3 className="text-sm font-extrabold text-card-foreground mb-1 flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-[hsl(var(--red))]" /> Rejected Projects
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">Projects rejected by an installer or financier. Reassign to route to a new party.</p>
+
+              {rejected.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto" />
+                  <p className="text-xs text-muted-foreground mt-2">No rejected projects</p>
+                </div>
+              ) : rejected.map((r, idx) => (
+                <div key={r.project.id} className="bg-muted rounded-xl border border-border p-4 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-sm font-bold text-card-foreground">{r.project.customerName}</div>
+                      <div className="text-[10px] text-muted-foreground">{r.project.id} · {r.project.systemSize} · ${r.project.projectCost.toLocaleString()}</div>
+                    </div>
+                    <span className="px-2 py-0.5 bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] rounded text-[9px] font-bold uppercase">{r.rejectedByRole}</span>
+                  </div>
+                  <div className="bg-card/50 border border-border rounded-lg p-3 mb-3">
+                    <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Rejection Reason</div>
+                    <div className="text-xs text-card-foreground">{r.reason}</div>
+                    <div className="text-[10px] text-muted-foreground mt-1">By {r.rejectedBy} · {new Date(r.rejectedAt).toLocaleDateString()}</div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => {
+                        store.reassignProject(r.project.id, 'installer', 'SunPeak Installations');
+                        toast.success(`${r.project.customerName} reassigned to SunPeak Installations`);
+                      }}
+                      className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[10px] font-bold hover:bg-primary/20 transition-all flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reassign Installer
+                    </button>
+                    <button
+                      onClick={() => {
+                        store.reassignProject(r.project.id, 'financier', 'ASP Capital');
+                        toast.success(`${r.project.customerName} reassigned to ASP Capital`);
+                      }}
+                      className="px-3 py-1.5 bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] border border-[hsl(var(--green))]/20 rounded-lg text-[10px] font-bold hover:bg-[hsl(var(--green))]/20 transition-all flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reassign Financier
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
       default:
         return null;
     }
@@ -1243,6 +1362,7 @@ const InstallerPortal = () => {
           { key: 'projects', label: 'Projects', icon: Wrench },
           { key: 'payments', label: 'Payments', icon: DollarSign },
           { key: 'tickets', label: 'Tickets', icon: Flag },
+          { key: 'rejected', label: 'Rejected', icon: XCircle },
         ] as const).map(s => (
           <button
             key={s.key}
@@ -1257,6 +1377,9 @@ const InstallerPortal = () => {
             <s.icon className="w-3.5 h-3.5" /> {s.label}
             {s.key === 'milestones' && pendingActions > 0 && (
               <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold ${activeSection === s.key ? 'bg-white/20 text-white' : 'bg-[hsl(var(--yellow))] text-black'}`}>{pendingActions}</span>
+            )}
+            {s.key === 'rejected' && store.getRejectedProjects().filter(r => r.rejectedByRole === 'installer').length > 0 && (
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold ${activeSection === s.key ? 'bg-white/20 text-white' : 'bg-[hsl(var(--red))] text-white'}`}>{store.getRejectedProjects().filter(r => r.rejectedByRole === 'installer').length}</span>
             )}
           </button>
         ))}
