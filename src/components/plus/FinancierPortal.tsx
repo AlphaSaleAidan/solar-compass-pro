@@ -548,6 +548,30 @@ const FinancierPortal = () => {
       case 'portfolio':
         return (
           <div className="space-y-3">
+            {/* Portfolio Summary Header */}
+            <div className="glass-panel p-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {[
+                  { label: 'Total Projects', value: projects.length.toString(), color: 'text-primary' },
+                  { label: 'Portfolio Value', value: `$${Math.round(projects.reduce((s, p) => s + p.contractValue, 0) / 1000)}k`, color: 'text-primary' },
+                  { label: 'Capital Deployed', value: `$${Math.round(projects.reduce((s, p) => s + p.projectCost * (p.currentMilestone / Math.max(p.totalMilestones, 1)), 0) / 1000)}k`, color: 'text-[hsl(var(--green))]' },
+                  { label: 'Active', value: projects.filter(p => p.status === 'active').length.toString(), color: 'text-[hsl(var(--green))]' },
+                  { label: 'At Risk', value: projects.filter(p => p.status === 'delayed' || p.status === 'on_hold').length.toString(), color: 'text-[hsl(var(--yellow))]' },
+                ].map((s, i) => (
+                  <div key={i} className="text-center">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">{s.label}</div>
+                    <div className={`text-lg font-black ${s.color}`}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {projects.length === 0 && (
+              <div className="glass-panel p-8 text-center">
+                <BarChart3 className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-bold text-card-foreground mb-1">No Projects in Portfolio</p>
+                <p className="text-xs text-muted-foreground">Projects will appear here once they are created through the Sales portal and funded.</p>
+              </div>
+            )}
             {projects.map(p => {
               const isExpanded = expandedProject === p.id;
               const ms = store.getMilestoneState(p.id);

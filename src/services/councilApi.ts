@@ -479,12 +479,45 @@ export const CouncilAPI = {
     councilState.directives.unshift(directive);
     notify();
 
-    // Simulate each agent responding (staggered)
+    // Simulate each agent responding (staggered — appears like real thinking)
     for (const agent of councilState.agents) {
-      await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
+      // Vary delay to feel organic: 0.8-2.0s between agents
+      await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+
+      // Set agent status to 'reviewing' during thinking
+      agent.status = 'reviewing';
+      notify();
+
+      // Short "thinking" pause
+      await new Promise(r => setTimeout(r, 300 + Math.random() * 500));
 
       const response = generateDirectiveResponse(agent, text, directive.responses);
       directive.responses.push(response);
+
+      // Add new recommendations from directive response to agent's rec list
+      if (response.recommendations.length > 0) {
+        const existingTitles = new Set(agent.recommendations.map(r => r.title.toLowerCase()));
+        response.recommendations.forEach((recText, i) => {
+          if (!existingTitles.has(recText.toLowerCase())) {
+            agent.recommendations.unshift({
+              id: generateId(),
+              agentId: agent.id,
+              title: recText,
+              description: `Generated from directive: "${text.slice(0, 60)}..."`,
+              priority: i === 0 ? 'high' : 'medium',
+              portal: 'general',
+              type: 'suggestion',
+              status: 'pending',
+              votes: { agree: [], disagree: [], abstain: [] },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+          }
+        });
+      }
+
+      // Set agent back to active
+      agent.status = 'active';
       notify();
     }
 
@@ -667,6 +700,23 @@ function generateDirectiveResponse(agent: CouncilAgent, directiveText: string, p
   const lower = directiveText.toLowerCase();
   const analysis = getAgentAnalysis(agent.id);
 
+  // ── Topic classification ──────────────────────────────────────
+  // Classify the question to route to the right response template
+  const topics = {
+    installer: /install|milestone|m[1-7]|pto|permit|inspection|panel|roof|crew/i.test(lower),
+    financier: /financ|fund|escrow|portfolio|capital|release|payment|risk/i.test(lower),
+    sales: /sales|pipeline|sell|convert|lead|proposal|close|rep|commission/i.test(lower),
+    ops: /ops|operation|qc|review|approve|reject|compliance|sop|audit/i.test(lower),
+    council: /council|agent|recommend|review|score|finding/i.test(lower),
+    auth: /auth|login|role|permission|rbac|admin|access/i.test(lower),
+    performance: /performance|speed|load|slow|optimize|bundle|build/i.test(lower),
+    data: /data|mock|fake|real|connect|sync|supabase|database/i.test(lower),
+    design: /design|ui|ux|visual|animation|transition|color|theme|style|sleek/i.test(lower),
+    bug: /bug|error|crash|broken|fix|issue|problem|wrong/i.test(lower),
+    general: true,
+  };
+  const primaryTopic = Object.entries(topics).find(([_, v]) => v && _ !== 'general')?.[0] || 'general';
+
   // Gather relevant findings from this agent's manifest
   const relevantFindings = analysis?.findings.filter(f => {
     const haystack = `${f.title} ${f.councilClaim} ${f.remainingWork || ''} ${f.evidence.map(e => e.notes || '').join(' ')}`.toLowerCase();
@@ -687,125 +737,171 @@ function generateDirectiveResponse(agent: CouncilAgent, directiveText: string, p
   const fixedItems = analysis?.findings.filter(f => f.realStatus === 'fixed') || [];
   const score = analysis?.currentScore || 0;
 
+  // Generate a unique question hash to vary responses
+  const qHash = lower.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
+
+  // ── Topic-aware response templates ─────────────────────────
+  // Each agent has different things to say depending on what's being asked about
+  const topicInsights: Record<string, Record<string, { perspective: string; recs: string[] }>> = {
+    design: {
+      installer: { perspective: 'The installer portal UX needs work on the milestone progression flow. The M1-M7 timeline could use better visual progress states, and the checklist items need clearer upload/completion indicators.', recs: ['Redesign milestone progress indicators with step-by-step visual flow', 'Add drag-drop zones for document uploads'] },
+      financier: { perspective: 'The financier portal should feel like a financial dashboard — clean typography, data-dense tables with subtle color coding. The escrow and portfolio tabs need clearer data hierarchy.', recs: ['Add sparkline charts for fund release trends', 'Improve portfolio card density and scan-ability'] },
+      sales: { perspective: 'The sales pipeline cards look good but need more depth. Hover states should reveal key metrics. The conversion funnel should feel interactive and alive.', recs: ['Add pipeline card hover previews with key metrics', 'Design conversion funnel animation'] },
+      ops: { perspective: 'The operations portal needs visual priority indicators for QC reviews. Projects in different states should be immediately distinguishable at a glance.', recs: ['Add color-coded state badges to project rows', 'Design QC review dashboard with urgency indicators'] },
+      design: { perspective: 'Overall design language is cohesive. The glass-morphism works well but some areas lack contrast. Micro-interactions on buttons and cards would elevate the feel significantly.', recs: ['Add subtle scale/glow on button hovers across all portals', 'Improve contrast ratios on muted text elements'] },
+      performance: { perspective: 'Animations might be contributing to perceived slowness. We should audit framer-motion usage and ensure we\'re not re-rendering entire lists during transitions.', recs: ['Audit animation performance on lower-end devices', 'Use layout animations instead of full re-renders'] },
+      data: { perspective: 'When data loads, there should be skeleton states, not blank areas. Loading choreography makes the app feel premium.', recs: ['Add skeleton loading states for all data sections', 'Design loading choreography sequence'] },
+      bug: { perspective: 'Visual bugs often hide in edge states — empty lists, long text overflow, responsive breakpoints. These need systematic testing.', recs: ['Test all portals at mobile/tablet breakpoints', 'Add text truncation with tooltips for overflow'] },
+      auth: { perspective: 'The login experience sets first impressions. It should feel secure and premium — animated background, smooth transitions.', recs: ['Add subtle background animation to login page', 'Smooth transition from login to dashboard'] },
+      general: { perspective: 'The platform visual quality is strong overall. Areas for improvement: micro-interactions, loading states, and edge case styling.', recs: ['Polish hover and focus states across all interactive elements', 'Add empty state illustrations'] },
+    },
+    engineering: {
+      installer: { perspective: 'The installer portal loads all project data upfront. For scale, we need pagination or virtual scrolling. The milestone state updates should use optimistic UI with rollback.', recs: ['Add virtual scrolling for large project lists', 'Implement optimistic updates for milestone changes'] },
+      financier: { perspective: 'Fund release calculations are client-side. This should move to Supabase edge functions for audit compliance. Risk flag computation should be server-side too.', recs: ['Move fund calculations to Supabase edge functions', 'Add server-side risk assessment'] },
+      sales: { perspective: 'The sell project flow uses client-side validation only. We need Zod schemas wired to the actual form fields, plus server-side validation on insert.', recs: ['Wire Zod schemas to SellProjectCard form', 'Add server-side validation on project creation'] },
+      ops: { perspective: 'The state machine is in place but transitions aren\'t enforced at the database level. We need RLS policies and database triggers for compliance.', recs: ['Create Supabase RLS policies for role enforcement', 'Add database triggers for state transition validation'] },
+      performance: { perspective: 'The bundle is 1.5MB gzipped. We should code-split each portal, lazy-load Three.js, and tree-shake unused Lucide icons.', recs: ['Lazy-load portal components with React.lazy', 'Tree-shake Lucide icons and code-split Three.js'] },
+      data: { perspective: 'Currently using Supabase REST queries. We should add Realtime channels for live updates — when an installer completes a milestone, the ops and financier portals should update instantly.', recs: ['Implement Supabase Realtime channels for cross-portal sync', 'Add real-time notification push on state changes'] },
+      auth: { perspective: 'Auth is functional but roles are hardcoded. We need to load roles from the Supabase profiles table and apply RLS policies based on role.', recs: ['Load user role from Supabase profiles on login', 'Generate RLS migration for role-based access'] },
+      bug: { perspective: 'Error boundaries catch component crashes, but we need better error reporting. Unhandled promise rejections and network errors should show user-friendly messages.', recs: ['Add global error handler for network failures', 'Implement user-friendly error toast notifications'] },
+      general: { perspective: 'Architecture is solid for beta. Key gaps: Realtime sync, RLS policies, and code splitting. These are the three biggest technical debts.', recs: ['Implement Supabase Realtime for live sync', 'Add RLS policies and code-split portals'] },
+    },
+    qa: {
+      installer: { perspective: 'I\'d flag the milestone progression flow for regression testing. Key scenarios: completing all M1 checklist items, uploading files, marking milestones done in sequence vs. out of order.', recs: ['Test: complete M1-M7 in order with all checklist items', 'Test: attempt to skip milestone — verify guard blocks it'] },
+      financier: { perspective: 'The fund release flow needs edge case testing: releasing when balance is zero, double-clicking release button, releasing for a project that\'s been put on hold.', recs: ['Test: fund release with zero-balance edge case', 'Test: concurrent fund release attempts'] },
+      sales: { perspective: 'The sell project form needs validation testing: empty fields, negative numbers, extremely long customer names, special characters in addresses.', recs: ['Test: form submission with invalid/edge data', 'Test: duplicate project name handling'] },
+      ops: { perspective: 'QC review flow is critical. Test: approving a project then reverting, rejecting with notes, approving a project with missing checklist items.', recs: ['Test: QC approve → revert → re-approve flow', 'Test: rejection with mandatory notes'] },
+      data: { perspective: 'Data integrity is the top QA concern. All Supabase queries should handle null/undefined gracefully. Test with empty databases and populated databases.', recs: ['Test all portals with empty Supabase data', 'Test data display with null/missing fields'] },
+      bug: { perspective: 'Current open bugs are mostly edge cases. The highest risk items are around state transitions and data display when projects have incomplete data.', recs: ['Prioritize fixing state transition edge cases', 'Add null guards for all data display components'] },
+      general: { perspective: 'Core happy paths are solid. Risk areas: edge cases in milestone flow, fund releases, and data display with incomplete project records.', recs: ['Run full regression on M1-M7 lifecycle', 'Test all portals with newly created (sparse) projects'] },
+    },
+    operations: {
+      installer: { perspective: 'SOP compliance for installers requires every milestone have documented evidence before progression. Current implementation has the checklist but doesn\'t enforce all items before advancing.', recs: ['Enforce all checklist items required before milestone advance', 'Add document retention policy for uploaded evidence'] },
+      financier: { perspective: 'Fund release operations need dual-approval for amounts over thresholds. The current single-click release doesn\'t meet audit requirements for enterprise clients.', recs: ['Implement dual-approval for fund releases above threshold', 'Add fund release audit trail with timestamps'] },
+      sales: { perspective: 'Sales to operations handoff needs a formal QC gate. Currently a sold project enters ops immediately — we need mandatory QC review before it becomes active.', recs: ['Add mandatory QC gate between sales and operations', 'Create handoff checklist for sales-to-ops transition'] },
+      ops: { perspective: 'The operations portal is the compliance backbone. Audit trail is logging but there\'s no admin viewer yet. For beta, we need at minimum a read-only audit log viewer.', recs: ['Build audit log viewer for admin users', 'Add compliance dashboard with SOP adherence metrics'] },
+      auth: { perspective: 'Role-based access is essential for operations. Installers shouldn\'t see financier data, and regional managers need different permissions than divisional.', recs: ['Implement role hierarchy: Admin > VP > Regional > Divisional > Manager', 'Add permission gates to sensitive operations data'] },
+      general: { perspective: 'State machine and audit trail are live. Next operational priorities: notification routing, role-based permissions, and a compliance dashboard.', recs: ['Build notification routing for all stakeholders', 'Create SOP compliance dashboard for management'] },
+    },
+    strategy: {
+      installer: { perspective: 'The installer experience is a key differentiator. If installers prefer ASP over competitors\' portals, they become our evangelists. Make it so good they recommend us.', recs: ['Benchmark installer UX against competitor platforms', 'Add installer NPS tracking after milestone completion'] },
+      financier: { perspective: 'Financier trust is everything. The portfolio view should feel like Bloomberg Terminal — data-dense, real-time, authoritative. Risk flags should feel automated and intelligent.', recs: ['Design financier dashboard for institutional trust', 'Add automated risk scoring with transparent methodology'] },
+      sales: { perspective: 'The sales pipeline is revenue. Every friction point in the sell flow costs money. Optimize for speed — a rep should be able to create a project in under 2 minutes.', recs: ['Time the sell flow and reduce to under 2 minutes', 'Add quick-sell templates for common system configurations'] },
+      ops: { perspective: 'Operations efficiency is ASP\'s moat. If we can show 30% faster time-to-PTO compared to manual processes, that\'s the key selling metric.', recs: ['Track and display time-to-PTO metrics', 'Build ROI calculator showing ASP efficiency gains'] },
+      data: { perspective: 'Real data is the beta milestone. Every mock data point remaining undermines credibility with early users. Prioritize complete data connectivity.', recs: ['Audit and eliminate all remaining mock data', 'Ensure all metrics are computed from real Supabase data'] },
+      general: { perspective: 'The platform is feature-complete for beta. Strategic priorities: onboard real users, collect feedback, track usage metrics, and iterate based on data.', recs: ['Design customer onboarding flow for first 10 beta users', 'Build usage analytics to inform pricing decisions'] },
+    },
+  };
+
   // Build unique, opinionated response per agent role
   const agentResponders: Record<string, () => { text: string; recs: string[]; conf: number }> = {
     design: () => {
-      const fixedDesign = fixedItems.map(f => f.title).join(', ') || 'none yet';
-      const openDesign = openItems.map(f => f.title);
+      const insight = topicInsights.design[primaryTopic] || topicInsights.design.general;
       const hasMatches = allMatches.length > 0;
 
-      let text = `Aurora here. My visual audit scores us at ${score}/100.\n\n`;
-      if (hasMatches) {
-        text += `Regarding your question: I see ${allMatches.length} related finding(s).\n`;
-        allMatches.slice(0, 3).forEach(f => {
-          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
-          text += `\n${st} ${f.title} — ${f.evidence[0]?.notes || f.councilClaim}`;
-        });
-      } else {
-        text += `I don't have a direct finding for this, but here's my design perspective:`;
-      }
-      text += `\n\nBiggest visual gaps right now: ${openDesign.length > 0 ? openDesign.join(', ') : 'All major items resolved.'}`;
-      text += `\nRecently completed: ${fixedDesign}`;
-      text += `\n\nMy recommendation: ${openDesign.length > 0 ? `Prioritize ${openDesign[0]} — it's the most visible to users and affects first impressions.` : 'Focus on micro-interactions. The big pieces are done, but hover states, transitions, and loading sequences are what separate good from exceptional.'}`;
+      let text = `Aurora here. Visual quality score: ${score}/100.\n\n`;
 
-      const recs = openDesign.length > 0
-        ? openDesign.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30))).slice(0, 3)
-        : ['Polish micro-interactions across all portals', 'Add loading choreography for data fetches'];
-      return { text, recs, conf: hasMatches ? 0.91 : 0.78 };
+      // Topic-specific insight first
+      text += insight.perspective;
+
+      // Then relevant findings if any
+      if (hasMatches) {
+        text += `\n\nRelated findings from my code review:`;
+        allMatches.slice(0, 2).forEach(f => {
+          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
+          text += `\n${st} ${f.title}`;
+        });
+      }
+
+      // Unique recommendation based on question + topic
+      const contextRec = insight.recs[Math.abs(qHash) % insight.recs.length];
+      text += `\n\nMy top recommendation: ${contextRec}`;
+
+      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
+      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: hasMatches ? 0.91 : 0.82 };
     },
 
     engineering: () => {
+      const insight = topicInsights.engineering[primaryTopic] || topicInsights.engineering.general;
+
       let text = `Forge reporting. Engineering health: ${score}/100.\n\n`;
+      text += insight.perspective;
+
       if (allMatches.length > 0) {
-        text += `Found ${allMatches.length} relevant findings:\n`;
-        allMatches.slice(0, 3).forEach(f => {
-          const st = f.realStatus === 'fixed' ? '✓ Resolved' : f.realStatus === 'partial' ? '◐ In Progress' : '○ Open';
+        text += `\n\nCode analysis findings:`;
+        allMatches.slice(0, 2).forEach(f => {
+          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
           text += `\n[${st}] ${f.title}`;
           if (f.evidence[0]?.file) text += ` (${f.evidence[0].file})`;
-          if (f.remainingWork && f.realStatus !== 'fixed') text += `\n  → Next step: ${f.remainingWork}`;
+          if (f.remainingWork && f.realStatus !== 'fixed') text += `\n  → ${f.remainingWork}`;
         });
-      } else {
-        text += `No direct code findings for this query, but from an architecture perspective:`;
       }
 
-      const archGaps = openItems.map(f => f.title);
-      const partialWork = partialItems.map(f => `${f.title} (${f.remainingWork || 'in progress'})`);
-      if (archGaps.length > 0) text += `\n\nOpen architecture items: ${archGaps.join('; ')}`;
-      if (partialWork.length > 0) text += `\nPartially complete: ${partialWork.join('; ')}`;
+      text += `\n\nEngineering priority: ${insight.recs[0]}`;
 
-      text += `\n\nTechnical recommendation: ${archGaps.length > 0 ? `${archGaps[0]} is the highest-impact engineering task. It improves code quality and reduces future bug surface area.` : 'Core architecture is solid. Focus on Supabase RLS policies and Realtime channels for production readiness.'}`;
-
-      const recs = [...archGaps, ...partialItems.map(f => f.remainingWork || f.title)]
-        .filter(Boolean)
-        .filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)))
-        .slice(0, 3);
-      return { text, recs: recs.length > 0 ? recs : ['Optimize bundle splitting', 'Add error boundaries to all portal routes'], conf: allMatches.length > 0 ? 0.93 : 0.75 };
+      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
+      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: allMatches.length > 0 ? 0.93 : 0.80 };
     },
 
     qa: () => {
+      const insight = topicInsights.qa[primaryTopic] || topicInsights.qa.general;
+
       let text = `Sentinel here. QA confidence: ${score}/100.\n\n`;
+      text += insight.perspective;
+
       if (allMatches.length > 0) {
-        text += `I found ${allMatches.length} QA-relevant finding(s):\n`;
-        allMatches.slice(0, 3).forEach(f => {
-          const st = f.realStatus === 'fixed' ? '✓ Verified fix' : f.realStatus === 'council_wrong' ? '✗ Was not a bug' : f.realStatus === 'partial' ? '◐ Partially addressed' : '○ Still open';
+        text += `\n\nKnown issues in this area:`;
+        allMatches.slice(0, 2).forEach(f => {
+          const st = f.realStatus === 'fixed' ? '✓ Verified' : f.realStatus === 'partial' ? '◐ Partial' : '○ Open';
           text += `\n[${st}] ${f.title}`;
-          if (f.evidence[0]?.notes) text += ` — ${f.evidence[0].notes}`;
         });
-      } else {
-        text += `No specific QA findings match, but here's my risk assessment:`;
       }
 
       const bugCount = openItems.length;
-      const fixedBugs = fixedItems.length;
-      text += `\n\nBug status: ${fixedBugs} bugs fixed, ${bugCount} remain open.`;
-      text += `\nHighest risk: ${openItems.length > 0 ? openItems[0].title : 'No critical bugs remain. Edge cases are the focus now.'}`;
-      text += `\n\nQA recommendation: ${bugCount > 0 ? `Address "${openItems[0].title}" before next release — it affects user trust.` : 'All critical paths are clean. Recommend regression testing on milestone progression and fund release flows.'}`;
+      text += `\n\n${bugCount} open items remaining. ${insight.recs[Math.abs(qHash) % insight.recs.length]} should be the immediate focus.`;
 
-      const recs = openItems.map(f => f.title).filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30))).slice(0, 2);
-      return { text, recs: recs.length > 0 ? recs : ['Run regression on milestone M1-M7 flow', 'Test edge: empty project conversion'], conf: allMatches.length > 0 ? 0.90 : 0.72 };
+      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
+      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: allMatches.length > 0 ? 0.90 : 0.76 };
     },
 
     operations: () => {
+      const insight = topicInsights.operations[primaryTopic] || topicInsights.operations.general;
+
       let text = `Nexus here. Operational compliance: ${score}/100.\n\n`;
+      text += insight.perspective;
+
       if (allMatches.length > 0) {
-        text += `Relevant operational findings:\n`;
-        allMatches.slice(0, 3).forEach(f => {
+        text += `\n\nCompliance findings:`;
+        allMatches.slice(0, 2).forEach(f => {
           const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
           text += `\n${st} ${f.title}: ${f.councilClaim}`;
-          if (f.remainingWork && f.realStatus !== 'fixed') text += `\n  Action needed: ${f.remainingWork}`;
         });
-      } else {
-        text += `From an operations standpoint on your question:`;
       }
 
-      text += `\n\nSOP compliance status: State machine is live, audit trail is logging actions, milestone gates are enforced.`;
-      const opsGaps = [...openItems, ...partialItems];
-      if (opsGaps.length > 0) text += `\nGaps: ${opsGaps.map(f => f.title).join(', ')}`;
-      text += `\n\nOperational recommendation: ${opsGaps.length > 0 ? `Wire ${opsGaps[0].title} — this is needed for SOP compliance and audit readiness.` : 'Core operations are sound. Focus on notification routing so every stakeholder gets real-time updates on their projects.'}`;
+      text += `\n\nSOP status: State machine live, audit trail active. Next priority: ${insight.recs[0]}`;
 
-      const recs = opsGaps.map(f => f.remainingWork || f.title).filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30))).slice(0, 2);
-      return { text, recs: recs.length > 0 ? recs : ['Build persistent notification system', 'Add admin audit log viewer'], conf: allMatches.length > 0 ? 0.88 : 0.70 };
+      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
+      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: allMatches.length > 0 ? 0.88 : 0.74 };
     },
 
     strategy: () => {
+      const insight = topicInsights.strategy[primaryTopic] || topicInsights.strategy.general;
+
       let text = `Oracle here. Strategic assessment: ${score}/100.\n\n`;
+      text += insight.perspective;
+
       if (allMatches.length > 0) {
-        text += `Strategic relevance to your question:\n`;
-        allMatches.slice(0, 3).forEach(f => {
-          const st = f.realStatus === 'fixed' ? '✓ Addressed' : f.realStatus === 'partial' ? '◐ Underway' : '○ Opportunity';
-          text += `\n${st} ${f.title} — ${f.councilClaim}`;
+        text += `\n\nStrategic relevance:`;
+        allMatches.slice(0, 2).forEach(f => {
+          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
+          text += `\n${st} ${f.title}`;
         });
-      } else {
-        text += `From a strategic perspective:`;
       }
 
-      const opportunities = openItems.map(f => f.title);
-      text += `\n\nMarket positioning: ASP's moat is operational enforcement + risk mitigation. Every feature should reinforce this narrative.`;
-      text += `\nGrowth opportunities: ${opportunities.length > 0 ? opportunities.join(', ') : 'Core differentiators are built. Focus on customer onboarding and usage-based pricing.'}`;
-      text += `\n\nStrategic recommendation: ${opportunities.length > 0 ? `"${opportunities[0]}" has the highest ROI — it directly impacts customer acquisition and retention.` : 'Ship what we have. The platform is feature-complete for beta. Focus on getting real users, collecting feedback, and iterating.'}`;
+      text += `\n\nStrategic recommendation: ${insight.recs[Math.abs(qHash) % insight.recs.length]}`;
 
-      const recs = opportunities.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30))).slice(0, 2);
-      return { text, recs: recs.length > 0 ? recs : ['Prioritize customer onboarding wizard', 'Build usage analytics for pricing decisions'], conf: allMatches.length > 0 ? 0.89 : 0.73 };
+      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
+      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: allMatches.length > 0 ? 0.89 : 0.77 };
     },
   };
 

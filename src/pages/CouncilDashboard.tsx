@@ -627,10 +627,48 @@ const DirectivesTab = ({ directives, directiveText, setDirectiveText, onSubmit, 
   </div>
 );
 
+/* ─── Typewriter Text ─────────────────────────────────────────────── */
+
+const TypewriterText = ({ text, speed = 12, onComplete }: { text: string; speed?: number; onComplete?: () => void }) => {
+  const [displayed, setDisplayed] = useState('');
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    setDisplayed('');
+    setDone(false);
+    let i = 0;
+    const words = text.split(/(\s+)/); // split keeping whitespace
+    let built = '';
+    const tick = () => {
+      if (i < words.length) {
+        built += words[i];
+        setDisplayed(built);
+        i++;
+        setTimeout(tick, speed + Math.random() * speed * 0.6);
+      } else {
+        setDone(true);
+        onComplete?.();
+      }
+    };
+    const t = setTimeout(tick, 100);
+    return () => clearTimeout(t);
+  }, [text]);
+
+  return (
+    <span>
+      {displayed}
+      {!done && <span className="inline-block w-1.5 h-3.5 bg-primary/70 ml-0.5 animate-pulse rounded-sm" />}
+    </span>
+  );
+};
+
 /* ─── Directive Card ──────────────────────────────────────────────── */
 
 const DirectiveCard = ({ directive, agents }: { directive: Directive; agents: CouncilAgent[] }) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  // Track which agent responses have finished their typewriter animation
+  const [revealedAgents, setRevealedAgents] = useState<Set<string>>(new Set());
+  const isProcessing = directive.status === 'processing';
 
   return (
     <motion.div
@@ -639,8 +677,8 @@ const DirectiveCard = ({ directive, agents }: { directive: Directive; agents: Co
       className="glass-panel overflow-hidden"
     >
       <button onClick={() => setIsExpanded(!isExpanded)} className="w-full p-4 flex items-start gap-3 text-left hover:bg-white/[0.02] transition-colors">
-        <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0 mt-0.5">
-          <MessageSquare className="w-4 h-4 text-primary" />
+        <div className={`w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0 mt-0.5 ${isProcessing ? 'animate-pulse' : ''}`}>
+          {isProcessing ? <RefreshCw className="w-4 h-4 text-primary animate-spin" /> : <MessageSquare className="w-4 h-4 text-primary" />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -648,13 +686,22 @@ const DirectiveCard = ({ directive, agents }: { directive: Directive; agents: Co
             <span className="text-[10px] text-gray-500">{new Date(directive.createdAt).toLocaleString()}</span>
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
               directive.status === 'completed' ? 'bg-green-500/15 text-green-400' :
-              directive.status === 'processing' ? 'bg-blue-500/15 text-blue-400' : 'bg-gray-500/15 text-gray-400'
+              directive.status === 'processing' ? 'bg-blue-500/15 text-blue-400 animate-pulse' : 'bg-gray-500/15 text-gray-400'
             }`}>
-              {directive.status}
+              {directive.status === 'processing' ? 'Agents thinking...' : directive.status}
             </span>
           </div>
           <p className="text-sm text-white font-medium">{directive.text}</p>
-          <p className="text-[10px] text-gray-500 mt-1">{directive.responses.length} / {directive.assignedAgents.length} agents responded</p>
+          <p className="text-[10px] text-gray-500 mt-1">
+            {isProcessing ? (
+              <span className="text-blue-400">
+                {directive.responses.length === 0 ? 'Initializing council agents...' :
+                  `${directive.responses.length} of ${directive.assignedAgents.length} agents have responded...`}
+              </span>
+            ) : (
+              `${directive.responses.length} / ${directive.assignedAgents.length} agents responded`
+            )}
+          </p>
         </div>
         {isExpanded ? <ChevronDown className="w-4 h-4 text-gray-400 mt-1" /> : <ChevronRight className="w-4 h-4 text-gray-400 mt-1" />}
       </button>
@@ -668,16 +715,18 @@ const DirectiveCard = ({ directive, agents }: { directive: Directive; agents: Co
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-2 border-t border-white/[0.06] pt-3">
-              {directive.responses.map(res => {
+              {directive.responses.map((res, resIdx) => {
                 const agent = agents.find(a => a.id === res.agentId);
                 const Icon = AGENT_ICONS[res.agentId];
-                const agentColor = res.agentId === 'design' ? '#8b5cf6' : res.agentId === 'engineering' ? '#00d4c8' : res.agentId === 'qa' ? '#f59e0b' : res.agentId === 'operations' ? '#22c55e' : '#6366f1';
+                const agentColor = AGENT_COLORS[res.agentId] || '#888';
+                const isRevealed = revealedAgents.has(res.agentId);
 
                 return (
                   <motion.div
                     key={res.agentId}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: resIdx * 0.15 }}
                     className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]"
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -687,25 +736,62 @@ const DirectiveCard = ({ directive, agents }: { directive: Directive; agents: Co
                       <span className="text-xs font-bold text-white">{agent?.name || res.agentId}</span>
                       <span className="text-[9px] text-gray-500">{agent?.role}</span>
                       <div className="ml-auto flex items-center gap-1">
-                        <div className="h-1.5 w-12 rounded-full bg-white/[0.06] overflow-hidden">
-                          <div className="h-full rounded-full bg-primary/60" style={{ width: `${res.confidence * 100}%` }} />
-                        </div>
+                        <motion.div
+                          className="h-1.5 w-12 rounded-full bg-white/[0.06] overflow-hidden"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.5 }}
+                        >
+                          <motion.div
+                            className="h-full rounded-full"
+                            style={{ background: agentColor }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${res.confidence * 100}%` }}
+                            transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
+                          />
+                        </motion.div>
                         <span className="text-[9px] text-gray-500">{Math.round(res.confidence * 100)}%</span>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-300 leading-relaxed">{res.text}</p>
-                    {res.recommendations.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-line">
+                      <TypewriterText
+                        text={res.text}
+                        speed={8}
+                        onComplete={() => setRevealedAgents(prev => new Set([...prev, res.agentId]))}
+                      />
+                    </div>
+                    {isRevealed && res.recommendations.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-2 flex flex-wrap gap-1.5"
+                      >
                         {res.recommendations.map((r, i) => (
-                          <span key={i} className="text-[9px] px-2 py-0.5 rounded-full bg-white/[0.04] text-gray-400 border border-white/[0.06]">
+                          <motion.span
+                            key={i}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.15 }}
+                            className="text-[9px] px-2 py-0.5 rounded-full bg-white/[0.04] text-gray-400 border border-white/[0.06]"
+                          >
                             {r}
-                          </span>
+                          </motion.span>
                         ))}
-                      </div>
+                      </motion.div>
                     )}
                   </motion.div>
                 );
               })}
+
+              {/* Show waiting indicator for agents that haven't responded yet */}
+              {isProcessing && directive.responses.length < directive.assignedAgents.length && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-white/[0.01] border border-white/[0.03]">
+                  <RefreshCw className="w-3.5 h-3.5 text-blue-400 animate-spin" />
+                  <span className="text-[10px] text-blue-400">
+                    {agents.filter(a => !directive.responses.some(r => r.agentId === a.id)).map(a => a.name).join(', ')} analyzing...
+                  </span>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
