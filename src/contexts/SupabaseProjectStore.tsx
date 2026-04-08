@@ -653,8 +653,11 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
 
   // Sell project actions
   const addSellProject = useCallback(async (project: SellProject) => {
-    await supabase.from('sell_projects').insert({
-      created_by: user?.id || '',
+    // Actual columns: rep_id, organization_id, first_name, last_name, email, phone, address,
+    // high_bill, low_bill, all_electric, credit_status (NOT created_by)
+    const { error } = await supabase.from('sell_projects').insert({
+      rep_id: user?.id || null,
+      organization_id: ORG_ID_CONST,
       first_name: project.firstName,
       last_name: project.lastName,
       email: project.email,
@@ -665,6 +668,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       all_electric: project.allElectric,
       credit_status: project.creditStatus === 'credit_passed' ? 'credit_pass' : project.creditStatus === 'credit_fail' ? 'credit_fail' : 'pending',
     });
+    if (error) console.error('addSellProject failed:', error.message);
     if (user?.id) logAuditEvent({ action: 'sell_project_created', actorId: user.id, details: { firstName: project.firstName, lastName: project.lastName } });
   }, [user]);
 
