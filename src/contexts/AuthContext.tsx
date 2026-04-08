@@ -60,14 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(newSession);
       if (newSession?.user) {
         setUser(prev => {
-          if (prev?.isDemo) return prev;
-          // Only load if not already handled by getSession below
           if (!initialSessionHandled) return prev;
           loadProductionUser(newSession.user);
           return prev;
         });
       } else {
-        setUser(prev => prev?.isDemo ? prev : null);
+        setUser(null);
       }
       if (initialSessionHandled) setLoading(false);
     });
@@ -91,14 +89,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Run both queries in parallel for faster login
       const [rolesResult, profileResult] = await Promise.all([
-        supabase.rpc('get_user_roles', { _user_id: supabaseUser.id }),
-        supabase.from('profiles').select('*').eq('user_id', supabaseUser.id).single(),
+        supabase.rpc('get_user_roles', { user_uuid: supabaseUser.id }),
+        supabase.from('profiles').select('*').eq('id', supabaseUser.id).single(),
       ]);
 
-      const userRoles = (rolesResult.data || []) as UserRole[];
+      // Map DB roles (app_role enum) to UI UserRole
+      const dbRoles = (rolesResult.data || []) as string[];
+      const userRoles: UserRole[] = dbRoles.map(r =>
+        r === 'master_admin' ? 'master' : r as UserRole
+      );
       const profile = profileResult.data;
 
-      const isMaster = userRoles.includes('master');
+      const isMaster = userRoles.includes('master') || dbRoles.includes('master_admin');
       const primaryRole = isMaster ? 'master' : userRoles[0] || 'sales_rep';
       const platformAccess = isMaster
         ? ['sales_rep', 'backend_ops', 'installer', 'financier']
@@ -127,28 +129,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Demo login (test001 / ASP26!)
-  const login = async (username: string, password: string, role: UserRole, mode: PortalMode): Promise<boolean> => {
-    if (username === 'Test001' && password === 'ASP26!') {
-      setUser({
-        id: 'demo-user',
-        username,
-        email: 'test001@alphasale.co',
-        role,
-        roles: ['sales_rep', 'backend_ops', 'installer', 'financier', 'master'],
-        name: DEMO_USER_MAP[role],
-        portalMode: mode,
-        isDemo: true,
-        platformAccess: ['sales_rep', 'backend_ops', 'installer', 'financier'],
-        orgRole: 'master_admin', // Demo users get full access
-      });
-      setPortalMode(mode);
-      return true;
-    }
-    return false;
+  // Beta: demo login removed. Keeping function signature for compatibility.
+  const login = async (_username: string, _password: string, _role: UserRole, _mode: PortalMode): Promise<boolean> => {
+    return false; // Demo disabled — use loginWithEmail
   };
 
-  // Production Supabase login
+  // Supabase production login
   const loginWithEmail = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
@@ -158,14 +144,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    if (user?.isDemo) {
-      setUser(null);
-      setPortalMode('asp');
-    } else {
-      await supabase.auth.signOut();
-      setUser(null);
-      setPortalMode('asp');
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    setPortalMode('asp');
   };
 
   const switchRole = (role: UserRole) => {
