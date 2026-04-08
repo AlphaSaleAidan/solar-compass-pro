@@ -17,18 +17,21 @@ const ShopSpin = () => {
     { id: 2, amount: 50, redeemed: false, label: 'Cash Drop $50' },
   ]);
   const [demoInventory, setDemoInventory] = useState([
-    { id: 'd1', name: 'ASP Stealth Tee', icon: 'ST', value: 40, tier: 'normal', sellValue: 25 },
-    { id: 'd2', name: 'ASP Snapback', icon: 'SB', value: 25, tier: 'normal', sellValue: 15 },
-    { id: 'd3', name: 'AirPods Pro', icon: 'AP', value: 150, tier: 'golden', sellValue: 100 },
-    { id: 'd4', name: 'ASP Elite Hoodie', icon: 'EH', value: 65, tier: 'normal', sellValue: 40 },
+    { id: 'd1', name: 'ASP Stealth Tee', icon: 'ST', image: 'https://tinyurl.com/TsFrE5dTLs8YGTWuHT-img', value: 40, tier: 'normal', sellValue: 25 },
+    { id: 'd2', name: 'ASP Snapback', icon: 'SB', image: 'https://tinyurl.com/Rc4bmdpJRmP9RpAbcm-img', value: 25, tier: 'normal', sellValue: 15 },
+    { id: 'd3', name: 'AirPods Pro', icon: 'AP', image: 'https://tinyurl.com/ESUkvJWH7whz8k7buL-img', value: 150, tier: 'golden', sellValue: 100 },
+    { id: 'd4', name: 'ASP Elite Hoodie', icon: 'EH', image: 'https://tinyurl.com/cAS3ssjWRvtu2YW8Lq-img', value: 65, tier: 'normal', sellValue: 40 },
   ]);
 
   const tickets = isDemo ? demoTickets : gamification.state.tickets;
   const alphaCash = isDemo ? demoAlphaCash : gamification.state.alpha_cash;
   const cashBonuses = isDemo ? demoCashBonuses : [];
   const inventoryItems = isDemo
-    ? demoInventory.map(i => ({ id: i.id, item_name: i.name, item_value: i.value, icon: i.icon, tier: i.tier, sellValue: i.sellValue }))
-    : gamification.inventory.map(i => ({ id: i.id, item_name: i.item_name, item_value: i.item_value, icon: i.item_name?.slice(0, 2).toUpperCase() || '??', tier: 'normal', sellValue: Math.round(i.item_value * 0.6) }));
+    ? demoInventory.map(i => ({ id: i.id, item_name: i.name, item_value: i.value, icon: i.icon, image: i.image, tier: i.tier, sellValue: i.sellValue }))
+    : gamification.inventory.map(i => {
+        const match = SPIN_PRIZES.find(p => p.name === i.item_name);
+        return { id: i.id, item_name: i.item_name, item_value: i.item_value, icon: i.item_name?.slice(0, 2).toUpperCase() || '??', image: match?.image, tier: 'normal', sellValue: Math.round(i.item_value * 0.6) };
+      });
 
   const [selectedTier, setSelectedTier] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -172,6 +175,7 @@ const ShopSpin = () => {
           id: `d-${Date.now()}`,
           name: prize.name,
           icon: prize.icon,
+          image: prize.image,
           value: prize.value,
           tier: prize.tier,
           sellValue: Math.round(prize.value * 0.6),
@@ -264,10 +268,14 @@ const ShopSpin = () => {
           {trackItems.map((item, i) => (
             <div
               key={`${i}-${item.name}`}
-              className={`shrink-0 w-[100px] h-[100px] rounded-xl flex flex-col items-center justify-center gap-1.5 border-2 backdrop-blur-sm ${itemTierColors[item.tier]} hover:scale-105 transition-transform`}
+              className={`shrink-0 w-[100px] h-[100px] rounded-xl flex flex-col items-center justify-center gap-1 border-2 backdrop-blur-sm overflow-hidden ${itemTierColors[item.tier]} hover:scale-105 transition-transform`}
             >
-              <span className="text-3xl leading-none drop-shadow-lg">{item.icon}</span>
-              <span className="text-[10px] font-bold text-center leading-tight px-1.5 text-foreground">{item.name}</span>
+              {item.image ? (
+                <img src={item.image} alt={item.name} className="w-14 h-14 object-contain drop-shadow-lg" loading="lazy" />
+              ) : (
+                <span className="text-3xl leading-none drop-shadow-lg">{item.icon}</span>
+              )}
+              <span className="text-[9px] font-bold text-center leading-tight px-1.5 text-foreground">{item.name}</span>
             </div>
           ))}
         </div>
@@ -296,7 +304,11 @@ const ShopSpin = () => {
       {/* Win Banner */}
       {wonPrize && (
         <div className="mt-4 p-4 rounded-xl border-2 border-primary bg-gradient-to-r from-primary/10 to-primary/5 flex items-center gap-3.5 animate-scale-in">
-          <span className="text-5xl drop-shadow-lg">{wonPrize.icon}</span>
+          {wonPrize.image ? (
+            <img src={wonPrize.image} alt={wonPrize.name} className="w-16 h-16 object-contain drop-shadow-lg rounded-lg" />
+          ) : (
+            <span className="text-5xl drop-shadow-lg">{wonPrize.icon}</span>
+          )}
           <div>
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-5 h-5 text-asp-yellow" />
@@ -399,7 +411,11 @@ const ShopSpin = () => {
               {inventoryItems.map((item) => (
                 <div key={item.id} className="flex items-center justify-between py-2 px-3 bg-bg3 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-primary bg-primary/15 border border-primary/20 w-8 h-8 rounded-lg flex items-center justify-center">{item.icon || '??'}</span>
+                    {item.image ? (
+                      <img src={item.image} alt={item.item_name} className="w-8 h-8 object-contain rounded-lg bg-black/30 border border-primary/20" loading="lazy" />
+                    ) : (
+                      <span className="text-[10px] font-black text-primary bg-primary/15 border border-primary/20 w-8 h-8 rounded-lg flex items-center justify-center">{item.icon || '??'}</span>
+                    )}
                     <div>
                       <span className="text-xs font-bold text-foreground">{item.item_name}</span>
                       <div className="text-[9px] text-muted-foreground">~${item.item_value} value</div>
