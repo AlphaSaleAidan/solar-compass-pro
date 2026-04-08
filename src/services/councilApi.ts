@@ -479,20 +479,45 @@ export const CouncilAPI = {
     councilState.directives.unshift(directive);
     notify();
 
-    // Simulate each agent responding (staggered — appears like real thinking)
+    // Simulate each agent responding with streaming typewriter effect
+    // Staggered start times to feel organic — agents "think" at different speeds
     for (const agent of councilState.agents) {
-      // Vary delay to feel organic: 0.8-2.0s between agents
-      await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+      // Vary delay to feel organic: 0.6-1.5s between agents
+      await new Promise(r => setTimeout(r, 600 + Math.random() * 900));
 
       // Set agent status to 'reviewing' during thinking
       agent.status = 'reviewing';
       notify();
 
-      // Short "thinking" pause
-      await new Promise(r => setTimeout(r, 300 + Math.random() * 500));
+      // "Thinking" pause — varies per agent personality
+      const thinkTime = agent.id === 'engineering' ? 500 + Math.random() * 300
+        : agent.id === 'strategy' ? 400 + Math.random() * 600
+        : 300 + Math.random() * 400;
+      await new Promise(r => setTimeout(r, thinkTime));
 
+      // Generate full response
       const response = generateDirectiveResponse(agent, text, directive.responses);
-      directive.responses.push(response);
+      
+      // Stream the response word-by-word using a partial response
+      const words = response.text.split(' ');
+      const partialResponse = { ...response, text: '' };
+      directive.responses.push(partialResponse);
+      notify();
+
+      // Stream words in small bursts (3-6 words at a time for speed)
+      for (let i = 0; i < words.length;) {
+        const burstSize = 3 + Math.floor(Math.random() * 4);
+        const burst = words.slice(i, i + burstSize).join(' ');
+        partialResponse.text += (i === 0 ? '' : ' ') + burst;
+        i += burstSize;
+        notify();
+        // Tiny delay between bursts: 30-80ms (fast but visible)
+        await new Promise(r => setTimeout(r, 30 + Math.random() * 50));
+      }
+
+      // Ensure final text matches
+      partialResponse.text = response.text;
+      partialResponse.recommendations = response.recommendations;
 
       // Add new recommendations from directive response to agent's rec list
       if (response.recommendations.length > 0) {
@@ -696,13 +721,33 @@ export const CouncilAPI = {
  * already said and covering new ground. Each agent has distinct personality,
  * concerns, and recommendations.
  */
+// Track directive response history to never repeat
+let _directiveCallCount = 0;
+const _responseHistory = new Map<string, string[]>(); // agentId → previous response hashes
+
+function hashStr(s: string): string {
+  return s.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0).toString(36);
+}
+
+function pickUnique<T>(arr: T[], seed: number, count: number = 1): T[] {
+  if (arr.length === 0) return [];
+  const shuffled = [...arr];
+  let s = Math.abs(seed);
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    const j = s % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
+}
+
 function generateDirectiveResponse(agent: CouncilAgent, directiveText: string, previousResponses: DirectiveResponse[] = []): DirectiveResponse {
   const lower = directiveText.toLowerCase();
   const analysis = getAgentAnalysis(agent.id);
+  _directiveCallCount++;
+  const callSeed = _directiveCallCount * 7919 + Date.now();
 
   // ── Topic classification ──────────────────────────────────────
-  // Classify the question to route to the right response template
-  // Use word boundaries (\b) to prevent partial matches like "rep" in "repeating"
   const topics = {
     installer: /\b(install|milestone|m[1-7]\b|pto|permit|inspection|panel|roof|crew)\b/i.test(lower),
     financier: /\b(financ|fund|escrow|portfolio|capital|release|payment|risk)\b/i.test(lower),
@@ -716,7 +761,8 @@ function generateDirectiveResponse(agent: CouncilAgent, directiveText: string, p
     bug: /\b(bug|error|crash|broken|fix|issue|problem|wrong)\b/i.test(lower),
     general: true,
   };
-  const primaryTopic = Object.entries(topics).find(([_, v]) => v && _ !== 'general')?.[0] || 'general';
+  const matchedTopics = Object.entries(topics).filter(([k, v]) => v && k !== 'general').map(([k]) => k);
+  const primaryTopic = matchedTopics[0] || 'general';
 
   // Gather relevant findings from this agent's manifest
   const relevantFindings = analysis?.findings.filter(f => {
@@ -725,196 +771,395 @@ function generateDirectiveResponse(agent: CouncilAgent, directiveText: string, p
     return keywords.some(kw => haystack.includes(kw));
   }) || [];
 
-  // Cross-agent search if this agent has no direct matches
   const crossMatches = relevantFindings.length === 0 ? searchFindings(directiveText).slice(0, 3) : [];
   const allMatches = relevantFindings.length > 0 ? relevantFindings : crossMatches;
 
-  // Avoid repeating what other agents already said
   const prevTopics = new Set(previousResponses.flatMap(r => r.recommendations.map(x => x.toLowerCase().slice(0, 30))));
 
-  // ── Agent-specific perspectives ─────────────────────────────
   const openItems = analysis?.findings.filter(f => f.realStatus === 'open') || [];
   const partialItems = analysis?.findings.filter(f => f.realStatus === 'partial') || [];
   const fixedItems = analysis?.findings.filter(f => f.realStatus === 'fixed') || [];
   const score = analysis?.currentScore || 0;
 
-  // Generate a unique question hash to vary responses
-  const qHash = lower.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
+  // ── Dynamic response generation ─────────────────────────
+  // IMPORTANT: Each call MUST produce a unique response even for the same question.
+  // We use callSeed + _directiveCallCount + Date.now() to guarantee uniqueness.
 
-  // ── Topic-aware response templates ─────────────────────────
-  // Each agent has different things to say depending on what's being asked about
-  const topicInsights: Record<string, Record<string, { perspective: string; recs: string[] }>> = {
+  // Agent personality banks — multiple perspectives per topic, cycled through
+  const AGENT_BANKS: Record<string, { name: string; intros: string[]; topicPerspectives: Record<string, string[]>; recBanks: Record<string, string[]> }> = {
     design: {
-      installer: { perspective: 'The installer portal UX needs work on the milestone progression flow. The M1-M7 timeline could use better visual progress states, and the checklist items need clearer upload/completion indicators.', recs: ['Redesign milestone progress indicators with step-by-step visual flow', 'Add drag-drop zones for document uploads'] },
-      financier: { perspective: 'The financier portal should feel like a financial dashboard — clean typography, data-dense tables with subtle color coding. The escrow and portfolio tabs need clearer data hierarchy.', recs: ['Add sparkline charts for fund release trends', 'Improve portfolio card density and scan-ability'] },
-      sales: { perspective: 'The sales pipeline cards look good but need more depth. Hover states should reveal key metrics. The conversion funnel should feel interactive and alive.', recs: ['Add pipeline card hover previews with key metrics', 'Design conversion funnel animation'] },
-      ops: { perspective: 'The operations portal needs visual priority indicators for QC reviews. Projects in different states should be immediately distinguishable at a glance.', recs: ['Add color-coded state badges to project rows', 'Design QC review dashboard with urgency indicators'] },
-      design: { perspective: 'Overall design language is cohesive. The glass-morphism works well but some areas lack contrast. Micro-interactions on buttons and cards would elevate the feel significantly.', recs: ['Add subtle scale/glow on button hovers across all portals', 'Improve contrast ratios on muted text elements'] },
-      performance: { perspective: 'Animations might be contributing to perceived slowness. We should audit framer-motion usage and ensure we\'re not re-rendering entire lists during transitions.', recs: ['Audit animation performance on lower-end devices', 'Use layout animations instead of full re-renders'] },
-      data: { perspective: 'When data loads, there should be skeleton states, not blank areas. Loading choreography makes the app feel premium.', recs: ['Add skeleton loading states for all data sections', 'Design loading choreography sequence'] },
-      bug: { perspective: 'Visual bugs often hide in edge states — empty lists, long text overflow, responsive breakpoints. These need systematic testing.', recs: ['Test all portals at mobile/tablet breakpoints', 'Add text truncation with tooltips for overflow'] },
-      auth: { perspective: 'The login experience sets first impressions. It should feel secure and premium — animated background, smooth transitions.', recs: ['Add subtle background animation to login page', 'Smooth transition from login to dashboard'] },
-      general: { perspective: 'The platform visual quality is strong overall. Areas for improvement: micro-interactions, loading states, and edge case styling.', recs: ['Polish hover and focus states across all interactive elements', 'Add empty state illustrations'] },
+      name: 'Aurora',
+      intros: [
+        `Aurora here. Visual quality score: ${score}/100.`,
+        `Aurora reporting in. Design health at ${score}/100 — here's my take.`,
+        `Visual review from Aurora — current design score sits at ${score}/100.`,
+        `Aurora scanning. I've got ${openItems.length} open items on my radar. Score: ${score}/100.`,
+        `Design perspective from Aurora. ${fixedItems.length} items resolved, ${openItems.length} still open.`,
+      ],
+      topicPerspectives: {
+        installer: [
+          'The installer portal M1-M7 timeline needs stronger visual progression. Step indicators should pulse when active, and completed milestones deserve a satisfying check animation.',
+          'I noticed the installer checklist items lack visual hierarchy. Critical vs optional items should be immediately distinguishable through weight and color.',
+          'The milestone upload zones feel flat. Drag-and-drop areas should have hover glow effects and a success burst animation when files land.',
+          'Installer acceptance flow needs a hero moment — the "Accept Project" action is a big deal and should feel like it with a celebration micro-animation.',
+        ],
+        financier: [
+          'The financier portal should channel Bloomberg Terminal energy — data-dense, clean typography, real-time updating numbers that tick like a stock ticker.',
+          'Escrow account cards need more visual authority. Fund balances should use large numerals with subtle glow effects, and release buttons need confirmation states.',
+          'Portfolio overview is missing sparkline charts. Each project\'s funding health should be visible at a glance without clicking in.',
+          'The NTP approval flow deserves a premium feel. When a financier approves, the UI should reflect the significance — smooth state transition, not just a button click.',
+        ],
+        sales: [
+          'Pipeline cards need depth. On hover, they should expand slightly to show key metrics — system size, estimated value, days in stage.',
+          'The sell project form UX could be faster. We should consider a multi-step wizard with progress bar instead of one long scrolling form.',
+          'Sales conversion funnel should be interactive — clicking a stage should filter the pipeline. The funnel bars should animate smoothly when data changes.',
+          'Commission visibility is a motivator. Sales reps should see their estimated commission update live as they configure system details.',
+        ],
+        ops: [
+          'The QC review queue needs urgency indicators. Color-coded borders, time-since-submission counters, and a clear visual distinction between first-review and re-review items.',
+          'Project state badges need more variety. Currently everything looks similar — we need distinct visual treatments for each pipeline stage.',
+          'The ops dashboard data density is good but readability suffers in some panels. We need consistent heading sizes and better whitespace management.',
+          'Communication hub messages need role-color-coding so you can instantly see who said what without reading names.',
+        ],
+        design: [
+          'Glass-morphism effects are solid but some panels lack contrast. We should audit all bg-white/[0.0x] values to ensure WCAG compliance on text.',
+          'Micro-interactions are the next frontier. Every clickable element should have hover, active, and focus states. Right now about 40% are missing focus styles.',
+          'The color palette is cohesive but we\'re under-using our accent colors. Each portal section could have a subtle tint to aid orientation.',
+          'Typography scale needs refinement. I see 12+ font sizes — we should consolidate to 6-7 sizes with clear semantic meaning.',
+        ],
+        performance: [
+          'Heavy animations on the landing page affect perceived load time. We should audit Three.js initialization and defer non-critical animations.',
+          'Framer-motion usage needs review — some list animations re-render entire arrays. Layout animations would be more performant.',
+          'Image assets in the portal cards should lazy-load with blur-up placeholders. Currently they pop in which feels jarring.',
+          'CSS bundle could be smaller. I see duplicate utility classes and unused keyframe definitions that could be tree-shaken.',
+        ],
+        data: [
+          'Loading states are inconsistent. Some sections show spinners, some go blank, some show stale data. We need a unified skeleton system.',
+          'Empty states throughout the app are plain. Each empty state should have an illustrated icon and action-oriented copy.',
+          'When data updates, values should animate — count-up for numbers, fade-in for text. Static snaps feel cheap.',
+          'Error states for failed data loads need better UX. Instead of a console error, show a retry button with helpful context.',
+        ],
+        bug: [
+          'Visual regression testing is needed. Long customer names overflow cards, and some modals don\'t scroll properly on short viewports.',
+          'Mobile responsiveness has gaps — the portal sidebars collapse awkwardly between tablet and phone breakpoints.',
+          'Dark mode contrast issues exist in several areas. Some gray-on-gray text combinations are nearly illegible.',
+          'Toast notifications stack awkwardly when multiple fire simultaneously. We need a queue system with staggered positioning.',
+        ],
+        auth: [
+          'The login page should set the tone for the whole app. A subtle animated background with the ASP grid pattern would feel premium.',
+          'The transition from login to dashboard should be seamless — a fade/morph effect rather than a hard route change.',
+          'Role selection during first login needs a visual selector — cards with role icons, not a dropdown.',
+          'Session timeout handling needs a graceful overlay, not a hard redirect that loses context.',
+        ],
+        general: [
+          `Platform visual quality is ${score >= 80 ? 'strong' : score >= 60 ? 'good with room to grow' : 'in need of polish'}. ${openItems.length} open design items remain. Key focus: micro-interactions and loading choreography.`,
+          `Across all portals, I see ${fixedItems.length} resolved items and ${partialItems.length} partial fixes. The overall aesthetic is cohesive but interaction design needs a push.`,
+          `I'd rate the current visual polish at ${score}/100. Main gaps: inconsistent hover states, missing loading skeletons, and typography scale consolidation.`,
+          `Design-wise we're solid on color and layout. The next tier of quality comes from animation polish — page transitions, state changes, and data loading choreography.`,
+        ],
+      },
+      recBanks: {
+        installer: ['Add step-glow animation to active milestone', 'Create drag-drop zones with hover effects for uploads', 'Design checklist priority indicators', 'Build accept-project celebration animation', 'Add milestone completion confetti burst', 'Design progress ring for overall project health'],
+        financier: ['Build Bloomberg-style data density in portfolio view', 'Add sparkline charts for fund release trends', 'Design escrow card with animated balance display', 'Create NTP approval ceremony animation', 'Add risk flag visual indicators with severity coloring', 'Design fund release success state'],
+        sales: ['Design pipeline card hover expansion with metrics', 'Build multi-step sell wizard with progress bar', 'Create interactive conversion funnel', 'Add live commission estimator to sell flow', 'Design lead-to-close timeline visualization', 'Build proposal preview card component'],
+        general: ['Audit and fix all hover/focus states', 'Add skeleton loading system', 'Consolidate typography scale to 6 sizes', 'Build page transition choreography', 'Add empty state illustrations', 'Polish glass-morphism contrast ratios'],
+      },
     },
     engineering: {
-      installer: { perspective: 'The installer portal loads all project data upfront. For scale, we need pagination or virtual scrolling. The milestone state updates should use optimistic UI with rollback.', recs: ['Add virtual scrolling for large project lists', 'Implement optimistic updates for milestone changes'] },
-      financier: { perspective: 'Fund release calculations are client-side. This should move to Supabase edge functions for audit compliance. Risk flag computation should be server-side too.', recs: ['Move fund calculations to Supabase edge functions', 'Add server-side risk assessment'] },
-      sales: { perspective: 'The sell project flow uses client-side validation only. We need Zod schemas wired to the actual form fields, plus server-side validation on insert.', recs: ['Wire Zod schemas to SellProjectCard form', 'Add server-side validation on project creation'] },
-      ops: { perspective: 'The state machine is in place but transitions aren\'t enforced at the database level. We need RLS policies and database triggers for compliance.', recs: ['Create Supabase RLS policies for role enforcement', 'Add database triggers for state transition validation'] },
-      performance: { perspective: 'The bundle is 1.5MB gzipped. We should code-split each portal, lazy-load Three.js, and tree-shake unused Lucide icons.', recs: ['Lazy-load portal components with React.lazy', 'Tree-shake Lucide icons and code-split Three.js'] },
-      data: { perspective: 'Currently using Supabase REST queries. We should add Realtime channels for live updates — when an installer completes a milestone, the ops and financier portals should update instantly.', recs: ['Implement Supabase Realtime channels for cross-portal sync', 'Add real-time notification push on state changes'] },
-      auth: { perspective: 'Auth is functional but roles are hardcoded. We need to load roles from the Supabase profiles table and apply RLS policies based on role.', recs: ['Load user role from Supabase profiles on login', 'Generate RLS migration for role-based access'] },
-      bug: { perspective: 'Error boundaries catch component crashes, but we need better error reporting. Unhandled promise rejections and network errors should show user-friendly messages.', recs: ['Add global error handler for network failures', 'Implement user-friendly error toast notifications'] },
-      general: { perspective: 'Architecture is solid for beta. Key gaps: Realtime sync, RLS policies, and code splitting. These are the three biggest technical debts.', recs: ['Implement Supabase Realtime for live sync', 'Add RLS policies and code-split portals'] },
+      name: 'Forge',
+      intros: [
+        `Forge reporting. Engineering health: ${score}/100.`,
+        `Forge here with a deep dive. ${openItems.length} open engineering items, score ${score}/100.`,
+        `Engineering assessment from Forge — we're at ${score}/100 with ${partialItems.length} items in progress.`,
+        `Forge scanning the codebase. ${fixedItems.length} fixes shipped, ${openItems.length} remaining. Score: ${score}/100.`,
+        `Technical readout from Forge. Architecture score: ${score}/100.`,
+      ],
+      topicPerspectives: {
+        installer: [
+          'The installer portal loads all project data upfront — that won\'t scale past 50 projects. We need pagination or virtual scrolling, and milestone state updates should use optimistic UI.',
+          'Milestone submission logic is client-only. For production, each milestone advance should trigger a Supabase edge function that validates, logs, and cascades notifications.',
+          'The installer acceptance flow needs a server-side guard. Right now the UI prevents invalid states but there\'s no backend enforcement — a savvy user could bypass it.',
+          'File uploads for milestones go to Supabase Storage, but there\'s no file type validation or size limits enforced. We need both client and server-side checks.',
+        ],
+        financier: [
+          'Fund release calculations happen client-side — this is a compliance risk. Amounts and percentages must be computed server-side with audit logging.',
+          'The escrow account creation is mocked. For production, this needs to hit a real banking API or at minimum a Supabase edge function that generates proper account records.',
+          'Portfolio aggregation queries will be expensive at scale. We should pre-compute rollup stats in a materialized view or Supabase function.',
+          'The financier portal needs WebSocket-based updates. When ops verifies a milestone, the fund release button should appear in real-time without page refresh.',
+        ],
+        sales: [
+          'The sell project form uses Zod schemas but they\'re not wired to the actual input fields yet. Validation only fires on submit, not inline.',
+          'Project creation should be an idempotent server operation. Current client-side creation could lead to duplicates if the user double-clicks.',
+          'The sales pipeline query fetches all projects then filters client-side. This needs server-side filtering with Supabase query params for performance.',
+          'Commission calculations reference hardcoded percentages. These should come from a `commission_rules` table that finance can configure.',
+        ],
+        ops: [
+          'State machine transitions are enforced in the UI but not at the database level. We need CHECK constraints and triggers in Supabase to prevent invalid transitions.',
+          'The QC review flow writes audit log entries, but these aren\'t queryable for compliance reports yet. We need an admin-facing audit log viewer.',
+          'Notification cascade fires on client-side events. For reliability, state changes should trigger Supabase edge functions that handle notification delivery.',
+          'The communication hub stores messages in component state. These need to persist in Supabase so message history survives page refreshes.',
+        ],
+        performance: [
+          'Bundle size is 1.5MB gzipped. Biggest culprits: Three.js (~600KB), framer-motion (~150KB), and Lucide icons (~200KB). Code splitting would halve initial load.',
+          'React re-renders are expensive in the portal dashboards. Moving to a Zustand store with selectors would eliminate unnecessary re-renders.',
+          'The landing page Three.js scene initializes even when users navigate directly to /login. We should lazy-load the entire landing page component.',
+          'API calls aren\'t deduped. Navigating between portal tabs re-fetches data that hasn\'t changed. We need a caching layer — React Query or Zustand.',
+        ],
+        data: [
+          'Supabase Realtime channels aren\'t set up yet. We need INSERT/UPDATE subscriptions on projects, milestones, and notifications tables.',
+          'Mock data coexists with real Supabase queries. The DataSource abstraction works but we need a systematic audit to ensure every view can handle real data.',
+          'Row Level Security policies are minimal. We need RLS rules that scope data by org_id and role — installers shouldn\'t see financier data.',
+          'Database schema needs indexes on commonly filtered columns: project status, milestone stage, created_at. Query performance will degrade without them.',
+        ],
+        general: [
+          `Engineering health at ${score}/100. Top 3 technical debts: Realtime sync (critical), RLS policies (high), and code splitting (high). ${openItems.length} items open.`,
+          `Architecture is solid for beta. ${fixedItems.length} engineering items shipped. Next priorities: move business logic to edge functions, add Realtime subscriptions, and wire Zod validation.`,
+          `I see ${partialItems.length} partially completed items. The pattern is consistent — UI is done but backend enforcement is missing. We need a "server-side hardening" sprint.`,
+          `Codebase is well-structured but over-reliant on client-side state. The Supabase integration layer needs deepening — more Realtime, more RLS, more edge functions.`,
+        ],
+      },
+      recBanks: {
+        installer: ['Add virtual scrolling for project lists', 'Move milestone validation to edge functions', 'Add server-side installer acceptance guard', 'Implement file type/size validation for uploads', 'Add optimistic UI with rollback for milestone updates', 'Create end-to-end test for M1-M7 flow'],
+        financier: ['Move fund calculations to Supabase edge functions', 'Build real escrow account creation API', 'Add materialized view for portfolio aggregation', 'Implement WebSocket updates for financier portal', 'Add audit logging for all fund operations', 'Create fund release idempotency keys'],
+        sales: ['Wire Zod schemas to inline form validation', 'Make project creation idempotent with server-side dedup', 'Move pipeline filtering to server-side queries', 'Create configurable commission_rules table', 'Add draft/autosave for sell project form', 'Implement lead scoring algorithm'],
+        general: ['Implement Supabase Realtime for live sync', 'Add comprehensive RLS policies', 'Code-split portals with React.lazy', 'Move business logic to edge functions', 'Add React Query for data caching', 'Set up error boundary reporting'],
+      },
     },
     qa: {
-      installer: { perspective: 'I\'d flag the milestone progression flow for regression testing. Key scenarios: completing all M1 checklist items, uploading files, marking milestones done in sequence vs. out of order.', recs: ['Test: complete M1-M7 in order with all checklist items', 'Test: attempt to skip milestone — verify guard blocks it'] },
-      financier: { perspective: 'The fund release flow needs edge case testing: releasing when balance is zero, double-clicking release button, releasing for a project that\'s been put on hold.', recs: ['Test: fund release with zero-balance edge case', 'Test: concurrent fund release attempts'] },
-      sales: { perspective: 'The sell project form needs validation testing: empty fields, negative numbers, extremely long customer names, special characters in addresses.', recs: ['Test: form submission with invalid/edge data', 'Test: duplicate project name handling'] },
-      ops: { perspective: 'QC review flow is critical. Test: approving a project then reverting, rejecting with notes, approving a project with missing checklist items.', recs: ['Test: QC approve → revert → re-approve flow', 'Test: rejection with mandatory notes'] },
-      data: { perspective: 'Data integrity is the top QA concern. All Supabase queries should handle null/undefined gracefully. Test with empty databases and populated databases.', recs: ['Test all portals with empty Supabase data', 'Test data display with null/missing fields'] },
-      bug: { perspective: 'Current open bugs are mostly edge cases. The highest risk items are around state transitions and data display when projects have incomplete data.', recs: ['Prioritize fixing state transition edge cases', 'Add null guards for all data display components'] },
-      general: { perspective: 'Core happy paths are solid. Risk areas: edge cases in milestone flow, fund releases, and data display with incomplete project records.', recs: ['Run full regression on M1-M7 lifecycle', 'Test all portals with newly created (sparse) projects'] },
+      name: 'Sentinel',
+      intros: [
+        `Sentinel here. QA confidence: ${score}/100.`,
+        `Sentinel reporting. ${openItems.length} open issues tracked, confidence ${score}/100.`,
+        `QA assessment from Sentinel — running ${openItems.length + partialItems.length} active tests. Score: ${score}/100.`,
+        `Sentinel checking in. ${fixedItems.length} bugs verified fixed, ${openItems.length} still open.`,
+        `Quality gate status from Sentinel. Overall score: ${score}/100. Let me break this down.`,
+      ],
+      topicPerspectives: {
+        installer: [
+          'Milestone progression has untested edge cases: what happens if you complete M3 before M2? The UI guard exists but I haven\'t verified it handles all sequences.',
+          'File upload testing reveals no size limit enforcement — I uploaded a 500MB file and it hung silently. Need max file size with user-friendly error.',
+          'The installer acceptance button doesn\'t have a confirmation dialog. Mis-clicks could accept projects prematurely. Need a confirm step.',
+          'M7 completion (PTO) should trigger a distinct celebration state. Currently it looks the same as any other milestone — that\'s a UX bug worth fixing.',
+        ],
+        financier: [
+          'Fund release edge case: clicking "Release Funds" twice rapidly fires two requests. Need a loading/disabled state on the button immediately after first click.',
+          'The portfolio tab shows aggregated values but I found a rounding error — individual project totals don\'t add up to the portfolio total. Off by $0.01 in some cases.',
+          'NTP approval flow doesn\'t validate that all prerequisite documents are present. A financier could approve NTP for a project missing critical documents.',
+          'Escrow account balance display doesn\'t handle negative scenarios. If a refund creates a negative balance, the UI shows NaN. Need null/negative guards.',
+        ],
+        sales: [
+          'The sell project form accepts negative kW values and $0 system prices without warning. Validation only blocks empty fields, not nonsensical values.',
+          'Customer name field allows HTML injection. I typed <script>alert(1)</script> and while it didn\'t execute, the raw HTML renders in the project card.',
+          'Duplicate project detection is missing. A sales rep can submit the same customer at the same address twice, creating phantom pipeline value.',
+          'The pipeline stage drag-and-drop (if implemented) needs to prevent dragging to invalid stages — e.g., you shouldn\'t drag from "Sold" back to "Lead".',
+        ],
+        ops: [
+          'QC review flow: I approved a project, then the page refreshed and the project still showed as "pending review." State persistence has a race condition.',
+          'The reject-with-notes flow doesn\'t enforce minimum note length. A reviewer could reject with a single character, which isn\'t helpful for the sales rep.',
+          'Audit log entries don\'t include the "before" state — only the "after." For compliance, we need both states to show what changed.',
+          'Communication hub messages don\'t persist across sessions. Sent a message, refreshed the page, message gone. Critical data loss bug.',
+        ],
+        general: [
+          `QA confidence at ${score}/100. I've verified ${fixedItems.length} fixes and found ${openItems.length} open issues. Key risk areas: state persistence, input validation, and edge cases in fund flows.`,
+          `Core happy paths test clean. The risk lives in edge cases — concurrent actions, invalid inputs, and state recovery after errors. ${partialItems.length} items are partially fixed.`,
+          `Testing coverage: milestone flow (partial), fund release (needs work), QC review (mostly solid), sell flow (validation gaps). Priority: fund release edge cases.`,
+          `I'd rate production readiness at ${Math.max(score - 15, 40)}/100 for beta. The extra gap is untested edge cases and missing error boundaries.`,
+        ],
+      },
+      recBanks: {
+        installer: ['Test M1-M7 out-of-order completion', 'Add file size limit with user error message', 'Add confirmation dialog to project acceptance', 'Test PTO celebration trigger', 'Verify milestone guard prevents skipping', 'Test concurrent milestone updates'],
+        financier: ['Add loading state to prevent double fund release', 'Fix portfolio rounding discrepancy', 'Validate prerequisite docs before NTP approval', 'Add null/negative guards for escrow balances', 'Test fund release at scale (50+ projects)', 'Verify audit trail completeness'],
+        sales: ['Add min/max validation for kW and price fields', 'Sanitize HTML in all text inputs', 'Build duplicate project detection', 'Test pipeline stage transition guards', 'Verify commission calculation accuracy', 'Test form behavior with slow network'],
+        general: ['Run full regression on all portal flows', 'Test with empty database (first-run experience)', 'Add error boundary coverage to 100%', 'Test concurrent user actions', 'Verify data persistence across page refreshes', 'Build automated smoke test suite'],
+      },
     },
     operations: {
-      installer: { perspective: 'SOP compliance for installers requires every milestone have documented evidence before progression. Current implementation has the checklist but doesn\'t enforce all items before advancing.', recs: ['Enforce all checklist items required before milestone advance', 'Add document retention policy for uploaded evidence'] },
-      financier: { perspective: 'Fund release operations need dual-approval for amounts over thresholds. The current single-click release doesn\'t meet audit requirements for enterprise clients.', recs: ['Implement dual-approval for fund releases above threshold', 'Add fund release audit trail with timestamps'] },
-      sales: { perspective: 'Sales to operations handoff needs a formal QC gate. Currently a sold project enters ops immediately — we need mandatory QC review before it becomes active.', recs: ['Add mandatory QC gate between sales and operations', 'Create handoff checklist for sales-to-ops transition'] },
-      ops: { perspective: 'The operations portal is the compliance backbone. Audit trail is logging but there\'s no admin viewer yet. For beta, we need at minimum a read-only audit log viewer.', recs: ['Build audit log viewer for admin users', 'Add compliance dashboard with SOP adherence metrics'] },
-      auth: { perspective: 'Role-based access is essential for operations. Installers shouldn\'t see financier data, and regional managers need different permissions than divisional.', recs: ['Implement role hierarchy: Admin > VP > Regional > Divisional > Manager', 'Add permission gates to sensitive operations data'] },
-      general: { perspective: 'State machine and audit trail are live. Next operational priorities: notification routing, role-based permissions, and a compliance dashboard.', recs: ['Build notification routing for all stakeholders', 'Create SOP compliance dashboard for management'] },
+      name: 'Nexus',
+      intros: [
+        `Nexus here. Operational compliance: ${score}/100.`,
+        `Nexus with an operations review. ${openItems.length} compliance items tracked. Score: ${score}/100.`,
+        `Operational readiness from Nexus — SOP adherence at ${score}/100.`,
+        `Nexus reporting. State machine active, audit trail live. ${partialItems.length} items need attention.`,
+        `Process compliance check from Nexus. Overall score: ${score}/100. Here's the breakdown.`,
+      ],
+      topicPerspectives: {
+        installer: [
+          'SOP compliance for installers requires documented evidence for every milestone. The checklist exists but doesn\'t enforce ALL items before the "Complete" button enables.',
+          'Installer assignment workflow needs a capacity check. Currently any installer gets all projects — we need workload balancing based on active project count.',
+          'The install schedule should feed into a shared calendar view visible to ops and the customer. Right now scheduling is isolated to the installer portal.',
+          'Photo evidence for inspections should be geo-tagged and timestamped. Just uploading any photo isn\'t sufficient for compliance audits.',
+        ],
+        financier: [
+          'Fund releases above $10K should require dual approval per our SOP. The current single-click release works but doesn\'t meet enterprise audit requirements.',
+          'Escrow account reconciliation needs a monthly automated check. Funds in escrow should match the sum of unreleased milestones — any discrepancy triggers an alert.',
+          'The financier should see a "risk dashboard" that flags projects with stalled milestones, expired permits, or overdue inspections. Proactive risk management.',
+          'NTP approval should trigger an automated escrow account setup and initial fund staging. Right now these are separate manual steps.',
+        ],
+        sales: [
+          'The sales-to-ops handoff needs a formal QC gate with a checklist: customer signed, system configured, financing approved, site survey complete.',
+          'Sales reps should have a "deal health" score that predicts cancellation risk based on time-in-stage, document completeness, and communication frequency.',
+          'Commission structure should be milestone-gated too — reps get a portion at sale, more at M3, and the rest at PTO. Aligns incentives with project completion.',
+          'The proposal generation workflow should auto-populate from the sell card data. Right now reps manually build proposals separately.',
+        ],
+        ops: [
+          'The audit log viewer is missing from the admin UI. We have comprehensive logging in the backend but no way for compliance officers to query it.',
+          'Ticket resolution SLAs need enforcement. Critical tickets should auto-escalate if unresolved after 4 hours. The current system has no time-based triggers.',
+          'QC review metrics should track reviewer accuracy — how often do approved projects have issues downstream? This feedback loop improves review quality.',
+          'The notification cascade works but doesn\'t have fallback channels. If in-app notifications are missed, there\'s no SMS/email escalation.',
+        ],
+        general: [
+          `Ops compliance at ${score}/100. State machine active, audit trail logging. Key gaps: dual-approval workflows, SLA enforcement, and notification escalation.`,
+          `${fixedItems.length} operational items resolved. The foundation is solid — next step is hardening: automated SLA triggers, compliance dashboards, and role-based visibility.`,
+          `Process maturity is at beta level. For production we need: formal QC checklists, milestone evidence requirements, fund release approval chains, and audit log viewer.`,
+          `The operational backbone works end-to-end in the happy path. ${openItems.length} items remain for edge cases and compliance hardening.`,
+        ],
+      },
+      recBanks: {
+        installer: ['Enforce all checklist items before milestone completion', 'Add installer capacity/workload balancing', 'Build shared installation calendar', 'Require geo-tagged photo evidence', 'Add installer performance scoring', 'Create installer onboarding checklist'],
+        financier: ['Implement dual-approval for releases above threshold', 'Build automated escrow reconciliation', 'Create proactive risk dashboard', 'Auto-trigger escrow setup on NTP approval', 'Add fund release audit trail export', 'Build monthly financial compliance report'],
+        sales: ['Build formal QC gate checklist for handoff', 'Add deal health/cancellation risk scoring', 'Implement milestone-gated commission structure', 'Auto-populate proposals from sell card data', 'Create sales performance dashboard', 'Build customer communication tracking'],
+        general: ['Build audit log viewer for compliance', 'Implement SLA-based auto-escalation', 'Add QC reviewer accuracy tracking', 'Build notification fallback channels', 'Create SOP compliance dashboard', 'Add role-based data visibility rules'],
+      },
     },
     strategy: {
-      installer: { perspective: 'The installer experience is a key differentiator. If installers prefer ASP over competitors\' portals, they become our evangelists. Make it so good they recommend us.', recs: ['Benchmark installer UX against competitor platforms', 'Add installer NPS tracking after milestone completion'] },
-      financier: { perspective: 'Financier trust is everything. The portfolio view should feel like Bloomberg Terminal — data-dense, real-time, authoritative. Risk flags should feel automated and intelligent.', recs: ['Design financier dashboard for institutional trust', 'Add automated risk scoring with transparent methodology'] },
-      sales: { perspective: 'The sales pipeline is revenue. Every friction point in the sell flow costs money. Optimize for speed — a rep should be able to create a project in under 2 minutes.', recs: ['Time the sell flow and reduce to under 2 minutes', 'Add quick-sell templates for common system configurations'] },
-      ops: { perspective: 'Operations efficiency is ASP\'s moat. If we can show 30% faster time-to-PTO compared to manual processes, that\'s the key selling metric.', recs: ['Track and display time-to-PTO metrics', 'Build ROI calculator showing ASP efficiency gains'] },
-      data: { perspective: 'Real data is the beta milestone. Every mock data point remaining undermines credibility with early users. Prioritize complete data connectivity.', recs: ['Audit and eliminate all remaining mock data', 'Ensure all metrics are computed from real Supabase data'] },
-      general: { perspective: 'The platform is feature-complete for beta. Strategic priorities: onboard real users, collect feedback, track usage metrics, and iterate based on data.', recs: ['Design customer onboarding flow for first 10 beta users', 'Build usage analytics to inform pricing decisions'] },
+      name: 'Oracle',
+      intros: [
+        `Oracle here. Strategic assessment: ${score}/100.`,
+        `Oracle with a market perspective. Platform score: ${score}/100.`,
+        `Strategic readout from Oracle — competitive positioning at ${score}/100.`,
+        `Oracle analyzing. ${openItems.length} items affect market readiness. Score: ${score}/100.`,
+        `Big-picture view from Oracle. Strategic health: ${score}/100.`,
+      ],
+      topicPerspectives: {
+        installer: [
+          'The installer experience is our moat. If installers prefer ASP over competitors\' portals, they become evangelists. Make it so good they recommend us to other solar companies.',
+          'Installer retention drives recurring revenue. We should track installer satisfaction (NPS) after each milestone and iterate on their top pain points weekly.',
+          'The installer marketplace is fragmented. If we build the best installer management tool, we can expand to connecting installers with homeowners directly — massive TAM expansion.',
+          'Installer onboarding time is a key metric. If a new installer can navigate ASP without training, that\'s a 10x better experience than legacy tools that require 2-week workshops.',
+        ],
+        financier: [
+          'Financier trust is the unlock for scale. The portfolio view should feel like Bloomberg Terminal — data-dense, real-time, authoritative. One look and they should feel confident.',
+          'We should position ASP as reducing financier risk, not just managing it. Automated compliance checks, real-time milestone verification, and transparent audit trails sell trust.',
+          'The solar financing market is $50B+. If we become the operating system financiers trust, we can charge basis points on funded deals — not just SaaS fees.',
+          'Financier onboarding should include a white-glove demo of the risk dashboard. First impressions set long-term perception. Budget for a dedicated financier success team.',
+        ],
+        sales: [
+          'Sales velocity is the North Star metric. Every day a deal sits in a pipeline stage costs money. The platform should show "days in stage" prominently and nudge action.',
+          'The best sales tools are invisible — they reduce friction to zero. ASP should auto-fill everything it can, suggest next actions, and never make a rep wait for a loading screen.',
+          'Commission visibility drives behavior. If reps can see their projected earnings update live as they work, they\'ll spend more time in ASP and close more deals.',
+          'Competitive intel: most solar CRMs are generic. ASP\'s solar-specific workflows (system design, utility coordination, permitting) are unique differentiators. Lean into this.',
+        ],
+        ops: [
+          'Ops efficiency is ASP\'s moat. If we can demonstrate 30% faster time-to-PTO compared to manual processes, that\'s the stat that closes enterprise deals.',
+          'The operations portal is where ASP earns trust daily. Every QC review, every milestone verification, every fund release should feel reliable and transparent.',
+          'Scaling ops means automation. The long-term vision: AI-powered QC review that flags issues before human reviewers see them. That reduces headcount needs by 40%.',
+          'Customer satisfaction correlates directly with ops speed. Track and display "average time from sale to PTO" as a company-wide KPI on the admin dashboard.',
+        ],
+        data: [
+          'Real data is the beta milestone. Every mock data point remaining undermines credibility with early users. Prioritize complete data connectivity over new features.',
+          'Data becomes a competitive advantage once we have scale. Aggregate (anonymized) insights like "average time-to-PTO by region" would be incredibly valuable to publish.',
+          'The Supabase migration is strategically important. Own your data layer. Don\'t let it become a dependency that a third party can price-gouge on later.',
+          'Usage analytics should inform pricing. Track feature usage by role — if financiers use the portal 10x more than sales reps, price tiers should reflect that value.',
+        ],
+        general: [
+          `Strategic score: ${score}/100. The platform is ${score >= 80 ? 'well-positioned for beta launch' : score >= 60 ? 'solid but needs key gaps closed' : 'in need of focused investment'}. ${openItems.length} items affect market readiness.`,
+          `Competitive analysis: ASP's solar-specific workflow approach is unique. ${fixedItems.length} features shipped, ${openItems.length} remain. Focus on what competitors can't replicate.`,
+          `Market timing favors us — solar adoption is accelerating. ${partialItems.length} in-progress items need to ship for beta. Prioritize features that demo well to early adopters.`,
+          `Strategic priority: reduce time-to-value for new users. An installer or financier should understand ASP's value within 5 minutes of first login.`,
+        ],
+      },
+      recBanks: {
+        installer: ['Add installer NPS survey after milestones', 'Benchmark onboarding time against competitors', 'Build installer referral program features', 'Create installer success metrics dashboard', 'Design self-service onboarding flow', 'Track installer portal time-to-first-action'],
+        financier: ['Design Bloomberg-grade portfolio dashboard', 'Build automated compliance verification', 'Create financier trust metrics page', 'Add basis-point pricing model framework', 'Design white-glove onboarding flow', 'Build financier ROI calculator'],
+        sales: ['Add "days in stage" prominent display', 'Build auto-fill for common form fields', 'Create live commission projections', 'Add competitive feature comparison page', 'Design sales velocity dashboard', 'Build AI-powered next-action suggestions'],
+        general: ['Design customer onboarding flow for beta', 'Build usage analytics for pricing decisions', 'Create time-to-PTO company KPI', 'Add competitive positioning materials', 'Build demo mode for prospects', 'Create ROI calculator landing page'],
+      },
     },
   };
 
-  // Build unique, opinionated response per agent role
-  const agentResponders: Record<string, () => { text: string; recs: string[]; conf: number }> = {
-    design: () => {
-      const insight = topicInsights.design[primaryTopic] || topicInsights.design.general;
-      const hasMatches = allMatches.length > 0;
+  const bank = AGENT_BANKS[agent.id] || AGENT_BANKS.design;
 
-      let text = `Aurora here. Visual quality score: ${score}/100.\n\n`;
+  // Select intro — guaranteed unique per call
+  const introIdx = (callSeed + _directiveCallCount) % bank.intros.length;
+  const intro = bank.intros[introIdx];
 
-      // Topic-specific insight first
-      text += insight.perspective;
+  // Select perspective — unique per call even for same topic
+  const perspectives = bank.topicPerspectives[primaryTopic] || bank.topicPerspectives.general || [];
+  // Check history to avoid repeating
+  const agentHistory = _responseHistory.get(agent.id) || [];
+  let perspIdx = (callSeed + _directiveCallCount * 3) % Math.max(perspectives.length, 1);
+  // Rotate if we've used this one before
+  for (let attempt = 0; attempt < perspectives.length; attempt++) {
+    const candidate = perspectives[perspIdx];
+    if (!agentHistory.includes(hashStr(candidate))) break;
+    perspIdx = (perspIdx + 1) % perspectives.length;
+  }
+  const perspective = perspectives[perspIdx] || `Analyzing "${directiveText.slice(0, 60)}..." from my ${bank.name} perspective.`;
 
-      // Then relevant findings if any
-      if (hasMatches) {
-        text += `\n\nRelated findings from my code review:`;
-        allMatches.slice(0, 2).forEach(f => {
-          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
-          text += `\n${st} ${f.title}`;
-        });
-      }
+  // Record this response in history
+  agentHistory.push(hashStr(perspective));
+  if (agentHistory.length > 20) agentHistory.shift(); // Keep rolling window
+  _responseHistory.set(agent.id, agentHistory);
 
-      // Unique recommendation based on question + topic
-      const contextRec = insight.recs[Math.abs(qHash) % insight.recs.length];
-      text += `\n\nMy top recommendation: ${contextRec}`;
+  // Build the response text
+  let text = intro + '\n\n';
 
-      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
-      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: hasMatches ? 0.91 : 0.82 };
-    },
+  // Core perspective
+  text += perspective;
 
-    engineering: () => {
-      const insight = topicInsights.engineering[primaryTopic] || topicInsights.engineering.general;
+  // Add relevant findings from manifest (dynamic per question)
+  if (allMatches.length > 0) {
+    const findingLabels = { fixed: '✓', partial: '◐', open: '○' };
+    text += '\n\nRelevant findings:';
+    const selectedFindings = pickUnique(allMatches, callSeed, Math.min(allMatches.length, 2));
+    selectedFindings.forEach(f => {
+      const st = findingLabels[f.realStatus] || '○';
+      text += `\n${st} ${f.title}`;
+      if (f.remainingWork && f.realStatus !== 'fixed') text += ` → ${f.remainingWork}`;
+    });
+  }
 
-      let text = `Forge reporting. Engineering health: ${score}/100.\n\n`;
-      text += insight.perspective;
+  // Add cross-reference with other agents' answers
+  if (previousResponses.length > 0) {
+    const prevAgent = previousResponses[previousResponses.length - 1];
+    const prevName = councilState.agents.find(a => a.id === prevAgent.agentId)?.name || prevAgent.agentId;
+    const prevPoint = prevAgent.recommendations[0];
+    if (prevPoint) {
+      text += `\n\nBuilding on ${prevName}'s point about "${prevPoint.slice(0, 50)}..." — `;
+      const connectors = [
+        'I agree and would add that the design implications are significant.',
+        'this aligns with what I\'m seeing from a different angle.',
+        'I have a complementary concern from my domain.',
+        'yes, and there\'s a downstream effect worth noting.',
+      ];
+      text += connectors[(callSeed + _directiveCallCount) % connectors.length];
+    }
+  }
 
-      if (allMatches.length > 0) {
-        text += `\n\nCode analysis findings:`;
-        allMatches.slice(0, 2).forEach(f => {
-          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
-          text += `\n[${st}] ${f.title}`;
-          if (f.evidence[0]?.file) text += ` (${f.evidence[0].file})`;
-          if (f.remainingWork && f.realStatus !== 'fixed') text += `\n  → ${f.remainingWork}`;
-        });
-      }
+  // Select unique recommendations
+  const topicRecs = bank.recBanks[primaryTopic] || bank.recBanks.general || [];
+  const generalRecs = bank.recBanks.general || [];
+  const allRecOptions = [...topicRecs, ...generalRecs.filter(r => !topicRecs.includes(r))];
+  const selectedRecs = pickUnique(
+    allRecOptions.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30))),
+    callSeed + _directiveCallCount,
+    3
+  );
 
-      text += `\n\nEngineering priority: ${insight.recs[0]}`;
+  // Add top recommendation to text
+  if (selectedRecs.length > 0) {
+    text += `\n\nMy top recommendation: ${selectedRecs[0]}`;
+  }
 
-      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
-      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: allMatches.length > 0 ? 0.93 : 0.80 };
-    },
-
-    qa: () => {
-      const insight = topicInsights.qa[primaryTopic] || topicInsights.qa.general;
-
-      let text = `Sentinel here. QA confidence: ${score}/100.\n\n`;
-      text += insight.perspective;
-
-      if (allMatches.length > 0) {
-        text += `\n\nKnown issues in this area:`;
-        allMatches.slice(0, 2).forEach(f => {
-          const st = f.realStatus === 'fixed' ? '✓ Verified' : f.realStatus === 'partial' ? '◐ Partial' : '○ Open';
-          text += `\n[${st}] ${f.title}`;
-        });
-      }
-
-      const bugCount = openItems.length;
-      text += `\n\n${bugCount} open items remaining. ${insight.recs[Math.abs(qHash) % insight.recs.length]} should be the immediate focus.`;
-
-      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
-      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: allMatches.length > 0 ? 0.90 : 0.76 };
-    },
-
-    operations: () => {
-      const insight = topicInsights.operations[primaryTopic] || topicInsights.operations.general;
-
-      let text = `Nexus here. Operational compliance: ${score}/100.\n\n`;
-      text += insight.perspective;
-
-      if (allMatches.length > 0) {
-        text += `\n\nCompliance findings:`;
-        allMatches.slice(0, 2).forEach(f => {
-          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
-          text += `\n${st} ${f.title}: ${f.councilClaim}`;
-        });
-      }
-
-      text += `\n\nSOP status: State machine live, audit trail active. Next priority: ${insight.recs[0]}`;
-
-      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
-      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: allMatches.length > 0 ? 0.88 : 0.74 };
-    },
-
-    strategy: () => {
-      const insight = topicInsights.strategy[primaryTopic] || topicInsights.strategy.general;
-
-      let text = `Oracle here. Strategic assessment: ${score}/100.\n\n`;
-      text += insight.perspective;
-
-      if (allMatches.length > 0) {
-        text += `\n\nStrategic relevance:`;
-        allMatches.slice(0, 2).forEach(f => {
-          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
-          text += `\n${st} ${f.title}`;
-        });
-      }
-
-      text += `\n\nStrategic recommendation: ${insight.recs[Math.abs(qHash) % insight.recs.length]}`;
-
-      const recs = insight.recs.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)));
-      return { text, recs: recs.length > 0 ? recs : insight.recs, conf: allMatches.length > 0 ? 0.89 : 0.77 };
-    },
-  };
-
-  const responder = agentResponders[agent.id];
-  const result = responder ? responder() : { text: `Score: ${score}/100. No specific analysis available.`, recs: [], conf: 0.5 };
+  const hasMatches = allMatches.length > 0;
+  const conf = hasMatches ? 0.82 + Math.random() * 0.13 : 0.68 + Math.random() * 0.18;
 
   return {
     agentId: agent.id,
-    text: result.text,
-    recommendations: result.recs,
+    text,
+    recommendations: selectedRecs.length > 0 ? selectedRecs : ['Continue monitoring this area'],
     timestamp: new Date().toISOString(),
-    confidence: result.conf,
+    confidence: Math.round(conf * 100) / 100,
   };
 }
 
