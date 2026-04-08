@@ -547,44 +547,47 @@ const FinancierPortal = () => {
 
       case 'incoming': {
         // Incoming deals: QC-approved sell projects that haven't been NTP-approved or rejected
+        // Use documentsSigned (persisted) for NTP approval, approvalStatus (persisted) for rejection
         const incomingDeals = store.sellProjects.filter(
-          sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned && sp.lifecycleState !== 'rejected'
+          sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned && sp.approvalStatus !== 'rejected'
         );
         const ntpApprovedDeals = store.sellProjects.filter(
           sp => sp.convertedToSale && sp.qcInitialApproved && sp.documentsSigned
         );
         const ntpRejectedDeals = store.sellProjects.filter(
-          sp => sp.lifecycleState === 'rejected'
+          sp => sp.approvalStatus === 'rejected'
         );
 
-        const handleNTPApprove = (sp: any) => {
-          // Approve NTP — triggers escrow account creation, card exits via AnimatePresence
-          store.updateSellProject({
-            ...sp,
-            documentsSigned: true,
-            approvalStatus: 'clean',
-            lifecycleState: 'active',
-          });
-          // Create/activate matching project
-          const matchedProject = projects.find(p =>
-            p.customerName?.toLowerCase().includes(sp.firstName?.toLowerCase()) ||
-            p.customerName?.toLowerCase().includes(sp.lastName?.toLowerCase())
-          );
-          if (matchedProject) {
-            store.updateProject({ ...matchedProject, status: 'active' } as any);
+        const handleNTPApprove = async (sp: any) => {
+          // Approve NTP — persist documentsSigned + approvalStatus to Supabase
+          try {
+            await store.updateSellProject({
+              ...sp,
+              documentsSigned: true,
+              approvalStatus: 'clean',
+            });
+            toast.success(`NTP Approved for ${sp.firstName} ${sp.lastName} — moved to Portfolio`);
+          } catch (err) {
+            console.error('NTP approve failed:', err);
+            toast.error('Failed to approve NTP — check console');
           }
-          toast.success(`NTP Approved for ${sp.firstName} ${sp.lastName} — Escrow account created`);
         };
 
-        const handleNTPReject = (sp: any) => {
+        const handleNTPReject = async (sp: any) => {
           const reason = window.prompt(`Reason for rejecting ${sp.firstName} ${sp.lastName}?`);
           if (!reason) return;
-          store.updateSellProject({
-            ...sp,
-            lifecycleState: 'rejected',
-            approvalNotes: `NTP Rejected: ${reason}`,
-          });
-          toast.error(`Deal rejected: ${sp.firstName} ${sp.lastName}`);
+          try {
+            // approvalStatus: 'rejected' is what inferState() reads to derive lifecycleState
+            await store.updateSellProject({
+              ...sp,
+              approvalStatus: 'rejected',
+              approvalNotes: `NTP Rejected: ${reason}`,
+            });
+            toast.error(`Deal rejected: ${sp.firstName} ${sp.lastName} — moved to Rejected`);
+          } catch (err) {
+            console.error('NTP reject failed:', err);
+            toast.error('Failed to reject deal — check console');
+          }
         };
 
         return (
@@ -727,7 +730,7 @@ const FinancierPortal = () => {
       case 'portfolio': {
         // Merge store.projects with NTP-approved sell projects
         const ntpApprovedSellProjects = store.sellProjects
-          .filter(sp => sp.convertedToSale && sp.qcInitialApproved && sp.documentsSigned && sp.lifecycleState !== 'rejected')
+          .filter(sp => sp.convertedToSale && sp.qcInitialApproved && sp.documentsSigned && sp.approvalStatus !== 'rejected')
           .map(sp => ({
             id: sp.id,
             customerName: `${sp.firstName} ${sp.lastName}`,
@@ -1233,7 +1236,7 @@ const FinancierPortal = () => {
         const rejected = store.getRejectedProjects();
         // Also include NTP-rejected sell projects
         const ntpRejectedSellProjects = store.sellProjects
-          .filter(sp => sp.lifecycleState === 'rejected')
+          .filter(sp => sp.approvalStatus === 'rejected')
           .map(sp => ({
             project: {
               id: sp.id,
