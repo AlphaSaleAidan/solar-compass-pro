@@ -123,6 +123,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   };
 
   return (
+    <>
     <header
       className="fixed top-0 left-0 right-0 z-50 h-[58px] flex items-center px-6 gap-2 border-b backdrop-blur-2xl"
       style={{
@@ -260,8 +261,9 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         onOpenChange={setShowSettings}
         onAvatarChange={(url) => setAvatarUrl(url)}
       />
-      <MessageCenter isOpen={showMessages} onClose={() => setShowMessages(false)} />
     </header>
+    <MessageCenter isOpen={showMessages} onClose={() => setShowMessages(false)} />
+    </>
   );
 };
 

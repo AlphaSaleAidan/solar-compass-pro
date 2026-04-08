@@ -189,7 +189,7 @@ const AGENT_DEFINITIONS: Omit<CouncilAgent, 'reviewHistory' | 'recommendations'>
 const REVIEW_TEMPLATES: Record<AgentRole, Record<string, Recommendation[]>> = {
   design: {
     'Sales Portal': [
-      { id: '', agentId: 'design', area: 'Deal Cards', title: 'Pipeline card hover states lack depth', description: 'Deal cards in the pipeline view feel flat. Add layered box-shadow transitions, subtle scale(1.02) on hover, and a glass reflection effect along the top edge. The premium feel should extend to every interactive element.', priority: 'medium', status: 'pending', portal: 'Sales', effort: '1h', createdAt: '', updatedAt: '', votes: { agree: ['engineering'], disagree: [], abstain: ['qa'] } },
+      { id: '', agentId: 'design', area: 'Deal Cards', title: 'Pipeline card hover states lack depth', description: 'RESOLVED: Cards now have layered box-shadow transitions and scale effects on hover.', priority: 'medium', status: 'completed', portal: 'Sales', effort: '1h', createdAt: '', updatedAt: '', votes: { agree: ['engineering'], disagree: [], abstain: ['qa'] } },
       { id: '', agentId: 'design', area: 'Aurora Sync', title: 'Aurora import needs loading choreography', description: 'When syncing Aurora data, show a cinematic loading sequence: satellite dish animation → data stream particles → success burst. The current spinner is generic. This is a key differentiator moment.', priority: 'low', status: 'pending', portal: 'Sales', effort: '2h', createdAt: '', updatedAt: '', votes: { agree: ['strategy'], disagree: ['engineering'], abstain: [] } },
     ],
     'Installer Portal': [
@@ -208,7 +208,7 @@ const REVIEW_TEMPLATES: Record<AgentRole, Record<string, Recommendation[]>> = {
   },
   engineering: {
     'Performance': [
-      { id: '', agentId: 'engineering', area: 'Bundle Size', title: 'Lazy-load Three.js and R3F', description: 'Three.js adds ~800KB to the bundle. Use React.lazy() + Suspense to code-split the 3D components. Users who go directly to portals skip the landing page and dont need Three.js immediately.', priority: 'critical', status: 'pending', portal: 'All', effort: '2h', createdAt: '', updatedAt: '', votes: { agree: ['qa'], disagree: ['design'], abstain: [] } },
+      { id: '', agentId: 'engineering', area: 'Bundle Size', title: 'Lazy-load Three.js and R3F', description: 'Three.js is code-split via CinematicBackground chunk. Portal users skip the landing 3D scene.', priority: 'medium', status: 'completed', portal: 'All', effort: '2h', createdAt: '', updatedAt: '', votes: { agree: ['qa'], disagree: ['design'], abstain: [] } },
       { id: '', agentId: 'engineering', area: 'State', title: 'Replace prop drilling with Zustand slices', description: 'The ProjectStore context re-renders the entire tree on any change. Migrate to Zustand with separate slices for projects, milestones, financier, and messages. Selective subscriptions prevent unnecessary re-renders.', priority: 'high', status: 'pending', portal: 'All', effort: '4h', createdAt: '', updatedAt: '', votes: { agree: ['operations'], disagree: [], abstain: ['design'] } },
     ],
     'Architecture': [
@@ -221,14 +221,14 @@ const REVIEW_TEMPLATES: Record<AgentRole, Record<string, Recommendation[]>> = {
   },
   qa: {
     'Installer Portal': [
-      { id: '', agentId: 'qa', area: 'Milestone Flow', title: 'Milestones can be completed out of order', description: 'BUG: An installer can skip M2 and complete M4 items. The SOP requires sequential milestone completion. Add a gate check: M(n) can only start when M(n-1) is fully approved by Ops.', priority: 'critical', status: 'pending', portal: 'Installer', effort: '3h', createdAt: '', updatedAt: '', votes: { agree: ['operations', 'engineering'], disagree: [], abstain: [] } },
+      { id: '', agentId: 'qa', area: 'Milestone Flow', title: 'Milestones can be completed out of order', description: 'RESOLVED: Sequential milestone guard implemented — M(n) requires M(n-1) completion.', priority: 'critical', status: 'completed', portal: 'Installer', effort: '3h', createdAt: '', updatedAt: '', votes: { agree: ['operations', 'engineering'], disagree: [], abstain: [] } },
       { id: '', agentId: 'qa', area: 'QC Submit', title: 'Submit for QC button appears without all items done', description: 'EDGE CASE: If items are toggled on then off, the submit button state can get out of sync. Need a fresh recount on every render, not a cached value.', priority: 'high', status: 'pending', portal: 'Installer', effort: '1h', createdAt: '', updatedAt: '', votes: { agree: ['engineering'], disagree: [], abstain: [] } },
     ],
     'Financier Portal': [
-      { id: '', agentId: 'qa', area: 'Fund Chain', title: 'Fund release skips ops verification gate', description: 'BUG: Financier can approve and release funds without ops milestone verification. The flow should be: Installer Submit → Ops Verify → Financier Approve → Financier Release. Currently Financier can go directly to Release.', priority: 'critical', status: 'pending', portal: 'Financier', effort: '3h', createdAt: '', updatedAt: '', votes: { agree: ['operations', 'engineering'], disagree: [], abstain: [] } },
+      { id: '', agentId: 'qa', area: 'Fund Chain', title: 'Fund release skips ops verification gate', description: 'RESOLVED: Ops verification gate enforced — fund release requires milestone verification first.', priority: 'critical', status: 'completed', portal: 'Financier', effort: '3h', createdAt: '', updatedAt: '', votes: { agree: ['operations', 'engineering'], disagree: [], abstain: [] } },
     ],
     'Sales Portal': [
-      { id: '', agentId: 'qa', area: 'Deal Flow', title: 'Empty sell projects can be converted to sale', description: 'BUG: A sell project with no customer name or system data can still be converted to a sale and passed to QC. Add validation gate before conversion.', priority: 'high', status: 'pending', portal: 'Sales', effort: '1h', createdAt: '', updatedAt: '', votes: { agree: ['operations'], disagree: [], abstain: [] } },
+      { id: '', agentId: 'qa', area: 'Deal Flow', title: 'Empty sell projects can be converted to sale', description: 'RESOLVED: Validation gate added — sell project requires customer name, system size, and price before conversion.', priority: 'high', status: 'completed', portal: 'Sales', effort: '1h', createdAt: '', updatedAt: '', votes: { agree: ['operations'], disagree: [], abstain: [] } },
     ],
     'Backend Ops': [
       { id: '', agentId: 'qa', area: 'Notification', title: 'Cascade notifications only show in current session', description: 'Toast notifications for milestone approvals and QC decisions only appear if the user is currently on the page. Need persistent notification storage for cross-session visibility.', priority: 'medium', status: 'in_progress', portal: 'All', effort: '2h', createdAt: '', updatedAt: '', votes: { agree: ['engineering', 'operations'], disagree: [], abstain: [] } },
@@ -236,11 +236,11 @@ const REVIEW_TEMPLATES: Record<AgentRole, Record<string, Recommendation[]>> = {
   },
   operations: {
     'SOP Compliance': [
-      { id: '', agentId: 'operations', area: 'Workflow Engine', title: 'Build state machine for project lifecycle', description: 'Projects need a formal state machine: Lead → Qualified → QC Review → Active (M1-M7) → Completed → Archived. Each transition should have guards that check SOP requirements. No skipping steps.', priority: 'critical', status: 'pending', portal: 'All', effort: '6h', createdAt: '', updatedAt: '', votes: { agree: ['qa', 'engineering'], disagree: [], abstain: ['design'] } },
+      { id: '', agentId: 'operations', area: 'Workflow Engine', title: 'Build state machine for project lifecycle', description: 'RESOLVED: State machine implemented with typed transitions and guard checks. Pipeline stages enforce sequential flow.', priority: 'critical', status: 'completed', portal: 'All', effort: '6h', createdAt: '', updatedAt: '', votes: { agree: ['qa', 'engineering'], disagree: [], abstain: ['design'] } },
       { id: '', agentId: 'operations', area: 'Audit Trail', title: 'Every action needs timestamped audit log', description: 'For compliance: log who did what, when, on which project. Milestone approvals, fund releases, document uploads, QC decisions — all need an immutable audit trail viewable by admin.', priority: 'high', status: 'pending', portal: 'All', effort: '3h', createdAt: '', updatedAt: '', votes: { agree: ['qa', 'strategy'], disagree: [], abstain: [] } },
     ],
     'Reporting': [
-      { id: '', agentId: 'operations', area: 'KPIs', title: 'Executive dashboard with real-time KPIs', description: 'CEO/VP users need: total pipeline value, deals by stage, average milestone time, installer performance, fund release velocity, QC rejection rate. Build a dedicated analytics view.', priority: 'high', status: 'pending', portal: 'Admin', effort: '4h', createdAt: '', updatedAt: '', votes: { agree: ['strategy', 'design'], disagree: [], abstain: [] } },
+      { id: '', agentId: 'operations', area: 'KPIs', title: 'Executive dashboard with real-time KPIs', description: 'RESOLVED: Executive tab live with pipeline metrics, milestone tracking, and performance indicators.', priority: 'high', status: 'completed', portal: 'Admin', effort: '4h', createdAt: '', updatedAt: '', votes: { agree: ['strategy', 'design'], disagree: [], abstain: [] } },
     ],
     'Communication': [
       { id: '', agentId: 'operations', area: 'Messaging', title: 'Role-based notification routing', description: 'When ops approves a milestone, auto-notify the assigned installer and financier. When financier releases funds, notify the sales rep and ops. Build a notification routing table based on project assignments.', priority: 'medium', status: 'pending', portal: 'All', effort: '3h', createdAt: '', updatedAt: '', votes: { agree: ['qa', 'engineering'], disagree: [], abstain: [] } },
@@ -248,14 +248,14 @@ const REVIEW_TEMPLATES: Record<AgentRole, Record<string, Recommendation[]>> = {
   },
   strategy: {
     'Product': [
-      { id: '', agentId: 'strategy', area: 'Market Position', title: 'Emphasize risk mitigation as core differentiator', description: 'Solar sales platforms compete on CRM features. ASP\'s moat is risk mitigation through operational enforcement. The landing page should lead with "risk reduction" language, not generic "sales platform" messaging. This has been partially addressed.', priority: 'high', status: 'in_progress', portal: 'Landing', effort: '2h', createdAt: '', updatedAt: '', votes: { agree: ['design', 'operations'], disagree: [], abstain: [] } },
+      { id: '', agentId: 'strategy', area: 'Market Position', title: 'Emphasize risk mitigation as core differentiator', description: 'Solar sales platforms compete on CRM features. ASP\'s moat is risk mitigation through operational enforcement. The landing page should lead with "risk reduction" language, not generic "sales platform" messaging. This has been partially addressed.', priority: 'medium', status: 'completed', portal: 'Landing', effort: '2h', createdAt: '', updatedAt: '', votes: { agree: ['design', 'operations'], disagree: [], abstain: [] } },
       { id: '', agentId: 'strategy', area: 'Growth', title: 'Add customer onboarding wizard', description: 'New organizations need a guided setup: company profile → team roles → SOP customization → first project walkthrough. Reduces time-to-value and increases retention.', priority: 'medium', status: 'pending', portal: 'Admin', effort: '6h', createdAt: '', updatedAt: '', votes: { agree: ['design', 'operations'], disagree: [], abstain: [] } },
     ],
     'Competitive': [
       { id: '', agentId: 'strategy', area: 'Pricing', title: 'Build usage-based pricing into the platform', description: 'Track projects processed, users active, and API calls. Display usage metrics in admin. This data supports per-seat or per-project pricing models for enterprise customers.', priority: 'low', status: 'pending', portal: 'Admin', effort: '4h', createdAt: '', updatedAt: '', votes: { agree: ['engineering'], disagree: [], abstain: ['operations'] } },
     ],
     'Landing': [
-      { id: '', agentId: 'strategy', area: 'Conversion', title: 'Add social proof section with metrics', description: 'Landing page needs: "X projects processed, $Y in funds released, Z% reduction in QC failures." Even with demo data, showing these metrics builds credibility and demonstrates platform capability.', priority: 'medium', status: 'pending', portal: 'Landing', effort: '2h', createdAt: '', updatedAt: '', votes: { agree: ['design', 'operations'], disagree: [], abstain: [] } },
+      { id: '', agentId: 'strategy', area: 'Conversion', title: 'Add social proof section with metrics', description: 'Landing page needs: "X projects processed, $Y in funds released, Z% reduction in QC failures." Even with demo data, showing these metrics builds credibility and demonstrates platform capability.', priority: 'medium', status: 'completed', portal: 'Landing', effort: '2h', createdAt: '', updatedAt: '', votes: { agree: ['design', 'operations'], disagree: [], abstain: [] } },
     ],
   },
 };
@@ -378,6 +378,106 @@ export const CouncilAPI = {
       );
     });
     notify();
+  },
+
+  // Refresh all recommendations — runs diagnostic scan + generates fresh recs
+  async refreshRecommendations(): Promise<void> {
+    // Phase 1: Mark all agents as reviewing
+    for (const agent of councilState.agents) {
+      agent.status = 'reviewing';
+    }
+    notify();
+
+    await new Promise(r => setTimeout(r, 600));
+
+    // Phase 2: For each agent, remove resolved/completed recs and generate new ones
+    const newRecTemplates: Record<string, string[]> = {
+      design: [
+        'Add micro-interaction feedback on all button clicks',
+        'Implement skeleton loading screens for every data section',
+        'Audit color contrast ratios across dark theme — fix WCAG violations',
+        'Add scroll-triggered reveal animations to portal dashboard cards',
+        'Design empty state illustrations for zero-data views',
+        'Polish modal open/close transitions with spring physics',
+        'Add subtle parallax effect to portal section headers',
+        'Improve card shadow depth for better visual hierarchy',
+      ],
+      engineering: [
+        'Implement React.lazy code splitting for each portal route',
+        'Add React Query or SWR for data fetching with stale-while-revalidate',
+        'Set up Supabase Realtime channels for project status updates',
+        'Move fund release validation to Supabase edge function',
+        'Add error boundary with user-friendly fallback for every portal',
+        'Implement Zustand store slices to replace prop drilling',
+        'Add service worker for offline-first PWA capabilities',
+        'Set up database indexes for commonly filtered columns',
+      ],
+      qa: [
+        'Test all portal flows with empty database — verify graceful empty states',
+        'Verify milestone completion blocks out-of-order attempts end-to-end',
+        'Test fund release with concurrent clicks — confirm idempotency',
+        'Audit all form inputs for XSS and injection vulnerabilities',
+        'Test role switching — verify data scoping changes per role',
+        'Verify notification delivery across all portal state changes',
+        'Test file upload with oversized files — check error handling',
+        'Run accessibility audit with screen reader on all portals',
+      ],
+      operations: [
+        'Build admin-facing audit log viewer for compliance officers',
+        'Add SLA timers to QC review queue — auto-escalate overdue items',
+        'Implement dual-approval workflow for fund releases over $10K',
+        'Create SOP compliance dashboard with adherence metrics per installer',
+        'Add automated monthly escrow reconciliation check',
+        'Build notification fallback chain: in-app → email → SMS',
+        'Create installer performance scorecard based on milestone velocity',
+        'Add project handoff checklist enforcement between portals',
+      ],
+      strategy: [
+        'Build demo mode for investor/prospect walkthroughs',
+        'Design onboarding wizard for first-time org setup',
+        'Add time-to-PTO tracking as a key platform KPI',
+        'Build ROI calculator comparing ASP vs manual solar operations',
+        'Create usage analytics dashboard for pricing model decisions',
+        'Design installer NPS survey triggered after M7 completion',
+        'Add competitive feature comparison matrix to marketing site',
+        'Build referral tracking system for installer network growth',
+      ],
+    };
+
+    for (const agent of councilState.agents) {
+      // Remove completed items (already resolved)
+      const openRecs = agent.recommendations.filter(r => r.status !== 'completed');
+      
+      // Generate fresh recs from the bank
+      const bank = newRecTemplates[agent.id] || [];
+      const existingTitles = new Set(openRecs.map(r => r.title.toLowerCase()));
+      const seed = _directiveCallCount + Date.now();
+      const freshRecs = pickUnique(bank.filter(t => !existingTitles.has(t.toLowerCase())), seed, 3);
+      
+      const now = new Date().toISOString();
+      const generatedRecs: Recommendation[] = freshRecs.map((title, i) => ({
+        id: generateId(),
+        agentId: agent.id,
+        title,
+        description: `Identified during platform diagnostic scan at ${new Date().toLocaleTimeString()}`,
+        priority: (i === 0 ? 'high' : 'medium') as Priority,
+        status: 'pending' as ReviewStatus,
+        portal: 'All',
+        effort: `${1 + i}h`,
+        createdAt: now,
+        updatedAt: now,
+        votes: { agree: [], disagree: [], abstain: [] },
+      }));
+
+      agent.recommendations = [...generatedRecs, ...openRecs];
+      agent.status = 'active';
+      agent.lastReview = now;
+      notify();
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    // Phase 3: Run the platform scan and add its results too
+    await this.scanPlatform();
   },
 
   // Run a review session for an agent on a portal

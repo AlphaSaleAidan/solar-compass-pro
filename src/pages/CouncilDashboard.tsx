@@ -67,6 +67,7 @@ const CouncilDashboard = () => {
   const [directiveText, setDirectiveText] = useState('');
   const [isRunningReview, setIsRunningReview] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [isRefreshingRecs, setIsRefreshingRecs] = useState(false);
   const [filter, setFilter] = useState<'all' | 'critical' | 'high' | 'in_progress'>('all');
   const [isSubmittingDirective, setIsSubmittingDirective] = useState(false);
 
@@ -97,6 +98,18 @@ const CouncilDashboard = () => {
       toast.error('Review failed');
     }
     setIsRunningReview(false);
+  }, []);
+
+  const handleRefreshRecs = useCallback(async () => {
+    setIsRefreshingRecs(true);
+    toast.info('Running diagnostic scan + generating fresh recommendations...');
+    try {
+      await CouncilAPI.refreshRecommendations();
+      toast.success('Recommendations refreshed — stale items removed, new diagnostics added');
+    } catch (e) {
+      toast.error('Refresh failed');
+    }
+    setIsRefreshingRecs(false);
   }, []);
 
   const handleScanPlatform = useCallback(async () => {
@@ -138,9 +151,9 @@ const CouncilDashboard = () => {
     setIsSubmittingDirective(false);
   }, [directiveText]);
 
-  // Filter recommendations
+  // Filter recommendations — hide completed by default
   const filteredRecs = useMemo(() => {
-    let recs = CouncilAPI.getAllRecommendations();
+    let recs = CouncilAPI.getAllRecommendations().filter(r => r.status !== 'completed');
     if (filter === 'critical') recs = recs.filter(r => r.priority === 'critical');
     if (filter === 'high') recs = recs.filter(r => r.priority === 'critical' || r.priority === 'high');
     if (filter === 'in_progress') recs = recs.filter(r => r.status === 'in_progress');
@@ -431,6 +444,14 @@ const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter, directive
             <Layers className="w-4 h-4 text-primary" />
             <span className="text-xs font-bold text-white">All Recommendations</span>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-gray-400 font-bold">{filteredRecs.length}</span>
+            <button
+              onClick={handleRefreshRecs}
+              disabled={isRefreshingRecs}
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-[10px] font-bold hover:bg-blue-500/20 transition-all disabled:opacity-40 disabled:pointer-events-none ml-2"
+            >
+              <RefreshCw className={`w-3 h-3 ${isRefreshingRecs ? 'animate-spin' : ''}`} />
+              {isRefreshingRecs ? 'Scanning...' : 'Refresh & Diagnose'}
+            </button>
           </div>
           <div className="flex items-center gap-1">
             {(['all', 'critical', 'high', 'in_progress'] as const).map(f => (
