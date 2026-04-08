@@ -17,10 +17,10 @@ const ShopSpin = () => {
     { id: 2, amount: 50, redeemed: false, label: 'Cash Drop $50' },
   ]);
   const [demoInventory, setDemoInventory] = useState([
-    { id: 'd1', name: 'ASP Stealth Tee', icon: '🖤', value: 40, tier: 'normal', sellValue: 25 },
-    { id: 'd2', name: 'ASP Snapback', icon: '⚡', value: 25, tier: 'normal', sellValue: 15 },
-    { id: 'd3', name: 'AirPods Pro', icon: '🎯', value: 150, tier: 'golden', sellValue: 100 },
-    { id: 'd4', name: 'ASP Elite Hoodie', icon: '👑', value: 65, tier: 'normal', sellValue: 40 },
+    { id: 'd1', name: 'ASP Stealth Tee', icon: 'ST', value: 40, tier: 'normal', sellValue: 25 },
+    { id: 'd2', name: 'ASP Snapback', icon: 'SB', value: 25, tier: 'normal', sellValue: 15 },
+    { id: 'd3', name: 'AirPods Pro', icon: 'AP', value: 150, tier: 'golden', sellValue: 100 },
+    { id: 'd4', name: 'ASP Elite Hoodie', icon: 'EH', value: 65, tier: 'normal', sellValue: 40 },
   ]);
 
   const tickets = isDemo ? demoTickets : gamification.state.tickets;
@@ -28,7 +28,7 @@ const ShopSpin = () => {
   const cashBonuses = isDemo ? demoCashBonuses : [];
   const inventoryItems = isDemo
     ? demoInventory.map(i => ({ id: i.id, item_name: i.name, item_value: i.value, icon: i.icon, tier: i.tier, sellValue: i.sellValue }))
-    : gamification.inventory.map(i => ({ id: i.id, item_name: i.item_name, item_value: i.item_value, icon: '🎁', tier: 'normal', sellValue: Math.round(i.item_value * 0.6) }));
+    : gamification.inventory.map(i => ({ id: i.id, item_name: i.item_name, item_value: i.item_value, icon: i.item_name?.slice(0, 2).toUpperCase() || '??', tier: 'normal', sellValue: Math.round(i.item_value * 0.6) }));
 
   const [selectedTier, setSelectedTier] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -231,7 +231,7 @@ const ShopSpin = () => {
       <p className="text-xs text-muted-foreground mb-5">
         Spend tickets to spin for prizes. Higher tiers unlock better rewards!
         {boostPct > 0 && (
-          <span className="ml-2 text-asp-blue font-bold">🔥 +{boostPct}% ticket boost active!</span>
+          <span className="ml-2 text-asp-blue font-bold">+{boostPct}% ticket boost active!</span>
         )}
       </p>
 
@@ -324,7 +324,7 @@ const ShopSpin = () => {
           ))}
           {boostPct > 0 && (
             <div className="flex items-center justify-between py-1.5 px-3 bg-asp-blue/10 border border-asp-blue/20 rounded-md">
-              <span className="text-xs text-asp-blue font-bold">🔥 Streak Boost Active</span>
+              <span className="text-xs text-asp-blue font-bold">Streak Boost Active</span>
               <span className="text-xs font-bold text-asp-blue">+{boostPct}% all tickets</span>
             </div>
           )}
@@ -399,7 +399,7 @@ const ShopSpin = () => {
               {inventoryItems.map((item) => (
                 <div key={item.id} className="flex items-center justify-between py-2 px-3 bg-bg3 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{item.icon || '🎁'}</span>
+                    <span className="text-[10px] font-black text-primary bg-primary/15 border border-primary/20 w-8 h-8 rounded-lg flex items-center justify-center">{item.icon || '??'}</span>
                     <div>
                       <span className="text-xs font-bold text-foreground">{item.item_name}</span>
                       <div className="text-[9px] text-muted-foreground">~${item.item_value} value</div>

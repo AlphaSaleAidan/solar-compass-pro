@@ -77,7 +77,7 @@ const InstalledHomesMap = ({ homes }: InstalledHomesMapProps) => {
                 <div className="text-xs space-y-1 min-w-[160px]">
                   <div className="font-bold text-sm">{home.customer}</div>
                   <div className="text-gray-600">{home.address}</div>
-                  <div className="text-gray-500">⚡ {home.systemSize} · 📅 {home.installDate}</div>
+                  <div className="text-gray-500">{home.systemSize} · {home.installDate}</div>
                 </div>
               </Popup>
             </CircleMarker>

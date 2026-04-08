@@ -538,24 +538,31 @@ const FinancierPortal = () => {
               })}
             </div>
 
-            {/* Historical fund releases */}
-            <div className="glass-panel overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-border text-sm font-extrabold text-card-foreground flex items-center gap-2">
-                <Clock className="w-4 h-4 text-primary" /> Release History
-              </div>
-              {FUNDS_RELEASE_HISTORY.slice(0, 6).map((h, i) => (
-                <div key={i} className="px-5 py-3 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setExpandedHistory(expandedHistory === i ? null : i)}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded bg-[hsl(var(--green))]/10 flex items-center justify-center text-[9px] font-extrabold text-[hsl(var(--green))]">✓</div>
-                    <div>
-                      <div className="text-xs font-bold text-card-foreground">{h.customer} — {h.milestone}</div>
-                      <div className="text-[10px] text-muted-foreground">{h.project} · {h.fundedDate} · {h.approvedBy}</div>
-                    </div>
-                  </div>
-                  <span className="text-sm font-black text-[hsl(var(--green))]">${h.amount.toLocaleString()}</span>
+            {/* Historical fund releases — built from real released milestones above */}
+            {releasedMilestones.length > 0 && (
+              <div className="glass-panel overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-border text-sm font-extrabold text-card-foreground flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-primary" /> Release History
                 </div>
-              ))}
-            </div>
+                {releasedMilestones.map((item, i) => {
+                  const amount = Math.round(item.project.projectCost * (item.sop.fundPercent / 100));
+                  return (
+                    <div key={i} className="px-5 py-3 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded bg-[hsl(var(--green))]/10 flex items-center justify-center text-[9px] font-extrabold text-[hsl(var(--green))]">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-card-foreground">{item.project.customerName} — M{item.milestoneIdx + 1}: {item.sop.name}</div>
+                          <div className="text-[10px] text-muted-foreground">{item.project.id} · Auto-funded</div>
+                        </div>
+                      </div>
+                      <span className="text-sm font-black text-[hsl(var(--green))]">${amount.toLocaleString()}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       }
@@ -920,28 +927,37 @@ const FinancierPortal = () => {
                 <Flag className="w-4 h-4 text-[hsl(var(--red))]" /> Flagged Accounts
               </h3>
               <div className="space-y-3">
-                {RISK_FLAGS.map(t => (
-                  <div key={t.id} className={`rounded-xl border p-4 ${
-                    t.priority === 'high' ? 'bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20' : 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
-                  }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Flag className="w-3.5 h-3.5 text-[hsl(var(--red))]" />
-                        <span className="text-xs font-extrabold text-card-foreground">{t.id}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
-                          t.priority === 'high' ? 'bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25' :
-                          'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25'
-                        }`}>{t.priority}</span>
+                {(() => {
+                  const openTickets = (store as any).tickets?.filter((t: any) => t.status === 'open') || [];
+                  if (openTickets.length === 0) return (
+                    <div className="text-center py-6">
+                      <Shield className="w-8 h-8 text-[hsl(var(--green))]/50 mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">No flagged accounts — portfolio is clean</p>
+                    </div>
+                  );
+                  return openTickets.map((t: any) => {
+                    const proj = projects.find(p => p.id === t.projectId);
+                    return (
+                      <div key={t.id} className="rounded-xl border p-4 bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Flag className="w-3.5 h-3.5 text-[hsl(var(--red))]" />
+                            <span className="text-xs font-extrabold text-card-foreground">{t.id?.slice(0, 8)}</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25">Open</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-[hsl(var(--yellow))] flex items-center gap-1"><Clock className="w-3 h-3" /> {t.createdAt || 'Recent'}</span>
+                        </div>
+                        <div className="text-xs font-bold text-card-foreground mb-2">
+                          <Flag className="w-3 h-3 text-[hsl(var(--red))] inline mr-1" />
+                          Account for <span className="text-primary">{proj?.customerName || 'Unknown'}</span> — {t.subject}
+                        </div>
+                        {t.messages?.[0]?.text && (
+                          <div className="text-sm text-card-foreground bg-muted/50 rounded-lg p-3">{t.messages[0].text}</div>
+                        )}
                       </div>
-                      <span className="text-[10px] font-bold text-[hsl(var(--yellow))] flex items-center gap-1"><Clock className="w-3 h-3" /> Open {t.daysOpen} days</span>
-                    </div>
-                    <div className="text-xs font-bold text-card-foreground mb-2">
-                      <Flag className="w-3 h-3 text-[hsl(var(--red))] inline mr-1" />
-                      Account for <span className="text-primary">{t.customerName}</span> has been flagged by ASP Pro+ Team for the following reasons:
-                    </div>
-                    <div className="text-sm text-card-foreground bg-muted/50 rounded-lg p-3">{t.issue}</div>
-                  </div>
-                ))}
+                    );
+                  });
+                })()}
               </div>
             </div>
 

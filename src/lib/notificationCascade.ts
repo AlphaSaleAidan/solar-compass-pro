@@ -205,7 +205,7 @@ export const cascadeFundsReleased = (
 export const cascadePTOGranted = (projectId: string, userId: string, projectName: string) =>
   triggerCascade({
     projectId, type: 'pto_granted',
-    title: '⚡ PTO Granted!',
+    title: 'PTO Granted!',
     message: `${projectName} has received Permission to Operate. System is LIVE.`,
     fromRole: 'backend_ops', fromUserId: userId,
     priority: 'urgent',

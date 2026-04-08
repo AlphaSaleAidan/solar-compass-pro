@@ -324,7 +324,7 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
           ))}
           
           {monthDays.map(({ day, dateStr, appts: dayAppts }) => {
-            const isToday = dateStr === '2026-03-28';
+            const isToday = dateStr === new Date().toISOString().split('T')[0];
             return (
               <div
                 key={day}

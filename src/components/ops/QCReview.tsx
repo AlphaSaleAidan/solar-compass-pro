@@ -41,9 +41,9 @@ const QCReview = () => {
       cascadeQCApproved(project.id, user.id, `${project.firstName} ${project.lastName}`);
     } else {
       // Demo mode: simulate cascade with local toasts
-      setTimeout(() => toast.info('🔔 Sales Rep notified: Documents ready for signing'), 800);
-      setTimeout(() => toast.info('🔔 Installer notified: New project incoming'), 1600);
-      setTimeout(() => toast.info('🔔 Financier notified: Project added to portfolio'), 2400);
+      setTimeout(() => toast.info('Sales Rep notified: Documents ready for signing'), 800);
+      setTimeout(() => toast.info('Installer notified: New project incoming'), 1600);
+      setTimeout(() => toast.info('Financier notified: Project added to portfolio'), 2400);
     }
   };
 
@@ -60,7 +60,7 @@ const QCReview = () => {
     if (user && !user.isDemo) {
       cascadeQCRejected(project.id, user.id, `${project.firstName} ${project.lastName}`, notes);
     } else {
-      setTimeout(() => toast.info('🔔 Sales Rep notified: Deal requires corrections'), 800);
+      setTimeout(() => toast.info('Sales Rep notified: Deal requires corrections'), 800);
     }
   };
 
@@ -144,7 +144,7 @@ const QCReview = () => {
 
                   {/* QC Review Summary — quick snapshot before action */}
                   <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
-                    <div className="text-[10px] text-primary font-bold tracking-wider uppercase mb-2">⚡ QC Review Summary</div>
+                    <div className="text-[10px] text-primary font-bold tracking-wider uppercase mb-2 flex items-center gap-1"><Zap className="w-3 h-3" /> QC Review Summary</div>
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       <div><span className="text-muted-foreground">Customer:</span> <span className="text-white font-bold">{p.firstName} {p.lastName}</span></div>
                       <div><span className="text-muted-foreground">System:</span> <span className="text-white font-bold">{resolved?.systemSize || '—'} kW</span></div>

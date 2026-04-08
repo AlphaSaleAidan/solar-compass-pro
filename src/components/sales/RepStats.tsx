@@ -59,7 +59,7 @@ const RepStats = () => {
   // Today's appointments
   const today = new Date().toISOString().split('T')[0];
   const todaysAppts = isDemo
-    ? APPOINTMENTS.filter(a => a.date === today || a.date === '2026-03-28')
+    ? APPOINTMENTS.filter(a => a.date === today)
     : liveStats.todaysAppointments;
 
   const getStarCount = (appt: any) => {

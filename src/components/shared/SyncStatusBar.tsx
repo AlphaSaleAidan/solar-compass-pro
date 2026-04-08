@@ -15,10 +15,10 @@ interface PortalStatus {
 const SyncStatusBar = ({ projectId }: { projectId?: string }) => {
   const { user } = useAuth();
   const [portalStatuses, setPortalStatuses] = useState<PortalStatus[]>([
-    { portal: 'SR', lastActivity: null, isActive: false, color: 'bg-muted-foreground', icon: '🏠' },
-    { portal: 'Ops', lastActivity: null, isActive: false, color: 'bg-muted-foreground', icon: '⚙️' },
-    { portal: 'Ins', lastActivity: null, isActive: false, color: 'bg-muted-foreground', icon: '🔧' },
-    { portal: 'Fin', lastActivity: null, isActive: false, color: 'bg-muted-foreground', icon: '💰' },
+    { portal: 'SR', lastActivity: null, isActive: false, color: 'bg-muted-foreground', icon: 'home' },
+    { portal: 'Ops', lastActivity: null, isActive: false, color: 'bg-muted-foreground', icon: 'settings' },
+    { portal: 'Ins', lastActivity: null, isActive: false, color: 'bg-muted-foreground', icon: 'wrench' },
+    { portal: 'Fin', lastActivity: null, isActive: false, color: 'bg-muted-foreground', icon: 'dollar-sign' },
   ]);
   const [synced, setSynced] = useState(true);
 

@@ -40,8 +40,8 @@ const RankingsTab = () => {
         <Trophy className="w-5 h-5 text-asp-yellow" />
         <h2 className="text-lg font-black text-foreground">Company Rankings</h2>
         {!isDemo && (
-          <span className="ml-auto text-[10px] text-muted-foreground font-medium bg-primary/10 px-2 py-0.5 rounded-full">
-            🔴 LIVE
+          <span className="ml-auto text-[10px] text-muted-foreground font-medium bg-primary/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE
           </span>
         )}
       </div>

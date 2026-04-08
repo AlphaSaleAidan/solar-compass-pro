@@ -15,6 +15,8 @@
  * Future: wire to OpenRouter/Supabase Edge Functions for real LLM calls
  */
 
+import { getAgentAnalysis, searchFindings, getOverallScore, getManifestStats } from '@/lib/councilManifest';
+
 // ─── Types ──────────────────────────────────────────────────────────
 
 export type AgentRole = 'design' | 'engineering' | 'qa' | 'operations' | 'strategy';
@@ -84,7 +86,7 @@ export interface CouncilAgent {
   recommendations: Recommendation[];
   systemPrompt: string;
   specialties: string[];
-  avatar: string; // emoji
+  avatar: string; // Short label or initials
 }
 
 export interface ConsensusReport {
@@ -126,7 +128,7 @@ const AGENT_DEFINITIONS: Omit<CouncilAgent, 'reviewHistory' | 'recommendations'>
     reviewScore: 86,
     systemPrompt: `You are Aurora, the Design Director for Alpha Sale Pro. You obsess over visual polish, animation fluidity, and "sex appeal" of the platform. You review every pixel, every transition, every hover state. You think in terms of cinematic experience — scroll reveals, glass morphism depth, typography hierarchy, and color harmony. You push for the platform to feel like a premium SaaS product, not a basic tool.`,
     specialties: ['UI/UX', 'Animations', 'Typography', 'Color Theory', 'Responsive Design', '3D Graphics'],
-    avatar: '🎨',
+    avatar: 'DX',
   },
   {
     id: 'engineering',
@@ -139,7 +141,7 @@ const AGENT_DEFINITIONS: Omit<CouncilAgent, 'reviewHistory' | 'recommendations'>
     reviewScore: 78,
     systemPrompt: `You are Forge, the Engineering Lead for Alpha Sale Pro. You focus on code quality, performance budgets, architecture decisions, and developer experience. You think about bundle size, load times, code splitting, state management patterns, and API design. You push for clean, typed, tested code that scales.`,
     specialties: ['Performance', 'Architecture', 'State Management', 'TypeScript', 'Build Optimization', 'API Design'],
-    avatar: '⚡',
+    avatar: 'EN',
   },
   {
     id: 'qa',
@@ -152,7 +154,7 @@ const AGENT_DEFINITIONS: Omit<CouncilAgent, 'reviewHistory' | 'recommendations'>
     reviewScore: 72,
     systemPrompt: `You are Sentinel, the QA Manager for Alpha Sale Pro. You ruthlessly test every user flow, every edge case, every error state. You think about what happens when data is missing, when users click things in the wrong order, when network fails. You validate against the Master SOP v2.0 document and ensure every workflow gate is enforced.`,
     specialties: ['Testing', 'SOP Compliance', 'Edge Cases', 'Error Handling', 'User Flows', 'Accessibility'],
-    avatar: '🛡️',
+    avatar: 'QA',
   },
   {
     id: 'operations',
@@ -165,7 +167,7 @@ const AGENT_DEFINITIONS: Omit<CouncilAgent, 'reviewHistory' | 'recommendations'>
     reviewScore: 71,
     systemPrompt: `You are Nexus, the Operations Director for Alpha Sale Pro. You know the solar sales business inside and out. You review whether the platform correctly models real-world operations: deal flow, milestone progression, fund release chains, QC gates, installer coordination, and financier approval workflows. You push for operational excellence and SOP compliance.`,
     specialties: ['Business Logic', 'SOP Enforcement', 'Workflow Design', 'KPIs', 'Reporting', 'Compliance'],
-    avatar: '📋',
+    avatar: 'OP',
   },
   {
     id: 'strategy',
@@ -178,7 +180,7 @@ const AGENT_DEFINITIONS: Omit<CouncilAgent, 'reviewHistory' | 'recommendations'>
     reviewScore: 85,
     systemPrompt: `You are Oracle, the Strategy Advisor for Alpha Sale Pro. You think about the big picture: market positioning, competitive advantages, product-market fit, pricing strategy, and growth vectors. You analyze the platform from the lens of investors, customers, and market trends. You push for features that create defensible moats and accelerate growth.`,
     specialties: ['Market Analysis', 'Product Strategy', 'Competitive Intel', 'Growth', 'Pricing', 'Investor Relations'],
-    avatar: '🔮',
+    avatar: 'ST',
   },
 ];
 
@@ -276,20 +278,40 @@ function initializeAgents(): CouncilAgent[] {
   return AGENT_DEFINITIONS.map(def => {
     const allRecs: Recommendation[] = [];
     const templates = REVIEW_TEMPLATES[def.id] || {};
+    const agentManifest = getAgentAnalysis(def.id);
+
     Object.values(templates).forEach(recs => {
       recs.forEach(rec => {
         const now = new Date().toISOString();
+        // Match recommendation to manifest finding by title similarity
+        const finding = agentManifest?.findings.find(f =>
+          f.title.toLowerCase().includes(rec.title.toLowerCase().slice(0, 20)) ||
+          rec.title.toLowerCase().includes(f.title.toLowerCase().slice(0, 20))
+        );
+        // Derive status from manifest
+        let status: ReviewStatus = rec.status;
+        if (finding) {
+          if (finding.realStatus === 'fixed') status = 'completed';
+          else if (finding.realStatus === 'partial') status = 'in_progress';
+          else if (finding.realStatus === 'council_wrong') status = 'completed'; // Not a bug = resolved
+          else status = 'pending';
+        }
         allRecs.push({
           ...rec,
           id: generateId(),
+          status,
           createdAt: now,
           updatedAt: now,
         });
       });
     });
 
+    // Use manifest score if available
+    const manifestScore = agentManifest?.currentScore ?? 70;
+
     return {
       ...def,
+      reviewScore: manifestScore,
       reviewHistory: [],
       recommendations: allRecs,
     };
@@ -393,11 +415,13 @@ export const CouncilAPI = {
       updatedAt: new Date().toISOString(),
     }));
 
-    const score = Math.floor(60 + Math.random() * 30);
+    // Use real score from manifest if available, otherwise derive from findings
+    const manifestScore = getAgentAnalysis(agentId)?.currentScore;
+    const score = manifestScore ?? Math.floor(60 + Math.random() * 30);
 
     session.findings = findings;
     session.score = score;
-    session.summary = `${agent.name} completed review of ${portal}. Found ${findings.length} items: ${findings.filter(f => f.priority === 'critical').length} critical, ${findings.filter(f => f.priority === 'high').length} high priority. Overall score: ${score}/100.`;
+    session.summary = `${agent.name} completed review of ${portal}. Found ${findings.length} items: ${findings.filter(f => f.priority === 'critical').length} critical, ${findings.filter(f => f.priority === 'high').length} high priority. Score: ${score}/100.`;
     session.completedAt = new Date().toISOString();
     session.status = 'completed';
 
@@ -499,14 +523,15 @@ export const CouncilAPI = {
       })),
     ];
 
-    const avgScore = councilState.agents.reduce((sum, a) => sum + a.reviewScore, 0) / councilState.agents.length;
+    const avgScore = getOverallScore();
+    const stats = getManifestStats();
 
     const report: ConsensusReport = {
       id: generateId(),
       timestamp: new Date().toISOString(),
       topic,
       agents: councilState.agents.map(a => a.id),
-      summary: `The council has identified ${criticalRecs.length} critical and ${highRecs.length} high-priority items across all portals. Key focus areas: SOP workflow enforcement, fund release approval chain, and visual polish. Platform overall score: ${Math.round(avgScore)}/100.`,
+      summary: `Platform score: ${avgScore}/100. Code analysis: ${stats.fixed} findings fixed, ${stats.partial} in progress, ${stats.open} open, ${stats.councilWrong} original findings were incorrect. ${criticalRecs.length} critical and ${highRecs.length} high-priority recommendations remain.`,
       agreements,
       disagreements,
       prioritizedActions,
@@ -566,62 +591,96 @@ export const CouncilAPI = {
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
+/**
+ * Dynamic directive response generator.
+ *
+ * Instead of returning canned text, this searches the code analysis
+ * manifest for findings relevant to the user's question, then builds
+ * a response that references actual implementation status, file paths,
+ * and remaining work. This makes the council a real troubleshooting tool.
+ */
 function generateDirectiveResponse(agent: CouncilAgent, directiveText: string): DirectiveResponse {
-  const lowerText = directiveText.toLowerCase();
-  const responses: Record<AgentRole, Record<string, DirectiveResponse>> = {
-    design: {
-      default: {
-        agentId: 'design',
-        text: `From a design perspective, I recommend we focus on visual consistency and user delight. ${lowerText.includes('landing') ? 'The landing page should be our hero — cinematic, immersive, unforgettable.' : 'Every interaction should feel premium and intentional.'}`,
-        recommendations: ['Polish hover states across all cards', 'Add micro-animations to state transitions', 'Ensure typography hierarchy is consistent'],
-        timestamp: new Date().toISOString(),
-        confidence: 0.85,
-      },
-    },
-    engineering: {
-      default: {
-        agentId: 'engineering',
-        text: `From an engineering standpoint, ${lowerText.includes('performance') ? 'we need to address bundle size and code splitting immediately.' : 'we should ensure the architecture supports scaling.'} Type safety and clean state management are prerequisites for rapid feature development.`,
-        recommendations: ['Code-split Three.js bundle', 'Add Zod validation to forms', 'Implement proper error boundaries'],
-        timestamp: new Date().toISOString(),
-        confidence: 0.82,
-      },
-    },
-    qa: {
-      default: {
-        agentId: 'qa',
-        text: `I've identified several workflow gaps that need attention. ${lowerText.includes('sop') || lowerText.includes('milestone') ? 'The SOP enforcement is critical — milestones can currently be completed out of order.' : 'Edge cases in the delete and fund release flows need testing.'} We should not ship without addressing the critical bugs.`,
-        recommendations: ['Fix milestone ordering enforcement', 'Add validation gates to fund release', 'Test delete flow across all portals'],
-        timestamp: new Date().toISOString(),
-        confidence: 0.78,
-      },
-    },
-    operations: {
-      default: {
-        agentId: 'operations',
-        text: `Operationally, ${lowerText.includes('workflow') || lowerText.includes('process') ? 'we need a proper state machine for project lifecycle.' : 'the platform must mirror real-world solar operations exactly.'} Every gate in the SOP must be enforced programmatically. No shortcuts.`,
-        recommendations: ['Build project lifecycle state machine', 'Implement audit trail for compliance', 'Add executive KPI dashboard'],
-        timestamp: new Date().toISOString(),
-        confidence: 0.80,
-      },
-    },
-    strategy: {
-      default: {
-        agentId: 'strategy',
-        text: `Strategically, ${lowerText.includes('market') || lowerText.includes('growth') ? 'we should double down on risk mitigation as our differentiator.' : 'the platform needs to demonstrate clear ROI to potential customers.'} The visual polish is excellent — now we need to prove operational depth to close enterprise deals.`,
-        recommendations: ['Position risk mitigation as core value prop', 'Build usage metrics for pricing model', 'Add customer onboarding wizard'],
-        timestamp: new Date().toISOString(),
-        confidence: 0.88,
-      },
-    },
-  };
+  const lower = directiveText.toLowerCase();
+  const analysis = getAgentAnalysis(agent.id);
 
-  return responses[agent.id]?.default || {
+  // ── 1. Find relevant findings ─────────────────────────────────
+  // Search the manifest for matches to the user's query
+  const relevantFindings = analysis?.findings.filter(f => {
+    const haystack = `${f.title} ${f.councilClaim} ${f.remainingWork || ''} ${f.evidence.map(e => e.notes || '').join(' ')}`.toLowerCase();
+    // Split query into keywords (3+ chars) and check if any match
+    const keywords = lower.split(/\s+/).filter(w => w.length >= 3);
+    return keywords.some(kw => haystack.includes(kw));
+  }) || [];
+
+  // Also search across ALL agents if this agent has no specific matches
+  const crossAgentMatches = relevantFindings.length === 0
+    ? searchFindings(directiveText).slice(0, 3)
+    : [];
+
+  // ── 2. Build context-aware response text ──────────────────────
+  const allMatches = relevantFindings.length > 0 ? relevantFindings : crossAgentMatches;
+  const fixedCount = allMatches.filter(f => f.realStatus === 'fixed').length;
+  const openCount = allMatches.filter(f => f.realStatus === 'open').length;
+  const partialCount = allMatches.filter(f => f.realStatus === 'partial').length;
+
+  let text: string;
+  let recommendations: string[];
+  let confidence: number;
+
+  if (allMatches.length > 0) {
+    // Build detailed response from real findings
+    const findingSummaries = allMatches.slice(0, 4).map(f => {
+      const status = f.realStatus === 'fixed' ? '✓ Fixed'
+        : f.realStatus === 'partial' ? '◐ Partial'
+        : f.realStatus === 'council_wrong' ? '✗ Not a bug'
+        : '○ Open';
+      const file = f.evidence[0]?.file || 'N/A';
+      const detail = f.realStatus === 'open' && f.remainingWork
+        ? ` — ${f.remainingWork}`
+        : f.realStatus === 'fixed' && f.evidence[0]?.notes
+        ? ` — ${f.evidence[0].notes}`
+        : '';
+      return `[${status}] ${f.title} (${file})${detail}`;
+    });
+
+    const summary = analysis
+      ? `Score: ${analysis.currentScore}/100 across ${Object.keys(analysis.scoreBreakdown).join(', ')}.`
+      : '';
+
+    text = `Found ${allMatches.length} related finding(s) in my analysis. ${fixedCount} resolved, ${partialCount} in progress, ${openCount} remaining.\n\n${findingSummaries.join('\n\n')}\n\n${summary}`;
+
+    recommendations = allMatches
+      .filter(f => f.realStatus === 'open' || f.realStatus === 'partial')
+      .slice(0, 4)
+      .map(f => f.remainingWork || f.title);
+
+    confidence = allMatches.length > 2 ? 0.92 : allMatches.length > 0 ? 0.85 : 0.65;
+  } else {
+    // No specific matches — give general agent-perspective answer
+    const agentPerspectives: Record<string, string> = {
+      design: `From my analysis (score: ${analysis?.currentScore || '?'}/100), the key open areas are: ${analysis?.findings.filter(f => f.realStatus === 'open').map(f => f.title).join(', ') || 'none identified'}. For your specific question, I'd need more context about which portal or component you're referring to.`,
+      engineering: `Engineering health is at ${analysis?.currentScore || '?'}/100. Open items: ${analysis?.findings.filter(f => f.realStatus === 'open').map(f => f.title).join(', ') || 'none'}. The biggest architectural gaps are Zustand migration and Supabase RLS policies.`,
+      qa: `QA score: ${analysis?.currentScore || '?'}/100. Most critical bugs have been fixed. Remaining edge cases: ${analysis?.findings.filter(f => f.realStatus === 'open').map(f => f.title).join(', ') || 'none found'}. The notification persistence issue is the top remaining gap.`,
+      operations: `Operations compliance is at ${analysis?.currentScore || '?'}/100. State machine and audit trail are live. Open items: ${analysis?.findings.filter(f => f.realStatus === 'open' || f.realStatus === 'partial').map(f => f.title).join(', ') || 'all clear'}.`,
+      strategy: `Strategic score: ${analysis?.currentScore || '?'}/100. Biggest opportunity gaps: ${analysis?.findings.filter(f => f.realStatus === 'open').map(f => f.title).join(', ') || 'none'}. Risk mitigation positioning and social proof are already live.`,
+    };
+
+    text = agentPerspectives[agent.id] || `I don't have specific findings matching your query. My current score is ${analysis?.currentScore || '?'}/100.`;
+
+    recommendations = analysis?.findings
+      .filter(f => f.realStatus === 'open')
+      .slice(0, 3)
+      .map(f => f.title) || [];
+
+    confidence = 0.65;
+  }
+
+  return {
     agentId: agent.id,
-    text: `Acknowledged. I'll review this from my ${agent.role} perspective and provide detailed recommendations.`,
-    recommendations: [],
+    text,
+    recommendations,
     timestamp: new Date().toISOString(),
-    confidence: 0.7,
+    confidence,
   };
 }
 

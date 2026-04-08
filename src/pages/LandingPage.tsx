@@ -2,10 +2,10 @@ import { useRef, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import {
-  Zap, Shield, TrendingUp, Users, CheckCircle, ArrowRight,
+  Zap, Shield, ShieldCheck, TrendingUp, Users, CheckCircle, ArrowRight,
   Sun, BarChart3, FileText, Phone, Star, ChevronDown,
   Building2, Handshake, Clock, DollarSign, Eye, Lock,
-  Activity, Percent, ArrowUpRight
+  Activity, Percent, ArrowUpRight, ClipboardList
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -653,12 +653,12 @@ const LandingPage = () => {
                 </h3>
                 <div className="space-y-3 relative">
                   {[
-                    { label: 'Mandatory Battery Storage', icon: '⚡', desc: '100% of installs include battery — higher home value, grid independence' },
-                    { label: 'Vetted Installer Network', icon: '🛡️', desc: 'Every installer is performance-scored and continuously monitored' },
-                    { label: '5-Year Service Contract', icon: '📋', desc: 'Post-install concierge: cleaning, monitoring, rate optimization' },
-                    { label: 'Real-Time Project Tracking', icon: '📡', desc: 'Every stakeholder sees live status — no black boxes' },
-                    { label: 'Aurora-Verified Designs', icon: '☀️', desc: 'Satellite data + shading analysis ensures optimal system sizing' },
-                    { label: 'Escrow-Protected Funding', icon: '🔒', desc: 'Funds released only on verified work completion — zero risk of abandonment' },
+                    { label: 'Mandatory Battery Storage', Icon: Zap, desc: '100% of installs include battery — higher home value, grid independence' },
+                    { label: 'Vetted Installer Network', Icon: ShieldCheck, desc: 'Every installer is performance-scored and continuously monitored' },
+                    { label: '5-Year Service Contract', Icon: ClipboardList, desc: 'Post-install concierge: cleaning, monitoring, rate optimization' },
+                    { label: 'Real-Time Project Tracking', Icon: Activity, desc: 'Every stakeholder sees live status — no black boxes' },
+                    { label: 'Aurora-Verified Designs', Icon: Sun, desc: 'Satellite data + shading analysis ensures optimal system sizing' },
+                    { label: 'Escrow-Protected Funding', Icon: Lock, desc: 'Funds released only on verified work completion — zero risk of abandonment' },
                   ].map((m, i) => (
                     <motion.div
                       key={m.label}
@@ -669,7 +669,7 @@ const LandingPage = () => {
                       className="flex items-center gap-4 group p-3 rounded-xl hover:bg-white/[0.02] transition-colors duration-300"
                     >
                       <div className="w-11 h-11 rounded-lg bg-emerald-400/[0.06] flex items-center justify-center shrink-0 group-hover:bg-emerald-400/[0.1] transition-colors duration-300">
-                        <span className="text-base">{m.icon}</span>
+                        <m.Icon className="w-5 h-5 text-emerald-400/70" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-white/70">{m.label}</div>

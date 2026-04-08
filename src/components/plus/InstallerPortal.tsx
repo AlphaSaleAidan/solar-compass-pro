@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2, XCircle, RefreshCw } from 'lucide-react';
+import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2, XCircle, RefreshCw, Lock } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -60,7 +60,7 @@ const InstallerPortal = () => {
 
   // For demo: show all projects (demo data is already scoped)
   // For production: RLS handles filtering — show all projects from the store
-  const installerName = isDemo ? 'SunTech Installations' : (user?.companyName || 'Installer');
+  const installerName = user?.companyName || user?.name || 'Installer';
   const installerProjects = store.projects;
   const completedCount = installerProjects.filter(p => p.currentMilestone >= 5).length;
   const activeCount = installerProjects.filter(p => p.status !== 'completed').length;
@@ -96,12 +96,12 @@ const InstallerPortal = () => {
 
   const handleDocUpload = (projectId: string) => {
     const fileName = `installer-doc-${Date.now()}.pdf`;
-    store.addFinancierUpload(projectId, fileName, 'document', 'SunTech Installations');
+    store.addFinancierUpload(projectId, fileName, 'document', installerName);
   };
 
   const handlePhotoUpload = (projectId: string) => {
     const fileName = `install-photo-${Date.now()}.jpg`;
-    store.addFinancierUpload(projectId, fileName, 'photo', 'SunTech Installations');
+    store.addFinancierUpload(projectId, fileName, 'photo', installerName);
   };
 
   // Enhanced project detail popup
@@ -369,7 +369,7 @@ const InstallerPortal = () => {
                             <div className="flex items-center gap-2 px-3 py-2.5 mb-3 bg-muted/70 border border-border rounded-lg">
                               <Shield className="w-4 h-4 text-muted-foreground shrink-0" />
                               <span className="text-[10px] text-muted-foreground font-bold">
-                                🔒 Locked — Complete M{p.currentMilestone + 1} ({MILESTONE_SOPS[p.currentMilestone]?.name}) and get Ops approval first
+                                <Lock className="w-3.5 h-3.5 inline-block mr-1 opacity-70" /> Locked — Complete M{p.currentMilestone + 1} ({MILESTONE_SOPS[p.currentMilestone]?.name}) and get Ops approval first
                               </span>
                             </div>
                           )}
@@ -544,7 +544,7 @@ const InstallerPortal = () => {
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && chatInput.trim()) {
-                        store.addProjectMessage(p.id, { sender: 'SunTech Installations', role: 'installer', text: chatInput.trim(), time: 'Now' });
+                        store.addProjectMessage(p.id, { sender: installerName, role: 'installer', text: chatInput.trim(), time: 'Now' });
                         setChatInput('');
                       }
                     }}
@@ -554,7 +554,7 @@ const InstallerPortal = () => {
                   <button
                     onClick={() => {
                       if (chatInput.trim()) {
-                        store.addProjectMessage(p.id, { sender: 'SunTech Installations', role: 'installer', text: chatInput.trim(), time: 'Now' });
+                        store.addProjectMessage(p.id, { sender: installerName, role: 'installer', text: chatInput.trim(), time: 'Now' });
                         setChatInput('');
                       }
                     }}
@@ -581,7 +581,7 @@ const InstallerPortal = () => {
                   <button
                     onClick={() => {
                       if (newUpdateText.trim()) {
-                        store.addFinancierUpdate(p.id, newUpdateText.trim(), 'SunTech Installations');
+                        store.addFinancierUpdate(p.id, newUpdateText.trim(), installerName);
                         setNewUpdateText('');
                       }
                     }}
@@ -658,9 +658,9 @@ const InstallerPortal = () => {
                         priority: ticketPriority,
                         status: 'open',
                         createdAt: new Date().toISOString().split('T')[0],
-                        createdBy: 'SunTech Installations',
+                        createdBy: installerName,
                         createdByRole: 'installer',
-                        messages: [{ sender: 'SunTech Installations', role: 'installer', text: ticketSubject.trim(), time: 'Now' }],
+                        messages: [{ sender: installerName, role: 'installer', text: ticketSubject.trim(), time: 'Now' }],
                       });
                       setTicketSubject('');
                       setShowTicketModal(false);
@@ -740,7 +740,7 @@ const InstallerPortal = () => {
 
           {projectsNeedingAction.length === 0 && (
             <div className="text-center py-8">
-              <span className="text-3xl">✅</span>
+              <CheckCircle className="w-8 h-8 text-[hsl(var(--green))]" />
               <p className="text-xs text-muted-foreground mt-2">No pending action items — all caught up!</p>
             </div>
           )}

@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, Shield, Paintbrush, Code, ClipboardCheck, Activity,
-  ChevronDown, ChevronRight, CheckCircle2, Circle, Clock,
+  ChevronDown, ChevronRight, CheckCircle, CheckCircle2, Circle, Clock,
   AlertTriangle, Star, Zap, MessageSquare, Settings, Eye,
   ArrowRight, ArrowLeft, BarChart3, Users, Layers, RefreshCw, Send,
   Play, Pause, Target, TrendingUp, FileText, Sparkles,
@@ -305,7 +305,7 @@ const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter }: {
                 filter === f ? 'bg-primary/15 text-primary border-primary/30' : 'bg-white/[0.03] text-gray-400 border-white/[0.06] hover:bg-white/[0.06]'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'critical' ? '🔴 Critical' : f === 'high' ? '🟠 High+' : '🔄 Active'}
+              {f === 'all' ? 'All' : f === 'critical' ? 'Critical' : f === 'high' ? 'High+' : 'Active'}
             </button>
           ))}
         </div>
@@ -688,7 +688,7 @@ const ConsensusTab = ({ reports, agents }: { reports: ConsensusReport[]; agents:
           {/* Agreements / Disagreements */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="text-[10px] text-green-400/70 uppercase tracking-wider font-bold mb-1.5">✅ Agreements ({report.agreements.length})</div>
+              <div className="text-[10px] text-green-400/70 uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Agreements ({report.agreements.length})</div>
               <div className="space-y-1">
                 {report.agreements.slice(0, 4).map((a, i) => (
                   <div key={i} className="text-[10px] text-gray-400 p-1.5 rounded bg-green-500/[0.03] border border-green-500/[0.06]">{a}</div>
@@ -696,7 +696,7 @@ const ConsensusTab = ({ reports, agents }: { reports: ConsensusReport[]; agents:
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-red-400/70 uppercase tracking-wider font-bold mb-1.5">⚠️ Disagreements ({report.disagreements.length})</div>
+              <div className="text-[10px] text-red-400/70 uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Disagreements ({report.disagreements.length})</div>
               <div className="space-y-1">
                 {report.disagreements.slice(0, 4).map((d, i) => (
                   <div key={i} className="text-[10px] text-gray-400 p-1.5 rounded bg-red-500/[0.03] border border-red-500/[0.06]">{d}</div>

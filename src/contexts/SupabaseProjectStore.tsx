@@ -11,6 +11,7 @@ import type {
 } from '@/contexts/ProjectStore';
 import type { Project, SellProject } from '@/data/mockData';
 import { inferState, type ProjectState } from '@/lib/projectStateMachine';
+import { logAuditEvent } from '@/lib/auditLog';
 import { useQueryClient } from '@tanstack/react-query';
 
 // This store provides the SAME interface as ProjectStore but reads/writes Supabase
@@ -333,7 +334,8 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     // For now, update the project status
     const dbId = getDbId(projectId);
     await supabase.from('projects').update({ status: 'in_pipeline' as any, current_milestone: 0 }).eq('id', dbId);
-  }, [projects]);
+    if (user?.id) logAuditEvent({ action: 'converted_to_sale', actorId: user.id, projectId: dbId });
+  }, [projects, user]);
 
   const toggleChecklist = useCallback(async (projectId: string, checklistItemId: string, done: boolean) => {
     const dbId = getDbId(projectId);
@@ -432,6 +434,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       const state = prev[projectId] || createDefaultMilestoneState();
       return { ...prev, [projectId]: { ...state, installerSubmitted: { ...state.installerSubmitted, [milestoneIndex]: true } } };
     });
+    if (user?.id) logAuditEvent({ action: 'milestone_submitted', actorId: user.id, projectId: dbId, details: { milestoneIndex } });
   }, [user]);
 
   const approveMilestone = useCallback(async (projectId: string, milestoneIndex: number) => {
@@ -470,6 +473,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       ...prev,
       [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), fundStatus: { ...(prev[projectId]?.fundStatus || {}), [milestoneIndex]: 'pending' } },
     }));
+    if (user?.id) logAuditEvent({ action: 'milestone_ops_approved', actorId: user.id, projectId: dbId, details: { milestoneIndex, newMilestone } });
   }, [projects, user]);
 
   const approveFundRelease = useCallback(async (projectId: string, milestoneIndex: number) => {
@@ -484,7 +488,8 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       ...prev,
       [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), fundStatus: { ...(prev[projectId]?.fundStatus || {}), [milestoneIndex]: 'approved' } },
     }));
-  }, [projects]);
+    if (user?.id) logAuditEvent({ action: 'fund_approved', actorId: user.id, projectId: dbId, details: { milestoneIndex } });
+  }, [projects, user]);
 
   const releaseFund = useCallback(async (projectId: string, milestoneIndex: number) => {
     const dbId = getDbId(projectId);
@@ -511,6 +516,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       ...prev,
       [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), fundStatus: { ...(prev[projectId]?.fundStatus || {}), [milestoneIndex]: 'released' } },
     }));
+    if (user?.id) logAuditEvent({ action: 'fund_released', actorId: user.id, projectId: dbId, details: { milestoneIndex, amount, percent: sop?.fundPercent } });
   }, [projects, user]);
 
   const setOpsNotes = useCallback(async (projectId: string, milestoneIndex: number, notes: string) => {
@@ -634,6 +640,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       all_electric: project.allElectric,
       credit_status: project.creditStatus === 'credit_passed' ? 'credit_pass' : project.creditStatus === 'credit_fail' ? 'credit_fail' : 'pending',
     });
+    if (user?.id) logAuditEvent({ action: 'sell_project_created', actorId: user.id, details: { firstName: project.firstName, lastName: project.lastName } });
   }, [user]);
 
   const updateSellProject = useCallback(async (project: SellProject) => {
@@ -721,13 +728,15 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     }
 
     setSellProjects(prev => prev.map(p => p.id === projectId ? { ...p, approvalStatus: 'clean' as const } : p));
+    if (user?.id) logAuditEvent({ action: 'qc_marked_clean', actorId: user.id, sellProjectId: dbId, details: { projectName: sp ? `${sp.firstName} ${sp.lastName}` : projectId } });
   }, [sellProjects, user]);
 
   const markSellProjectDirty = useCallback(async (projectId: string, notes: string) => {
     const dbId = getSellDbId(projectId);
     await supabase.from('sell_projects').update({ approval_status: 'dirty', rejection_reason: notes }).eq('id', dbId);
     setSellProjects(prev => prev.map(p => p.id === projectId ? { ...p, approvalStatus: 'dirty' as const, approvalNotes: notes } : p));
-  }, [sellProjects]);
+    if (user?.id) logAuditEvent({ action: 'qc_marked_dirty', actorId: user.id, sellProjectId: dbId, details: { notes } });
+  }, [sellProjects, user]);
 
   const getSellProjectsPendingApproval = useCallback(() => {
     return sellProjects.filter(p => p.approvalStatus === 'pending');
