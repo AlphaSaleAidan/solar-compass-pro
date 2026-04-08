@@ -702,17 +702,18 @@ function generateDirectiveResponse(agent: CouncilAgent, directiveText: string, p
 
   // ── Topic classification ──────────────────────────────────────
   // Classify the question to route to the right response template
+  // Use word boundaries (\b) to prevent partial matches like "rep" in "repeating"
   const topics = {
-    installer: /install|milestone|m[1-7]|pto|permit|inspection|panel|roof|crew/i.test(lower),
-    financier: /financ|fund|escrow|portfolio|capital|release|payment|risk/i.test(lower),
-    sales: /sales|pipeline|sell|convert|lead|proposal|close|rep|commission/i.test(lower),
-    ops: /ops|operation|qc|review|approve|reject|compliance|sop|audit/i.test(lower),
-    council: /council|agent|recommend|review|score|finding/i.test(lower),
-    auth: /auth|login|role|permission|rbac|admin|access/i.test(lower),
-    performance: /performance|speed|load|slow|optimize|bundle|build/i.test(lower),
-    data: /data|mock|fake|real|connect|sync|supabase|database/i.test(lower),
-    design: /design|ui|ux|visual|animation|transition|color|theme|style|sleek/i.test(lower),
-    bug: /bug|error|crash|broken|fix|issue|problem|wrong/i.test(lower),
+    installer: /\b(install|milestone|m[1-7]\b|pto|permit|inspection|panel|roof|crew)\b/i.test(lower),
+    financier: /\b(financ|fund|escrow|portfolio|capital|release|payment|risk)\b/i.test(lower),
+    sales: /\b(sales|pipeline|sell|convert|leads?\b|proposal|closing|reps?\b|commission)\b/i.test(lower),
+    ops: /\b(ops|operation|qc\b|review|approv|reject|compliance|sop\b|audit)\b/i.test(lower),
+    council: /\b(council|agents?\b|recommend|score|finding)\b/i.test(lower),
+    auth: /\b(auth|login|role|permission|rbac|admin|access)\b/i.test(lower),
+    performance: /\b(performance|speed|load|slow|optimize|bundle|build)\b/i.test(lower),
+    data: /\b(data|mock|fake|real|connect|sync|supabase|database)\b/i.test(lower),
+    design: /\b(design|ui\b|ux\b|visual|animation|transition|color|theme|style|sleek)\b/i.test(lower),
+    bug: /\b(bug|error|crash|broken|fix|issue|problem|wrong)\b/i.test(lower),
     general: true,
   };
   const primaryTopic = Object.entries(topics).find(([_, v]) => v && _ !== 'general')?.[0] || 'general';

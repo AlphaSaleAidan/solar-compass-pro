@@ -245,10 +245,12 @@ const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter, directive
   directives: Directive[];
 }) => {
   // Get latest agent thoughts from directives
+  // Show thoughts from ANY directive (including in-progress ones) — most recent first
   const latestThoughts = agents.map(agent => {
-    const latestDirective = directives.find(d => d.status === 'completed' && d.responses.some(r => r.agentId === agent.id));
+    const latestDirective = directives.find(d => d.responses.some(r => r.agentId === agent.id));
     const response = latestDirective?.responses.find(r => r.agentId === agent.id);
-    return { agent, response, directive: latestDirective };
+    const isThinking = directives.some(d => d.status === 'processing' && d.assignedAgents.includes(agent.id) && !d.responses.some(r => r.agentId === agent.id));
+    return { agent, response, directive: latestDirective, isThinking };
   });
 
   return (
@@ -289,13 +291,41 @@ const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter, directive
             <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 font-bold">Active</span>
           )}
         </div>
-        {latestThoughts.some(t => t.response) ? (
+        {latestThoughts.some(t => t.response || t.isThinking) ? (
           <div className="space-y-2.5">
-            {latestThoughts.filter(t => t.response).map(({ agent, response }) => {
+            {latestThoughts.map(({ agent, response, isThinking }) => {
               const Icon = AGENT_ICONS[agent.id];
               const color = AGENT_COLORS[agent.id] || '#888';
-              // Show first meaningful line of the response
-              const thoughtPreview = response!.text.split('\n').filter(l => l.trim().length > 0).slice(0, 2).join(' ').slice(0, 200);
+
+              if (isThinking && !response) {
+                return (
+                  <motion.div
+                    key={agent.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]"
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 animate-pulse" style={{ background: `${color}15` }}>
+                      <Icon className="w-4 h-4" style={{ color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-white">{agent.name}</span>
+                        <span className="text-[9px] text-blue-400 animate-pulse">Analyzing...</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              }
+
+              if (!response) return null;
+
+              const thoughtPreview = response.text.split('\n').filter(l => l.trim().length > 0).slice(0, 2).join(' ').slice(0, 200);
               return (
                 <motion.div
                   key={agent.id}
@@ -312,15 +342,15 @@ const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter, directive
                       <span className="text-[9px] text-gray-500">{agent.role}</span>
                       <div className="ml-auto flex items-center gap-1">
                         <div className="h-1.5 w-10 rounded-full bg-white/[0.06] overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${(response!.confidence * 100)}%`, background: color }} />
+                          <div className="h-full rounded-full" style={{ width: `${(response.confidence * 100)}%`, background: color }} />
                         </div>
-                        <span className="text-[9px] text-gray-500">{Math.round(response!.confidence * 100)}%</span>
+                        <span className="text-[9px] text-gray-500">{Math.round(response.confidence * 100)}%</span>
                       </div>
                     </div>
                     <p className="text-[11px] text-gray-300 leading-relaxed line-clamp-2">{thoughtPreview}</p>
-                    {response!.recommendations.length > 0 && (
+                    {response.recommendations.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1.5">
-                        {response!.recommendations.slice(0, 2).map((r, i) => (
+                        {response.recommendations.slice(0, 2).map((r, i) => (
                           <span key={i} className="text-[9px] px-2 py-0.5 rounded-full border border-white/[0.06] text-gray-400" style={{ background: `${color}08` }}>
                             {r.length > 40 ? r.slice(0, 40) + '...' : r}
                           </span>

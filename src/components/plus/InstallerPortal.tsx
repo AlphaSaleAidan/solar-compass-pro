@@ -1135,6 +1135,35 @@ const InstallerPortal = () => {
                   </div>
                   {isExpanded && (
                     <div className="border-t border-border px-5 py-4 space-y-4">
+                      {/* Accept Project — required before M1 submission */}
+                      {!p.installerAccepted && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-center justify-between p-4 rounded-xl bg-primary/[0.06] border border-primary/20"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                              <FileText className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-card-foreground">Accept Project Assignment</div>
+                              <div className="text-[10px] text-muted-foreground">Review SOW and accept before starting M1 — Contract Signed</div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              store.updateProject({ ...p, installerAccepted: true } as any);
+                              toast.success(`Project accepted — ${p.customerName}. You can now begin M1 submission.`);
+                            }}
+                            className="flex items-center gap-1.5 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:bg-primary/90 transition-all active:scale-95 shadow-lg shadow-primary/20"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Accept Project
+                          </button>
+                        </motion.div>
+                      )}
                       {/* M1-M7 Visual Timeline */}
                       <MilestoneTimeline currentMilestone={p.currentMilestone} fundStatus={ms.fundStatus} />
                       {/* Quick Info */}

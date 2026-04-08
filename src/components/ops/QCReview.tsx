@@ -18,9 +18,11 @@ const QCReview = () => {
     p => p.convertedToSale && !p.qcInitialApproved && p.approvalStatus === 'pending'
   );
 
-  // Recently reviewed
+  // Recently reviewed — filter out legacy demo records
   const recentlyReviewed = sellProjects.filter(
-    p => p.convertedToSale && p.qcInitialApproved
+    p => p.convertedToSale && p.qcInitialApproved &&
+      !(p.firstName === 'Maria' && p.lastName === 'Gonzalez') &&
+      !(p.firstName === 'Maria' && p.lastName === 'Gonzales')
   ).slice(0, 5);
 
   const handleApproveInitialQC = (project: SellProject) => {

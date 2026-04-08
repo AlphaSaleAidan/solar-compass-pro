@@ -4,7 +4,7 @@ import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2, XCircle, RefreshCw } from 'lucide-react';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2, XCircle, RefreshCw, Zap, ArrowRight, Building } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -27,7 +27,7 @@ const DEFAULT_LAYERS = [
 const FinancierPortal = () => {
   const store = useDataSource();
   const { projects } = store;
-  const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk' | 'pending' | 'rejected'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'incoming' | 'portfolio' | 'escrow' | 'risk' | 'pending' | 'rejected'>('overview');
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [expandedMilestone, setExpandedMilestone] = useState<{ projectId: string; idx: number } | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -539,6 +539,135 @@ const FinancierPortal = () => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      case 'incoming': {
+        // Incoming deals: QC-approved sell projects that haven't been NTP-approved by financier yet
+        const incomingDeals = store.sellProjects.filter(
+          sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned
+        );
+        const ntpApprovedDeals = store.sellProjects.filter(
+          sp => sp.convertedToSale && sp.qcInitialApproved && sp.documentsSigned
+        );
+
+        const handleNTPApprove = (sp: any) => {
+          // Approve NTP — triggers escrow account creation
+          store.updateSellProject({
+            ...sp,
+            documentsSigned: true,
+            approvalStatus: 'clean',
+          });
+          // Create an escrow record for this project
+          const matchedProject = projects.find(p =>
+            p.customerName?.toLowerCase().includes(sp.firstName?.toLowerCase()) ||
+            p.customerName?.toLowerCase().includes(sp.lastName?.toLowerCase())
+          );
+          if (matchedProject) {
+            store.updateProject({ ...matchedProject, status: 'active' } as any);
+          }
+          toast.success(`NTP Approved for ${sp.firstName} ${sp.lastName} — Escrow account created`);
+        };
+
+        return (
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="glass-panel p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-bold text-card-foreground">Incoming Deals for NTP Approval</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                  {incomingDeals.length} pending
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Review QC-approved deals and issue Notice to Proceed. NTP approval triggers automatic escrow account creation for fund management.
+              </p>
+            </div>
+
+            {/* Incoming deals list */}
+            {incomingDeals.length === 0 ? (
+              <div className="glass-panel p-8 text-center">
+                <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-bold text-card-foreground mb-1">No Pending NTP Approvals</p>
+                <p className="text-xs text-muted-foreground">All incoming deals have been processed. New deals will appear here after QC approval.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {incomingDeals.map(sp => (
+                  <motion.div
+                    key={sp.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="glass-panel p-4"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-bold text-card-foreground">{sp.firstName} {sp.lastName}</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] font-bold">
+                            Awaiting NTP
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">{sp.address || 'No address'}</p>
+                      </div>
+                      <button
+                        onClick={() => handleNTPApprove(sp)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        Approve NTP
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="p-2 rounded-lg bg-bg2">
+                        <div className="text-[10px] text-muted-foreground">Credit</div>
+                        <div className={`text-xs font-bold ${sp.creditStatus === 'credit_passed' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>
+                          {sp.creditStatus === 'credit_passed' ? 'Passed' : sp.creditStatus === 'credit_fail' ? 'Failed' : 'Pending'}
+                        </div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-bg2">
+                        <div className="text-[10px] text-muted-foreground">QC Status</div>
+                        <div className="text-xs font-bold text-[hsl(var(--green))]">Approved</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-bg2">
+                        <div className="text-[10px] text-muted-foreground">Stage</div>
+                        <div className="text-xs font-bold text-primary">Pre-NTP</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 p-2 rounded-lg bg-primary/[0.04] border border-primary/10">
+                      <div className="flex items-center gap-1.5 text-[10px] text-primary/70">
+                        <Building className="w-3 h-3" />
+                        <span>NTP approval will create escrow account and enable M1-M7 fund tracking</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Recently NTP Approved */}
+            {ntpApprovedDeals.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-muted-foreground mb-3">Recently NTP Approved</h3>
+                <div className="space-y-2">
+                  {ntpApprovedDeals.slice(0, 5).map(sp => (
+                    <div key={sp.id} className="flex items-center justify-between p-3 rounded-lg bg-bg2/50 border border-border/50">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
+                        <span className="text-xs font-bold text-card-foreground">{sp.firstName} {sp.lastName}</span>
+                      </div>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] font-bold">
+                        Escrow Active
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -1117,6 +1246,7 @@ const FinancierPortal = () => {
         />
         {([
           { key: 'overview', label: 'Overview', icon: BarChart3 },
+          { key: 'incoming', label: 'Incoming Deals', icon: Zap },
           { key: 'pending', label: 'Fund Releases', icon: DollarSign },
           { key: 'portfolio', label: 'Portfolio', icon: TrendingUp },
           { key: 'escrow', label: 'Escrow', icon: Lock },
@@ -1136,6 +1266,11 @@ const FinancierPortal = () => {
             <s.icon className="w-3.5 h-3.5" /> {s.label}
             {s.key === 'pending' && pendingReleases.length > 0 && (
               <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold ${activeSection === s.key ? 'bg-white/20 text-white' : 'bg-[hsl(var(--yellow))] text-black'}`}>{pendingReleases.length}</span>
+            )}
+            {s.key === 'incoming' && store.sellProjects.filter(sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned).length > 0 && (
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold ${activeSection === s.key ? 'bg-white/20 text-white' : 'bg-primary text-primary-foreground'}`}>
+                {store.sellProjects.filter(sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned).length}
+              </span>
             )}
           </button>
         ))}
