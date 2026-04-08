@@ -695,6 +695,8 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       approval_status: project.approvalStatus,
       dirty_notes: project.approvalNotes || null,
       qc_initial_approved: project.qcInitialApproved,
+      final_submitted: project.submittedForApproval || false,
+      site_survey_data: project.siteSurveyData as any || null,
     }).eq('id', dbId);
     if (error) console.error('updateSellProject failed:', error.message, 'dbId:', dbId);
   }, [sellProjects]);

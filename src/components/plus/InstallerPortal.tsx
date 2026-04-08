@@ -8,6 +8,7 @@ import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2, XCircle, RefreshCw, Lock } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
+import { CelebrationAnimation } from '@/components/shared/CelebrationAnimation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const INSTALLER_MILESTONES = [
@@ -37,6 +38,7 @@ const InstallerPortal = () => {
   const [popupTab, setPopupTab] = useState<'details' | 'milestones' | 'uploads' | 'chat' | 'updates'>('details');
   const [popupExpandedM, setPopupExpandedM] = useState<number | null>(null);
   const [chatInput, setChatInput] = useState('');
+  const [showCelebration, setShowCelebration] = useState(false);
   const [newUpdateText, setNewUpdateText] = useState('');
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketSubject, setTicketSubject] = useState('');
@@ -476,6 +478,7 @@ const InstallerPortal = () => {
                                     disabled={!allDone}
                                     onClick={() => {
                                       store.submitMilestoneForQC(p.id, i);
+                                      setShowCelebration(true);
                                       toast.success(`M${i + 1} submitted for QC review`);
                                     }}
                                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none"
@@ -903,6 +906,7 @@ const InstallerPortal = () => {
                               disabled={!allDone}
                               onClick={() => {
                                 store.submitMilestoneForQC(p.id, p.currentMilestone);
+                                setShowCelebration(true);
                                 toast.success(`M${p.currentMilestone + 1} submitted for QC review`);
                               }}
                               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none"
@@ -1474,6 +1478,7 @@ const InstallerPortal = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
+      <CelebrationAnimation trigger={showCelebration} onComplete={() => setShowCelebration(false)} />
       <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
       <div ref={sectionNavRef} className="relative flex gap-1.5">
         {/* Animated background pill */}

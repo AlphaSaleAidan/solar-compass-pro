@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2, XCircle, RefreshCw, Zap, ArrowRight, Building } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CelebrationAnimation } from '@/components/shared/CelebrationAnimation';
 
 // Escrow milestone percentages are derived from MILESTONE_SOPS (no hardcoded mock data)
 
@@ -39,6 +40,7 @@ const FinancierPortal = () => {
   // Popup state
   const [popupTab, setPopupTab] = useState<'details' | 'milestones' | 'uploads' | 'chat' | 'updates'>('details');
   const [popupExpandedM, setPopupExpandedM] = useState<number | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [newUpdateText, setNewUpdateText] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [showTicketModal, setShowTicketModal] = useState(false);
@@ -567,6 +569,7 @@ const FinancierPortal = () => {
               documentsSigned: true,
               approvalStatus: 'clean',
             });
+            setShowCelebration(true);
             toast.success(`NTP Approved for ${sp.firstName} ${sp.lastName} — moved to Portfolio`);
           } catch (err) {
             console.error('NTP approve failed:', err);
@@ -1319,6 +1322,7 @@ const FinancierPortal = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
+      <CelebrationAnimation trigger={showCelebration} onComplete={() => setShowCelebration(false)} />
       <div ref={sectionNavRef} className="relative flex gap-1.5">
         {/* Animated background pill */}
         <motion.div
