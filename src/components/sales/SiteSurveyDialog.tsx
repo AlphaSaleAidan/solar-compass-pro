@@ -95,7 +95,7 @@ const SiteSurveyDialog = ({ open, onOpenChange, onComplete }: SiteSurveyDialogPr
                 Cancel
               </button>
               <button onClick={capturePhoto} className="px-4 py-1.5 bg-primary rounded-lg text-primary-foreground text-xs font-bold">
-                📸 Capture
+                Capture
               </button>
             </div>
           </div>

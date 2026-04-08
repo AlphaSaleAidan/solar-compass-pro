@@ -67,12 +67,12 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const isMaster = user.roles?.includes('master') || user.isDemo;
 
   const getTabDisplay = (tab: string) => {
-    if (tab === '🦁') return <Crown className="w-4 h-4" />;
+    if (tab === 'Alpha') return <Crown className="w-4 h-4" />;
     return tab;
   };
 
   const aspTabs = user.role === 'sales_rep'
-    ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', '🦁', 'Activity']
+    ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', 'Alpha', 'Activity']
     : ['Executive', 'QC Review', 'Final Approval', 'Milestones', 'Projects', 'Communication', 'Super Support', 'Activity'];
 
   const aspPlusTabs = user.role === 'financier'

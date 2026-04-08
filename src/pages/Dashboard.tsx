@@ -36,7 +36,7 @@ const Dashboard = () => {
 
   const handleConvertToProject = (data: { name: string; email: string; phone: string; address: string }) => {
     setConvertedProjectData(data);
-    setActiveTab('🦁');
+    setActiveTab('Alpha');
   };
 
   const renderContent = () => {
@@ -70,7 +70,7 @@ const Dashboard = () => {
           return <CalendarTab onConvertToProject={handleConvertToProject} />;
         case 'Rankings':
           return <RankingsTab />;
-        case '🦁':
+        case 'Alpha':
           return <SellTab initialProjectData={convertedProjectData} />;
         default:
           return null;

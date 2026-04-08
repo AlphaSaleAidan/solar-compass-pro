@@ -212,7 +212,7 @@ const FinalApprovalQueue = ({ projects, onMarkClean, onMarkDirty }: FinalApprova
                           {p.welcomeCallAnswers.map((a, i) => (
                             <div key={i} className="flex items-start gap-2 text-xs">
                               {a.correct === undefined ? (
-                                <span className="text-primary mt-0.5 shrink-0">📝</span>
+                                <span className="text-primary mt-0.5 shrink-0"></span>
                               ) : a.correct ? (
                                 <CheckCircle className="w-3 h-3 text-asp-green shrink-0 mt-0.5" />
                               ) : (

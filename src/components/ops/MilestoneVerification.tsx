@@ -297,7 +297,7 @@ const MilestoneVerification = () => {
                                           {item.requiresDate && (
                                             <div className="mt-2">
                                               {dateEntry ? (
-                                                <div className="text-[10px] text-[hsl(var(--green))] font-bold">📅 {dateEntry}</div>
+                                                <div className="text-[10px] text-[hsl(var(--green))] font-bold">{dateEntry}</div>
                                               ) : (
                                                 <input
                                                   type="date"

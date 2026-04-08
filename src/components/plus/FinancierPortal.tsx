@@ -229,7 +229,7 @@ const FinancierPortal = () => {
                       <div className="text-[10px] text-muted-foreground mb-1.5">{sop.description}</div>
                       <div className="text-[10px] font-bold text-primary">Fund Release: {sop.fundPercent}% · ${(amount / 1000).toFixed(1)}K</div>
                       <div className={`text-[10px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>
-                        {isPassed ? (fundSt === 'released' ? '✓ Funds Released' : '✓ Approved') : isCurrent ? '⏳ In Progress' : '○ Pending'}
+                        {isPassed ? (fundSt === 'released' ? '✓ Funds Released' : '✓ Approved') : isCurrent ? 'In Progress' : '○ Pending'}
                       </div>
                     </TooltipContent>
                   </Tooltip>

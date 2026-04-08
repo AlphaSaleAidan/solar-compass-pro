@@ -153,7 +153,7 @@ const WelcomeCall = ({ project, onComplete, onClose }: WelcomeCallProps) => {
             {answers.map((a, i) => (
               <div key={i} className="flex items-start gap-2 text-xs p-2 bg-white/[0.03] rounded-lg">
                 {a.correct === undefined ? (
-                  <span className="text-primary mt-0.5">📝</span>
+                  <span className="text-primary mt-0.5"></span>
                 ) : a.correct ? (
                   <CheckCircle className="w-3.5 h-3.5 text-[hsl(150,60%,50%)] shrink-0 mt-0.5" />
                 ) : (

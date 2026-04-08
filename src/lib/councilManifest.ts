@@ -220,7 +220,7 @@ export const CODE_ANALYSIS: AgentCodeAnalysis[] = [
         councilClaim: 'BUG: Installer can skip M2 and complete M4.',
         realStatus: 'fixed',
         evidence: [
-          { file: 'src/components/plus/InstallerPortal.tsx', line: 364, snippet: 'const isLocked = i > p.currentMilestone', status: 'verified', notes: 'Soft lock: future milestones show 🔒, greyed out with opacity-50 pointer-events-none. Can only interact with current milestone.' },
+          { file: 'src/components/plus/InstallerPortal.tsx', line: 364, snippet: 'const isLocked = i > p.currentMilestone', status: 'verified', notes: 'Soft lock: future milestones show lock icon, greyed out with opacity-50 pointer-events-none. Can only interact with current milestone.' },
         ],
         fixedInCommit: 'Milestone soft-lock',
         scoreImpact: 6,

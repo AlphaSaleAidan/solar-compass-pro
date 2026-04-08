@@ -34,10 +34,10 @@ const DEFAULT_STATE: GamificationState = {
 
 // Puzzle prizes — $200-400 average value, cycling through
 export const PUZZLE_PRIZES = [
-  { name: '$400 Dinner Card', icon: '🍽️', value: 400 },
-  { name: 'Meta Ray-Bans', icon: '😎', value: 300 },
+  { name: '$400 Dinner Card', icon: 'DC', value: 400 },
+  { name: 'Meta Ray-Bans', icon: 'RB', value: 300 },
   { name: 'Apple Watch SE', icon: '⌚', value: 250 },
-  { name: 'Yeti Cooler Bundle', icon: '🧊', value: 350 },
+  { name: 'Yeti Cooler Bundle', icon: 'YC', value: 350 },
 ];
 
 // Fixed 3-day puzzle cycle — epoch is April 1, 2026 at 00:01 local time
