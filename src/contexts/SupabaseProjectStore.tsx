@@ -22,6 +22,7 @@ interface ProjectStoreActions {
   setTextEntry: (projectId: string, checklistItemId: string, text: string) => void;
   setDateEntry: (projectId: string, checklistItemId: string, date: string) => void;
   approveMilestone: (projectId: string, milestoneIndex: number) => void;
+  submitMilestoneForQC: (projectId: string, milestoneIndex: number) => void;
   approveFundRelease: (projectId: string, milestoneIndex: number) => void;
   releaseFund: (projectId: string, milestoneIndex: number) => void;
   setOpsNotes: (projectId: string, milestoneIndex: number, notes: string) => void;
@@ -67,6 +68,7 @@ const createDefaultMilestoneState = (): ProjectMilestoneState => ({
   dateEntries: {},
   fundStatus: {},
   opsNotes: {},
+  installerSubmitted: {},
 });
 
 // Map a Supabase project row to the UI Project interface
@@ -408,6 +410,19 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     }));
   }, [milestoneStates, projects]);
 
+  const submitMilestoneForQC = useCallback(async (projectId: string, milestoneIndex: number) => {
+    const dbId = getDbId(projectId);
+    await supabase.from('milestone_states').upsert({
+      project_id: dbId,
+      milestone_index: milestoneIndex,
+      installer_submitted: true,
+    }, { onConflict: 'project_id,milestone_index' });
+    setMilestoneStates(prev => {
+      const state = prev[projectId] || createDefaultMilestoneState();
+      return { ...prev, [projectId]: { ...state, installerSubmitted: { ...state.installerSubmitted, [milestoneIndex]: true } } };
+    });
+  }, [user]);
+
   const approveMilestone = useCallback(async (projectId: string, milestoneIndex: number) => {
     const dbId = getDbId(projectId);
     const newMilestone = milestoneIndex + 1;
@@ -741,7 +756,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
 
   const value: ProjectStoreContextType = {
     projects, qcQueue, milestoneStates, tickets, financierUpdates, financierUploads, projectMessages, sellProjects,
-    acceptDeal, toggleChecklist, uploadFile, setTextEntry, setDateEntry, approveMilestone, approveFundRelease,
+    acceptDeal, toggleChecklist, uploadFile, setTextEntry, setDateEntry, approveMilestone, submitMilestoneForQC, approveFundRelease,
     releaseFund, setOpsNotes, getMilestoneState, isMilestoneReady, getProjectsForInstaller, getProjectsForRep,
     getAllActiveProjects, createTicket, addTicketMessage, resolveTicket, getTicketsForProject,
     addFinancierUpdate, addFinancierUpload, addProjectMessage, deleteProject, deleteSellProject,

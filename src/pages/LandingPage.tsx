@@ -240,6 +240,7 @@ const LandingPage = () => {
       // Staggered card reveals
       gsap.utils.toArray<HTMLElement>('.gsap-stagger-container').forEach((container) => {
         const cards = container.querySelectorAll('.gsap-stagger-item');
+        if (!cards.length) return;
         gsap.fromTo(cards,
           { y: 50, opacity: 0, scale: 0.95 },
           {
@@ -252,19 +253,7 @@ const LandingPage = () => {
         );
       });
 
-      // Horizontal progress line across milestones
-      const milestoneLine = document.querySelector('.gsap-milestone-line') as HTMLElement;
-      if (milestoneLine) {
-        gsap.fromTo(milestoneLine,
-          { scaleX: 0 },
-          {
-            scaleX: 1,
-            duration: 1.5,
-            ease: 'power2.inOut',
-            scrollTrigger: { trigger: milestoneLine, start: 'top 75%', toggleActions: 'play none none none' },
-          }
-        );
-      }
+      // (Milestone progress line removed — section no longer exists)
     }, landingRef);
 
     return () => ctx.revert();

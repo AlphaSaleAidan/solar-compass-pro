@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import { toast } from 'sonner';
 import { COMMISSIONS } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -357,7 +358,12 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                                           </div>
                                           <button
                                             disabled={!allReady}
-                                            onClick={() => store.approveMilestone(p.id, milestoneIdx)}
+                                            onClick={() => {
+                                              store.approveMilestone(p.id, milestoneIdx);
+                                              toast.success(`M${milestoneIdx + 1} approved — fund release queued for Financier`);
+                                              setTimeout(() => toast.info('🔔 Financier notified: Fund release pending'), 800);
+                                              setTimeout(() => toast.info('🔔 Installer notified: Milestone verified'), 1600);
+                                            }}
                                             className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5"
                                           >
                                             <ClipboardCheck className="w-3.5 h-3.5" /> Approve M{milestoneIdx + 1} & Queue Fund Release

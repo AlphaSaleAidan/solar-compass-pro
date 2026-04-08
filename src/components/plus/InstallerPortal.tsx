@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2 } from 'lucide-react';
@@ -408,6 +409,35 @@ const InstallerPortal = () => {
                               </div>
                             )}
                           </div>
+                          {/* Submit Milestone for QC Review */}
+                          {isCurrent && (() => {
+                            const instItems = sop.checklist.filter(c => c.actor === 'installer');
+                            const allDone = instItems.length > 0 && instItems.every(c => ms.checklistDone[c.id]);
+                            const submitted = ms.installerSubmitted?.[i];
+                            return (
+                              <div className="mt-3 pt-3 border-t border-white/5">
+                                {submitted ? (
+                                  <div className="flex items-center gap-2 text-xs font-bold text-[hsl(var(--green))]">
+                                    <CheckCircle className="w-4 h-4" /> Submitted for QC — awaiting Backend Ops
+                                  </div>
+                                ) : (
+                                  <button
+                                    disabled={!allDone}
+                                    onClick={() => {
+                                      store.submitMilestoneForQC(p.id, i);
+                                      toast.success(`M${i + 1} submitted for QC review`);
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none"
+                                  >
+                                    <ClipboardCheck className="w-4 h-4" /> Submit M{i + 1} for QC Review
+                                  </button>
+                                )}
+                                {!allDone && !submitted && (
+                                  <div className="text-[10px] text-muted-foreground mt-1.5">Complete all installer checklist items first</div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -734,6 +764,34 @@ const InstallerPortal = () => {
                         </div>
                       );
                     })}
+                    {/* Submit for QC */}
+                    {(() => {
+                      const allDone = installerItems.length > 0 && installerItems.every(c => ms.checklistDone[c.id]);
+                      const submitted = ms.installerSubmitted?.[p.currentMilestone];
+                      return (
+                        <div className="mt-3 pt-3 border-t border-white/5">
+                          {submitted ? (
+                            <div className="flex items-center gap-2 text-xs font-bold text-[hsl(var(--green))]">
+                              <CheckCircle className="w-4 h-4" /> Submitted for QC — awaiting Backend Ops
+                            </div>
+                          ) : (
+                            <button
+                              disabled={!allDone}
+                              onClick={() => {
+                                store.submitMilestoneForQC(p.id, p.currentMilestone);
+                                toast.success(`M${p.currentMilestone + 1} submitted for QC review`);
+                              }}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none"
+                            >
+                              <ClipboardCheck className="w-4 h-4" /> Submit M{p.currentMilestone + 1} for QC Review
+                            </button>
+                          )}
+                          {!allDone && !submitted && (
+                            <div className="text-[10px] text-muted-foreground mt-1.5">Complete all installer items first</div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

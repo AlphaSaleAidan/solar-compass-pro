@@ -10,6 +10,8 @@ export interface ProjectMilestoneState {
   dateEntries: Record<string, string>;
   fundStatus: Record<number, 'none' | 'pending' | 'approved' | 'released'>;
   opsNotes: Record<number, string>;
+  /** Installer marks milestone as submitted for QC review */
+  installerSubmitted: Record<number, boolean>;
 }
 
 // Shared ticket type
@@ -69,6 +71,7 @@ interface ProjectStoreActions {
   setTextEntry: (projectId: string, checklistItemId: string, text: string) => void;
   setDateEntry: (projectId: string, checklistItemId: string, date: string) => void;
   approveMilestone: (projectId: string, milestoneIndex: number) => void;
+  submitMilestoneForQC: (projectId: string, milestoneIndex: number) => void;
   approveFundRelease: (projectId: string, milestoneIndex: number) => void;
   releaseFund: (projectId: string, milestoneIndex: number) => void;
   setOpsNotes: (projectId: string, milestoneIndex: number, notes: string) => void;
@@ -109,6 +112,7 @@ const createDefaultMilestoneState = (): ProjectMilestoneState => ({
   dateEntries: {},
   fundStatus: {},
   opsNotes: {},
+  installerSubmitted: {},
 });
 
 // Initial mock messages per project
@@ -231,6 +235,13 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
       ...prev,
       dateEntries: { ...prev.dateEntries, [checklistItemId]: date },
       checklistDone: { ...prev.checklistDone, [checklistItemId]: true },
+    }));
+  }, [updateMilestoneState]);
+
+  const submitMilestoneForQC = useCallback((projectId: string, milestoneIndex: number) => {
+    updateMilestoneState(projectId, prev => ({
+      ...prev,
+      installerSubmitted: { ...prev.installerSubmitted, [milestoneIndex]: true },
     }));
   }, [updateMilestoneState]);
 
@@ -402,7 +413,14 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
     // Add to main projects pipeline (installer/financier visible)
     const sp = sellProjects.find(p => p.id === projectId);
-    if (sp && sp.auroraData) {
+    if (sp) {
+      const aurora = sp.auroraData || {
+        systemSize: 'Pending Aurora Sync',
+        battery: 'TBD',
+        financier: 'TBD',
+        monthlyPayment: '$0',
+        adders: [],
+      };
       const newProject: Project = {
         id: `ASP-${2060 + projects.length}`,
         customerName: `${sp.firstName} ${sp.lastName}`,
@@ -412,18 +430,18 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
         status: 'active',
         currentMilestone: 0,
         totalMilestones: 7,
-        systemSize: sp.auroraData.systemSize,
-        battery: sp.auroraData.battery,
+        systemSize: aurora.systemSize,
+        battery: aurora.battery,
         soldPPW: 4.25,
-        contractValue: 0,
-        projectCost: 0,
+        contractValue: parseFloat(aurora.monthlyPayment.replace(/[^0-9.]/g, '')) * 300 || 28000,
+        projectCost: parseFloat(aurora.monthlyPayment.replace(/[^0-9.]/g, '')) * 300 || 28000,
         interestRate: 2.99,
         loanTerms: '25 year @ 2.99%',
         repName: 'Jordan Mills',
         installerName: 'SunTech Installations',
         addedDate: new Date().toISOString().split('T')[0],
         stage: 'Contract Signed',
-        adders: sp.auroraData.adders.map(a => ({ name: a.split(' (')[0], cost: parseInt(a.match(/\$(\d+)/)?.[1] || '0') * 100 })),
+        adders: aurora.adders.map(a => ({ name: a.split(' (')[0], cost: parseInt(a.match(/\$(\d+)/)?.[1] || '0') * 100 })),
         siteSurveyPhotos: [],
         permitStatus: 'pending',
         roofCondition: 'good',
@@ -478,6 +496,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     setTextEntry,
     setDateEntry,
     approveMilestone,
+    submitMilestoneForQC,
     approveFundRelease,
     releaseFund,
     setOpsNotes,

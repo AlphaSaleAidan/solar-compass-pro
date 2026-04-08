@@ -39,6 +39,11 @@ const QCReview = () => {
     // Trigger wave notification cascade → SR + Installer + Financier
     if (user && !user.isDemo) {
       cascadeQCApproved(project.id, user.id, `${project.firstName} ${project.lastName}`);
+    } else {
+      // Demo mode: simulate cascade with local toasts
+      setTimeout(() => toast.info('🔔 Sales Rep notified: Documents ready for signing'), 800);
+      setTimeout(() => toast.info('🔔 Installer notified: New project incoming'), 1600);
+      setTimeout(() => toast.info('🔔 Financier notified: Project added to portfolio'), 2400);
     }
   };
 
@@ -54,6 +59,8 @@ const QCReview = () => {
     // Trigger wave notification cascade → SR gets notified
     if (user && !user.isDemo) {
       cascadeQCRejected(project.id, user.id, `${project.firstName} ${project.lastName}`, notes);
+    } else {
+      setTimeout(() => toast.info('🔔 Sales Rep notified: Deal requires corrections'), 800);
     }
   };
 

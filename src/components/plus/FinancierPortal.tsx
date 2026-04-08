@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2 } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
@@ -463,21 +464,45 @@ const FinancierPortal = () => {
                       </div>
                     )}
 
+                    {/* Fund Amount Breakdown */}
+                    <div className="mb-3 bg-card/50 rounded-lg p-3 border border-border">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Release Amount</div>
+                          <div className="text-lg font-extrabold text-card-foreground">${amount.toLocaleString()}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">% of Contract</div>
+                          <div className="text-lg font-extrabold text-primary">{item.sop.fundPercent}%</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">Contract Value</div>
+                          <div className="text-sm font-bold text-card-foreground">${item.project.projectCost.toLocaleString()}</div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2 justify-end">
                       {item.fundStatus === 'pending' && (
                         <button
-                          onClick={() => store.approveFundRelease(item.project.id, item.milestoneIdx)}
+                          onClick={() => {
+                            store.approveFundRelease(item.project.id, item.milestoneIdx);
+                            toast.success(`M${item.milestoneIdx + 1} fund release approved — $${amount.toLocaleString()} (${item.sop.fundPercent}%)`);
+                          }}
                           className="px-4 py-2 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-95 flex items-center gap-1.5"
                         >
-                          <CheckCircle className="w-3.5 h-3.5" /> Approve Release
+                          <CheckCircle className="w-3.5 h-3.5" /> Approve ${amount.toLocaleString()} Release
                         </button>
                       )}
                       {item.fundStatus === 'approved' && (
                         <button
-                          onClick={() => store.releaseFund(item.project.id, item.milestoneIdx)}
+                          onClick={() => {
+                            store.releaseFund(item.project.id, item.milestoneIdx);
+                            toast.success(`$${amount.toLocaleString()} released for M${item.milestoneIdx + 1}`);
+                          }}
                           className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 flex items-center gap-1.5"
                         >
-                          <DollarSign className="w-3.5 h-3.5" /> Release Funds — ${amount.toLocaleString()}
+                          <DollarSign className="w-3.5 h-3.5" /> Release ${amount.toLocaleString()}
                         </button>
                       )}
                     </div>
