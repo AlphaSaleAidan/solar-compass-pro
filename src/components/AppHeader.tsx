@@ -2,11 +2,13 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LogOut, User, Crown, ArrowLeftRight, Wifi, WifiOff, Brain } from 'lucide-react';
+import { Zap, LogOut, User, Crown, ArrowLeftRight, Wifi, WifiOff, Brain, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { UserRole } from '@/contexts/AuthContext';
 import UserSettingsModal from '@/components/settings/UserSettingsModal';
 import NotificationCenter from '@/components/shared/NotificationCenter';
+import MessageCenter from '@/components/shared/MessageCenter';
+import { MessagingService } from '@/lib/messaging';
 
 interface AppHeaderProps {
   activeTab: string;
@@ -19,6 +21,8 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
   const [showSettings, setShowSettings] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(true);
+  const [showMessages, setShowMessages] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   // Animated tab indicator
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -35,6 +39,19 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
           if (data?.avatar_url) setAvatarUrl(data.avatar_url);
         });
     }
+  }, [user]);
+
+  // Messaging unread count
+  useEffect(() => {
+    if (!user || user.isDemo) return;
+    const userId = user.id || 'admin';
+    const userName = user.name || 'User';
+    const userRole = user.role || 'admin';
+    MessagingService.seedDemoData(userId, userName, userRole);
+    const update = () => setUnreadMessages(MessagingService.getTotalUnreadCount(userId));
+    update();
+    const unsub = MessagingService.subscribe(update);
+    return unsub;
   }, [user]);
 
   // Realtime connection health
@@ -185,6 +202,22 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
           </div>
         )}
 
+        {/* Messages */}
+        {!user.isDemo && (
+          <button
+            onClick={() => setShowMessages(true)}
+            className="relative p-2 rounded-lg hover:bg-white/5 transition-colors"
+            title="Messages"
+          >
+            <MessageSquare className="w-5 h-5 text-white/60" />
+            {unreadMessages > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-primary text-black text-[10px] font-black">
+                {unreadMessages > 99 ? '99+' : unreadMessages}
+              </span>
+            )}
+          </button>
+        )}
+
         {/* Notification bell */}
         {!user.isDemo && <NotificationCenter />}
 
@@ -227,6 +260,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         onOpenChange={setShowSettings}
         onAvatarChange={(url) => setAvatarUrl(url)}
       />
+      <MessageCenter isOpen={showMessages} onClose={() => setShowMessages(false)} />
     </header>
   );
 };
