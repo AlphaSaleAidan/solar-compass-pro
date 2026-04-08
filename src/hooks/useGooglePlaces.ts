@@ -49,11 +49,19 @@ async function loadGoogleMaps(): Promise<void> {
   window.__googleMapsLoading = true;
 
   try {
-    const { data, error } = await supabase.functions.invoke('google-maps-key');
-    const apiKey = typeof data?.key === 'string' ? data.key.trim() : '';
+    // Option 1: Read from env var (preferred — no edge function needed)
+    let apiKey = (import.meta.env.VITE_GOOGLE_MAPS_KEY || '').trim();
 
-    if (error || !apiKey) {
-      throw new Error('Failed to fetch Google Maps API key');
+    // Fallback: try Supabase edge function (legacy path)
+    if (!apiKey) {
+      try {
+        const { data, error } = await supabase.functions.invoke('google-maps-key');
+        if (!error && typeof data?.key === 'string') apiKey = data.key.trim();
+      } catch { /* edge function may not exist */ }
+    }
+
+    if (!apiKey) {
+      throw new Error('Google Maps API key not configured. Set VITE_GOOGLE_MAPS_KEY in .env');
     }
 
     if (!GOOGLE_KEY_REGEX.test(apiKey)) {
