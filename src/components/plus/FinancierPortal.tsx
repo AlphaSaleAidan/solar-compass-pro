@@ -8,14 +8,7 @@ import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, Chev
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const ESCROW_MILESTONES = [
-  { name: 'SOW Confirmed', percent: 15 },
-  { name: 'Permit + Materials', percent: 20 },
-  { name: 'Install Scheduled', percent: 15 },
-  { name: 'Install Complete', percent: 20 },
-  { name: 'Utility Inspection', percent: 20 },
-  { name: 'PTO Granted', percent: 10 },
-];
+// Escrow milestone percentages are derived from MILESTONE_SOPS (no hardcoded mock data)
 
 const DEFAULT_LAYERS = [
   { name: 'Utility Bill Verification', desc: 'Real savings confirmed before pipeline entry', active: true },
@@ -27,24 +20,9 @@ const DEFAULT_LAYERS = [
   { name: 'Battery-First Design', desc: '100% storage attachment improves satisfaction', active: true },
 ];
 
-const FUNDS_RELEASE_HISTORY = [
-  { project: 'ASP-2025', customer: 'Luis Martinez', milestone: 'M4 — Install Complete', percent: 20, amount: 6000, fundedDate: '2026-02-10', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Install completion certificate', 'System commissioning report'], photos: ['Completed array photo', 'Inverter installation photo'], report: 'Installation completed 02/08 — 22 panels mounted on south-facing roof. All microinverters communicating. System commissioning report shows 8.5 kW DC capacity.' },
-  { project: 'ASP-2027', customer: 'James Robinson', milestone: 'M3 — Install Scheduled', percent: 15, amount: 5100, fundedDate: '2026-02-18', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['Install crew assignment', 'Homeowner install confirmation'], photos: ['Pre-install roof condition photos'], report: 'Install crew assigned for 02/22. Homeowner confirmed window. Roof truss spacing 24" OC — standard mount hardware approved.' },
-  { project: 'ASP-2029', customer: 'Monica Chen', milestone: 'M2 — Permit + Materials', percent: 20, amount: 7400, fundedDate: '2026-02-25', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['City permit approval', 'Material order confirmation'], photos: ['Permit document scan'], report: 'Permit #HOU-2026-53190 approved. 28x REC Alpha 400W panels + 2x Tesla Powerwall 3 ordered.' },
-  { project: 'ASP-2031', customer: 'Robert Tran', milestone: 'M5 — Utility Inspection', percent: 20, amount: 5800, fundedDate: '2026-03-01', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Utility inspection report', 'Net metering application'], photos: ['Meter swap photo', 'Inspection tag photo'], report: 'CenterPoint Energy inspection passed. Meter upgraded to bi-directional. Net metering accepted.' },
-  { project: 'ASP-2033', customer: 'Stephanie Okafor', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 6375, fundedDate: '2026-03-05', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['Signed SOW contract', 'Utility bill verification'], photos: ['Property exterior photo'], report: 'SOW executed for 12.5 kW system. 80% offset target met. Credit Tier 1 confirmed.' },
-  { project: 'ASP-2035', customer: 'David Nakamura', milestone: 'M6 — PTO Granted', percent: 10, amount: 3200, fundedDate: '2026-03-12', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['PTO certificate', 'Warranty registration'], photos: ['System monitoring screenshot'], report: 'PTO granted by CenterPoint on 03/10. All 20 microinverters online. Warranty registered.' },
-  { project: 'ASP-2028', customer: 'Karen Washington', milestone: 'M4 — Install Complete', percent: 20, amount: 6600, fundedDate: '2026-03-08', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Install completion certificate', 'Photo verification packet'], photos: ['Completed roof array', 'Battery wall mount'], report: 'Install completed 03/06 by SunPro Team Alpha. 24 panels on south-facing hip roof. Tesla Powerwall 3 mounted.' },
-  { project: 'ASP-2032', customer: 'Anthony Reyes', milestone: 'M3 — Install Scheduled', percent: 15, amount: 4950, fundedDate: '2026-03-15', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['Install crew assignment', 'Material staging receipt'], photos: ['Staged materials photo'], report: 'Crew locked for 03/20. All materials staged. Homeowner confirmed — taking PTO day for install.' },
-  { project: 'ASP-2036', customer: 'Lisa Gutierrez', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 4800, fundedDate: '2026-03-18', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Signed SOW contract', 'Credit approval letter'], photos: ['Front property photo'], report: 'SOW signed for 9.4 kW system. Usage at 1,280 kWh/mo — offset target met. Fast-tracked to permitting.' },
-  { project: 'ASP-2037', customer: 'Priya Sharma', milestone: 'M2 — Permit + Materials', percent: 20, amount: 5200, fundedDate: '2026-03-20', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['City permit approval', 'Equipment order confirmation'], photos: ['Permit scan'], report: 'Permit approved. 24x panels + Duracell 20kW ordered. Materials ETA 03/28.' },
-];
+// FUNDS_RELEASE_HISTORY removed — escrow tab now derives release history from real project data
 
-const RISK_FLAGS = [
-  { id: 'RF-001', projectId: 'ASP-2030', customerName: 'Angela Davis', issue: 'Roof structural damage — water damage and sagging near chimney. Capital paused at M3 pending repair.', priority: 'high', daysOpen: 8, flaggedBy: 'Marcus Reeves (Capital Ops)' },
-  { id: 'RF-002', projectId: 'ASP-2034', customerName: 'Deborah White', issue: 'Financing on hold — employment change triggered credit re-evaluation. Escrow locked at M2.', priority: 'high', daysOpen: 12, flaggedBy: 'Jordan Kim (Fund Manager)' },
-  { id: 'RF-003', projectId: 'ASP-2026', customerName: 'Patricia Williams', issue: 'HOA approval delay — panel placement variance requires board approval. Capital paused at M3.', priority: 'medium', daysOpen: 5, flaggedBy: 'Caitlin Frost (Escrow Specialist)' },
-];
+// RISK_FLAGS removed — risk tab now uses store.tickets
 
 const FinancierPortal = () => {
   const store = useDataSource();
@@ -812,7 +790,39 @@ const FinancierPortal = () => {
           </div>
         );
 
-      case 'escrow':
+      case 'escrow': {
+        // Build escrow data from real MILESTONE_SOPS + project data
+        const escrowMilestones = MILESTONE_SOPS.map((sop, i) => ({ name: sop.name, percent: sop.fundPercent }));
+
+        // Build release history from real store data
+        const releasedMilestones: { projectId: string; customer: string; milestoneIdx: number; milestoneName: string; percent: number; amount: number }[] = [];
+        projects.forEach(p => {
+          const ms = store.getMilestoneState(p.id);
+          MILESTONE_SOPS.forEach((sop, i) => {
+            if (ms.fundStatus[i] === 'released') {
+              releasedMilestones.push({
+                projectId: p.id,
+                customer: p.customerName,
+                milestoneIdx: i,
+                milestoneName: sop.name,
+                percent: sop.fundPercent,
+                amount: Math.round(p.projectCost * (sop.fundPercent / 100)),
+              });
+            }
+          });
+        });
+
+        // Total in escrow (approved but not yet released)
+        let totalInEscrow = 0;
+        projects.forEach(p => {
+          const ms = store.getMilestoneState(p.id);
+          MILESTONE_SOPS.forEach((sop, i) => {
+            if (i < p.currentMilestone && ms.fundStatus[i] !== 'released') {
+              totalInEscrow += Math.round(p.projectCost * (sop.fundPercent / 100));
+            }
+          });
+        });
+
         return (
           <div className="space-y-5">
             <div className="glass-panel p-5">
@@ -821,7 +831,7 @@ const FinancierPortal = () => {
               </h3>
               <p className="text-xs text-muted-foreground mb-4">Funds held in ASP-managed escrow. 7 milestone gates — each requires documented ASP verification.</p>
               <div className="grid grid-cols-7 gap-3">
-                {ESCROW_MILESTONES.map((m, i) => (
+                {escrowMilestones.map((m, i) => (
                   <div key={i} className="bg-muted rounded-xl p-4 text-center border border-border">
                     <div className="text-base font-black text-primary mb-1">M{i + 1}</div>
                     <div className="text-lg font-black text-card-foreground">{m.percent}%</div>
@@ -829,65 +839,53 @@ const FinancierPortal = () => {
                   </div>
                 ))}
               </div>
+              {totalInEscrow > 0 && (
+                <div className="mt-4 bg-[hsl(var(--yellow))]/5 border border-[hsl(var(--yellow))]/20 rounded-xl px-4 py-3 flex items-center justify-between">
+                  <span className="text-xs font-bold text-[hsl(var(--yellow))]">Currently in Escrow</span>
+                  <span className="text-lg font-black text-[hsl(var(--yellow))]">${totalInEscrow.toLocaleString()}</span>
+                </div>
+              )}
             </div>
 
             {/* Funds Released History */}
             <div className="glass-panel overflow-hidden">
               <div className="px-5 py-3.5 border-b border-border text-sm font-extrabold text-card-foreground flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-[hsl(var(--green))]" /> Funds Released History
+                <ClipboardCheck className="w-4 h-4 text-[hsl(var(--green))]" /> Funds Released History ({releasedMilestones.length})
               </div>
-              {FUNDS_RELEASE_HISTORY.map((entry, i) => {
+              {releasedMilestones.length === 0 ? (
+                <div className="px-5 py-8 text-center">
+                  <Lock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">No funds have been released yet. Milestone approvals will appear here once ops and financier sign off.</p>
+                </div>
+              ) : releasedMilestones.map((entry, i) => {
                 const isOpen = expandedHistory === i;
                 return (
-                  <div key={i} className="border-b border-border">
+                  <div key={`${entry.projectId}-M${entry.milestoneIdx}`} className="border-b border-border">
                     <div className="px-5 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors flex items-center justify-between" onClick={() => setExpandedHistory(isOpen ? null : i)}>
                       <div className="flex items-center gap-3">
                         {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
                         <div>
                           <div className="text-sm font-bold text-card-foreground">{entry.customer}</div>
-                          <div className="text-[10px] text-muted-foreground">{entry.project} · {entry.milestone}</div>
+                          <div className="text-[10px] text-muted-foreground">{entry.projectId} · M{entry.milestoneIdx + 1} — {entry.milestoneName}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold bg-primary text-primary-foreground">
-                          {entry.milestone.match(/M\d/)?.[0] || 'M1'}
+                          M{entry.milestoneIdx + 1}
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()}</div>
-                          <div className="text-[10px] text-muted-foreground">{entry.percent}% · {entry.fundedDate}</div>
+                          <div className="text-[10px] text-muted-foreground">{entry.percent}%</div>
                         </div>
                         <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
                       </div>
                     </div>
                     {isOpen && (
-                      <div className="px-5 pb-4 space-y-3">
+                      <div className="px-5 pb-4">
                         <div className="bg-muted rounded-xl p-3 space-y-2">
-                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Funded Date</span><span className="text-xs font-bold text-[hsl(var(--green))]">{entry.fundedDate}</span></div>
-                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Approved By</span><span className="text-xs font-bold text-card-foreground">{entry.approvedBy}</span></div>
+                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Milestone</span><span className="text-xs font-bold text-card-foreground">M{entry.milestoneIdx + 1} — {entry.milestoneName}</span></div>
                           <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Amount</span><span className="text-xs font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()} ({entry.percent}%)</span></div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Documents</div>
-                          <div className="space-y-1">
-                            {entry.documents.map((doc, di) => (
-                              <div key={di} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2"><FileText className="w-3 h-3 text-primary shrink-0" /><span className="text-xs text-card-foreground">{doc}</span></div>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5"><Camera className="w-3 h-3" /> Photos</div>
-                          <div className="space-y-1">
-                            {entry.photos.map((photo, phi) => (
-                              <div key={phi} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2"><Camera className="w-3 h-3 text-primary shrink-0" /><span className="text-xs text-card-foreground">{photo}</span></div>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5"><ClipboardCheck className="w-3 h-3" /> Report</div>
-                          <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
-                            <div className="text-xs text-card-foreground leading-relaxed">{entry.report}</div>
-                            <div className="mt-2 text-[10px] text-muted-foreground">— {entry.approvedBy}, {entry.fundedDate}</div>
-                          </div>
+                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Status</span><span className="text-xs font-bold text-[hsl(var(--green))]">Released</span></div>
                         </div>
                       </div>
                     )}
@@ -897,6 +895,7 @@ const FinancierPortal = () => {
             </div>
           </div>
         );
+      }
 
       case 'risk':
         return (

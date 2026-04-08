@@ -196,7 +196,7 @@ const CouncilDashboard = () => {
       <AnimatePresence mode="wait">
         {tab === 'overview' && (
           <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <OverviewTab stats={stats} agents={state.agents} filteredRecs={filteredRecs} filter={filter} setFilter={setFilter} />
+            <OverviewTab stats={stats} agents={state.agents} filteredRecs={filteredRecs} filter={filter} setFilter={setFilter} directives={state.directives} />
           </motion.div>
         )}
         {tab === 'agents' && (
@@ -228,99 +228,179 @@ const CouncilDashboard = () => {
 
 /* ─── Overview Tab ────────────────────────────────────────────────── */
 
-const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter }: {
+const AGENT_COLORS: Record<string, string> = {
+  design: '#8b5cf6',
+  engineering: '#00d4c8',
+  qa: '#f59e0b',
+  operations: '#22c55e',
+  strategy: '#6366f1',
+};
+
+const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter, directives }: {
   stats: ReturnType<typeof CouncilAPI.getStats>;
   agents: CouncilAgent[];
   filteredRecs: Recommendation[];
   filter: string;
   setFilter: (f: any) => void;
-}) => (
-  <div className="space-y-4">
-    {/* Stats Grid */}
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {[
-        { label: 'Council Score', value: `${stats.averageScore}/100`, icon: Star, color: '#00d4c8' },
-        { label: 'Critical Issues', value: stats.criticalIssues, icon: AlertTriangle, color: '#ef4444' },
-        { label: 'In Progress', value: stats.inProgress, icon: RefreshCw, color: '#3b82f6' },
-        { label: 'Total Findings', value: stats.totalRecommendations, icon: FileText, color: '#8b5cf6' },
-      ].map((s, i) => {
-        const Icon = s.icon;
-        return (
-          <motion.div
-            key={s.label}
-            className="glass-panel p-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className="w-4 h-4" style={{ color: s.color }} />
-              <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">{s.label}</span>
-            </div>
-            <div className="text-2xl font-extrabold text-white">{s.value}</div>
-          </motion.div>
-        );
-      })}
-    </div>
+  directives: Directive[];
+}) => {
+  // Get latest agent thoughts from directives
+  const latestThoughts = agents.map(agent => {
+    const latestDirective = directives.find(d => d.status === 'completed' && d.responses.some(r => r.agentId === agent.id));
+    const response = latestDirective?.responses.find(r => r.agentId === agent.id);
+    return { agent, response, directive: latestDirective };
+  });
 
-    {/* Agent Overview Strip */}
-    <div className="glass-panel p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Users className="w-4 h-4 text-primary" />
-        <span className="text-xs font-bold text-white">Agent Status</span>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        {agents.map(agent => {
-          const Icon = AGENT_ICONS[agent.id];
+  return (
+    <div className="space-y-4">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: 'Council Score', value: `${stats.averageScore}/100`, icon: Star, color: '#00d4c8' },
+          { label: 'Critical Issues', value: stats.criticalIssues, icon: AlertTriangle, color: '#ef4444' },
+          { label: 'In Progress', value: stats.inProgress, icon: RefreshCw, color: '#3b82f6' },
+          { label: 'Directives Processed', value: directives.filter(d => d.status === 'completed').length, icon: MessageSquare, color: '#8b5cf6' },
+        ].map((s, i) => {
+          const Icon = s.icon;
           return (
-            <div key={agent.id} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${agent.id === 'design' ? '#8b5cf6' : agent.id === 'engineering' ? '#00d4c8' : agent.id === 'qa' ? '#f59e0b' : agent.id === 'operations' ? '#22c55e' : '#6366f1'}15` }}>
-                <Icon className="w-4 h-4" style={{ color: agent.id === 'design' ? '#8b5cf6' : agent.id === 'engineering' ? '#00d4c8' : agent.id === 'qa' ? '#f59e0b' : agent.id === 'operations' ? '#22c55e' : '#6366f1' }} />
+            <motion.div
+              key={s.label}
+              className="glass-panel p-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className="w-4 h-4" style={{ color: s.color }} />
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">{s.label}</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-white truncate">{agent.name}</div>
-                <div className="text-[10px] text-gray-400">{agent.reviewScore}/100</div>
-              </div>
-              <div className={`w-2 h-2 rounded-full ${agent.status === 'active' ? 'bg-green-400' : agent.status === 'reviewing' ? 'bg-blue-400 animate-pulse' : 'bg-gray-500'}`} />
-            </div>
+              <div className="text-2xl font-extrabold text-white">{s.value}</div>
+            </motion.div>
           );
         })}
       </div>
-    </div>
 
-    {/* Filters + Recommendations List */}
-    <div className="glass-panel p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-primary" />
-          <span className="text-xs font-bold text-white">All Recommendations</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-gray-400 font-bold">{filteredRecs.length}</span>
+      {/* Live Agent Thoughts */}
+      <div className="glass-panel p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Activity className="w-4 h-4 text-primary" />
+          <span className="text-xs font-bold text-white">Live Agent Thoughts</span>
+          {directives.length > 0 && (
+            <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 font-bold">Active</span>
+          )}
         </div>
-        <div className="flex items-center gap-1">
-          {(['all', 'critical', 'high', 'in_progress'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`text-[10px] px-2.5 py-1 rounded-full border transition-all ${
-                filter === f ? 'bg-primary/15 text-primary border-primary/30' : 'bg-white/[0.03] text-gray-400 border-white/[0.06] hover:bg-white/[0.06]'
-              }`}
-            >
-              {f === 'all' ? 'All' : f === 'critical' ? 'Critical' : f === 'high' ? 'High+' : 'Active'}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
-        {filteredRecs.map((rec, i) => (
-          <RecommendationRow key={rec.id} rec={rec} index={i} />
-        ))}
-        {filteredRecs.length === 0 && (
-          <div className="text-center py-8 text-xs text-gray-500">No recommendations match this filter.</div>
+        {latestThoughts.some(t => t.response) ? (
+          <div className="space-y-2.5">
+            {latestThoughts.filter(t => t.response).map(({ agent, response }) => {
+              const Icon = AGENT_ICONS[agent.id];
+              const color = AGENT_COLORS[agent.id] || '#888';
+              // Show first meaningful line of the response
+              const thoughtPreview = response!.text.split('\n').filter(l => l.trim().length > 0).slice(0, 2).join(' ').slice(0, 200);
+              return (
+                <motion.div
+                  key={agent.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] transition-all"
+                >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}15` }}>
+                    <Icon className="w-4 h-4" style={{ color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold text-white">{agent.name}</span>
+                      <span className="text-[9px] text-gray-500">{agent.role}</span>
+                      <div className="ml-auto flex items-center gap-1">
+                        <div className="h-1.5 w-10 rounded-full bg-white/[0.06] overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${(response!.confidence * 100)}%`, background: color }} />
+                        </div>
+                        <span className="text-[9px] text-gray-500">{Math.round(response!.confidence * 100)}%</span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-gray-300 leading-relaxed line-clamp-2">{thoughtPreview}</p>
+                    {response!.recommendations.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {response!.recommendations.slice(0, 2).map((r, i) => (
+                          <span key={i} className="text-[9px] px-2 py-0.5 rounded-full border border-white/[0.06] text-gray-400" style={{ background: `${color}08` }}>
+                            {r.length > 40 ? r.slice(0, 40) + '...' : r}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-6">
+            <MessageSquare className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+            <p className="text-xs text-gray-500">Send a directive to see live agent analysis.</p>
+            <p className="text-[10px] text-gray-600 mt-1">Go to the Directives tab and ask a question — all 5 agents will respond with data-backed answers.</p>
+          </div>
         )}
       </div>
+
+      {/* Agent Status Strip */}
+      <div className="glass-panel p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Users className="w-4 h-4 text-primary" />
+          <span className="text-xs font-bold text-white">Agent Status</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {agents.map(agent => {
+            const Icon = AGENT_ICONS[agent.id];
+            const color = AGENT_COLORS[agent.id] || '#888';
+            return (
+              <div key={agent.id} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}15` }}>
+                  <Icon className="w-4 h-4" style={{ color }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-white truncate">{agent.name}</div>
+                  <div className="text-[10px] text-gray-400">{agent.reviewScore}/100</div>
+                </div>
+                <div className={`w-2 h-2 rounded-full ${agent.status === 'active' ? 'bg-green-400' : agent.status === 'reviewing' ? 'bg-blue-400 animate-pulse' : 'bg-gray-500'}`} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Filters + Recommendations List */}
+      <div className="glass-panel p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-primary" />
+            <span className="text-xs font-bold text-white">All Recommendations</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-gray-400 font-bold">{filteredRecs.length}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            {(['all', 'critical', 'high', 'in_progress'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`text-[10px] px-2.5 py-1 rounded-full border transition-all ${
+                  filter === f ? 'bg-primary/15 text-primary border-primary/30' : 'bg-white/[0.03] text-gray-400 border-white/[0.06] hover:bg-white/[0.06]'
+                }`}
+              >
+                {f === 'all' ? 'All' : f === 'critical' ? 'Critical' : f === 'high' ? 'High+' : 'Active'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
+          {filteredRecs.map((rec, i) => (
+            <RecommendationRow key={rec.id} rec={rec} index={i} />
+          ))}
+          {filteredRecs.length === 0 && (
+            <div className="text-center py-8 text-xs text-gray-500">No recommendations match this filter.</div>
+          )}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ─── Recommendation Row ──────────────────────────────────────────── */
 
@@ -642,72 +722,110 @@ const ConsensusTab = ({ reports, agents }: { reports: ConsensusReport[]; agents:
       <div className="glass-panel p-8 text-center">
         <Target className="w-8 h-8 text-gray-600 mx-auto mb-3" />
         <p className="text-sm font-bold text-white mb-1">No Consensus Reports Yet</p>
-        <p className="text-xs text-gray-400">Run a Full Review to generate a consensus report from all agents.</p>
+        <p className="text-xs text-gray-400">Send a directive to the council — the Consensus tab will show the synthesized answer from all agents.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {reports.map(report => (
-        <motion.div
-          key={report.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-panel p-5"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Target className="w-5 h-5 text-primary" />
-            <span className="font-bold text-white text-sm">{report.topic}</span>
-            <span className="ml-auto text-xs font-bold text-primary">{report.overallScore}/100</span>
-          </div>
-          <p className="text-xs text-gray-300 leading-relaxed mb-4">{report.summary}</p>
+      {reports.map((report, reportIdx) => {
+        // Parse the summary to extract structured data
+        const isDirectiveSynthesis = report.summary.includes('Directive:');
+        const lines = report.summary.split('\n').filter(l => l.trim());
 
-          {/* Prioritized Actions */}
-          <div className="mb-4">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-2">Priority Actions</div>
-            <div className="space-y-1.5">
-              {report.prioritizedActions.slice(0, 8).map((action, i) => (
-                <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                  <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${PRIORITY_COLORS[action.priority]}`}>
-                    {action.priority}
-                  </span>
-                  <span className="text-xs text-white flex-1">{action.action}</span>
-                  <div className="flex items-center gap-0.5">
-                    {action.agents.slice(0, 3).map(a => {
-                      const Icon = AGENT_ICONS[a];
-                      const c = a === 'design' ? '#8b5cf6' : a === 'engineering' ? '#00d4c8' : a === 'qa' ? '#f59e0b' : a === 'operations' ? '#22c55e' : '#6366f1';
-                      return <div key={a} className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${c}15` }}><Icon className="w-3 h-3" style={{ color: c }} /></div>;
-                    })}
+        return (
+          <motion.div
+            key={report.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: reportIdx * 0.05 }}
+            className="glass-panel p-5"
+          >
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-5 h-5 text-primary" />
+              <span className="font-bold text-white text-sm flex-1 truncate">{report.topic}</span>
+              <span className="text-xs font-bold text-primary">{report.overallScore}% confidence</span>
+            </div>
+
+            {/* Concise Answer Section */}
+            {isDirectiveSynthesis && (
+              <div className="mb-4 p-3 rounded-lg bg-primary/[0.06] border border-primary/20">
+                <div className="text-[10px] text-primary/70 uppercase tracking-wider font-bold mb-2 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Council Answer
+                </div>
+                <div className="space-y-1.5">
+                  {lines.slice(2).filter(l => !l.startsWith('Key actions:')).map((line, i) => (
+                    <p key={i} className="text-xs text-gray-200 leading-relaxed">{line}</p>
+                  ))}
+                </div>
+                {/* Key Actions */}
+                {lines.find(l => l.startsWith('Key actions:')) && (
+                  <div className="mt-2 pt-2 border-t border-primary/10">
+                    <p className="text-[10px] text-primary/80 font-bold">
+                      {lines.find(l => l.startsWith('Key actions:'))}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Non-directive summary */}
+            {!isDirectiveSynthesis && (
+              <p className="text-xs text-gray-300 leading-relaxed mb-4">{report.summary}</p>
+            )}
+
+            {/* Prioritized Actions */}
+            {report.prioritizedActions.length > 0 && (
+              <div className="mb-4">
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-2">Priority Actions</div>
+                <div className="space-y-1.5">
+                  {report.prioritizedActions.slice(0, 6).map((action, i) => (
+                    <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                      <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${PRIORITY_COLORS[action.priority]}`}>
+                        {action.priority}
+                      </span>
+                      <span className="text-xs text-white flex-1">{action.action.length > 60 ? action.action.slice(0, 60) + '...' : action.action}</span>
+                      <div className="flex items-center gap-0.5">
+                        {action.agents.slice(0, 3).map(a => {
+                          const Icon = AGENT_ICONS[a];
+                          const c = AGENT_COLORS[a] || '#888';
+                          return <div key={a} className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: `${c}15` }}><Icon className="w-3 h-3" style={{ color: c }} /></div>;
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Agreements / Disagreements */}
+            {(report.agreements.length > 0 || report.disagreements.length > 0) && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-[10px] text-green-400/70 uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Agreements ({report.agreements.length})</div>
+                  <div className="space-y-1">
+                    {report.agreements.slice(0, 4).map((a, i) => (
+                      <div key={i} className="text-[10px] text-gray-400 p-1.5 rounded bg-green-500/[0.03] border border-green-500/[0.06]">{a}</div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Agreements / Disagreements */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="text-[10px] text-green-400/70 uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Agreements ({report.agreements.length})</div>
-              <div className="space-y-1">
-                {report.agreements.slice(0, 4).map((a, i) => (
-                  <div key={i} className="text-[10px] text-gray-400 p-1.5 rounded bg-green-500/[0.03] border border-green-500/[0.06]">{a}</div>
-                ))}
+                <div>
+                  <div className="text-[10px] text-orange-400/70 uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Uncertain ({report.disagreements.length})</div>
+                  <div className="space-y-1">
+                    {report.disagreements.slice(0, 4).map((d, i) => (
+                      <div key={i} className="text-[10px] text-gray-400 p-1.5 rounded bg-orange-500/[0.03] border border-orange-500/[0.06]">{d}</div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-red-400/70 uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Disagreements ({report.disagreements.length})</div>
-              <div className="space-y-1">
-                {report.disagreements.slice(0, 4).map((d, i) => (
-                  <div key={i} className="text-[10px] text-gray-400 p-1.5 rounded bg-red-500/[0.03] border border-red-500/[0.06]">{d}</div>
-                ))}
-              </div>
-            </div>
-          </div>
+            )}
 
-          <div className="text-[10px] text-gray-500 mt-3">{new Date(report.timestamp).toLocaleString()}</div>
-        </motion.div>
-      ))}
+            <div className="text-[10px] text-gray-500 mt-3">{new Date(report.timestamp).toLocaleString()}</div>
+          </motion.div>
+        );
+      })}
     </div>
   );
 };

@@ -18,20 +18,7 @@ const INSTALLER_MILESTONES = [
   { name: 'PTO Granted', percent: 10 },
 ];
 
-const TICKETS = [
-  { id: 'TK-001', projectId: 'ASP-2030', customerName: 'Angela Davis', issue: 'Roof repair required before install — northeast section has water damage and structural sagging near chimney.', status: 'open', priority: 'high', daysOpen: 3, flaggedBy: 'Marcus R.' },
-  { id: 'TK-002', projectId: 'ASP-2026', customerName: 'Patricia Williams', issue: 'HOA approval pending — shingle color variance detected during install prep.', status: 'in_progress', priority: 'medium', daysOpen: 5, flaggedBy: 'Jordan K.' },
-  { id: 'TK-003', projectId: 'ASP-2024', customerName: 'James Hernandez', issue: 'Interconnection document missing utility signature.', status: 'resolved', priority: 'low', daysOpen: 1, flaggedBy: 'Caitlin F.' },
-];
-
-const PAYMENT_DETAILS = [
-  { approvedDate: '2026-03-15', receivedDate: '2026-03-18', approvedBy: 'Marcus Reeves (Ops Manager)' },
-  { approvedDate: '2026-03-10', receivedDate: '2026-03-13', approvedBy: 'Jordan Kim (Ops Lead)' },
-  { approvedDate: '2026-03-05', receivedDate: '2026-03-08', approvedBy: 'Caitlin Frost (Ops Specialist)' },
-  { approvedDate: '2026-02-28', receivedDate: '2026-03-02', approvedBy: 'Marcus Reeves (Ops Manager)' },
-  { approvedDate: '2026-02-20', receivedDate: '2026-02-23', approvedBy: 'Jordan Kim (Ops Lead)' },
-  { approvedDate: '2026-02-15', receivedDate: '2026-02-18', approvedBy: 'Caitlin Frost (Ops Specialist)' },
-];
+// Tickets and payment details are now sourced from the Supabase store (no mock data)
 
 const InstallerPortal = () => {
   const store = useDataSource();
@@ -64,8 +51,29 @@ const InstallerPortal = () => {
   const installerProjects = store.projects;
   const completedCount = installerProjects.filter(p => p.currentMilestone >= 5).length;
   const activeCount = installerProjects.filter(p => p.status !== 'completed').length;
-  const avgDaysToPTO = 24;
-  const onTimeRate = 87;
+  // Compute avg days to PTO from real project data
+  const completedProjectDays = installerProjects
+    .filter(p => p.currentMilestone >= 6 && p.addedDate)
+    .map(p => {
+      const start = new Date(p.addedDate).getTime();
+      const now = Date.now();
+      return Math.round((now - start) / (1000 * 60 * 60 * 24));
+    });
+  const avgDaysToPTO = completedProjectDays.length > 0
+    ? Math.round(completedProjectDays.reduce((a, b) => a + b, 0) / completedProjectDays.length)
+    : 0;
+
+  // On-time rate: projects where current milestone is on or ahead of schedule
+  // For beta, derive from milestone progress vs elapsed time
+  const onTimeCount = installerProjects.filter(p => {
+    if (!p.addedDate) return false;
+    const daysElapsed = (Date.now() - new Date(p.addedDate).getTime()) / (1000 * 60 * 60 * 24);
+    const expectedMilestone = Math.min(7, Math.floor(daysElapsed / 14)); // ~2 weeks per milestone
+    return p.currentMilestone >= expectedMilestone;
+  }).length;
+  const onTimeRate = installerProjects.length > 0
+    ? Math.round((onTimeCount / installerProjects.length) * 100)
+    : 0;
   const totalInstallValue = installerProjects.reduce((s, p) => s + p.projectCost, 0);
   const speedBonusEarned = installerProjects.filter(p => p.currentMilestone >= 6).length * (totalInstallValue / Math.max(installerProjects.length, 1) * 0.05);
 
@@ -1059,6 +1067,28 @@ const InstallerPortal = () => {
       case 'projects':
         return (
           <div className="space-y-3">
+            {/* Project filter dropdown */}
+            {installerProjects.length > 1 && (
+              <div className="flex items-center gap-2 mb-2">
+                <select
+                  value={expandedProject || ''}
+                  onChange={e => setExpandedProject(e.target.value || null)}
+                  className="bg-card border border-border rounded-lg px-3 py-2 text-xs font-bold text-card-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 w-full max-w-xs"
+                >
+                  <option value="">All Projects ({installerProjects.length})</option>
+                  {installerProjects.map(p => (
+                    <option key={p.id} value={p.id}>{p.customerName} — {p.id}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {installerProjects.length === 0 && (
+              <div className="text-center py-12 bg-card border border-border rounded-2xl">
+                <Wrench className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <div className="text-sm font-bold text-card-foreground mb-1">No assigned projects yet</div>
+                <div className="text-xs text-muted-foreground max-w-xs mx-auto">Projects will appear here once they've been converted from the sales pipeline and assigned to your installer account.</div>
+              </div>
+            )}
             {installerProjects.map(p => {
               const isExpanded = expandedProject === p.id;
               const ms = store.getMilestoneState(p.id);
@@ -1230,44 +1260,57 @@ const InstallerPortal = () => {
           </div>
         );
 
-      case 'tickets':
+      case 'tickets': {
+        const allTickets = store.tickets || [];
         return (
           <div className="space-y-4">
             <div className="bg-card border border-border rounded-2xl p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-3 flex items-center gap-2">
                 <Flag className="w-4 h-4 text-[hsl(var(--red))]" /> Flagged Accounts
               </h3>
-              <div className="space-y-3">
-                {TICKETS.map(t => (
-                  <div key={t.id} className={`rounded-xl border p-4 ${
-                    t.status === 'resolved' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' :
-                    t.priority === 'high' ? 'bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20' :
-                    'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
-                  }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Flag className="w-3.5 h-3.5 text-[hsl(var(--red))]" />
-                        <span className="text-xs font-extrabold text-card-foreground">{t.id}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
-                          t.priority === 'high' ? 'bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25' :
-                          'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25'
-                        }`}>{t.priority}</span>
+              {allTickets.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">No active tickets — all clear</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {allTickets.map(t => {
+                    const proj = store.projects.find(p => p.id === t.projectId);
+                    const custName = proj?.customerName || t.projectId;
+                    return (
+                      <div key={t.id} className={`rounded-xl border p-4 ${
+                        t.status === 'resolved' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' :
+                        t.priority === 'high' || t.priority === 'critical' ? 'bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20' :
+                        'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Flag className="w-3.5 h-3.5 text-[hsl(var(--red))]" />
+                            <span className="text-xs font-extrabold text-card-foreground">{t.id}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
+                              t.priority === 'high' || t.priority === 'critical' ? 'bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25' :
+                              'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25'
+                            }`}>{t.priority}</span>
+                          </div>
+                          <span className={`text-[10px] font-bold ${t.status === 'resolved' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>
+                            {t.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <div className="text-xs font-bold text-card-foreground mb-2">
+                          <Flag className="w-3 h-3 text-[hsl(var(--red))] inline mr-1" />
+                          Account for <span className="text-primary">{custName}</span> flagged
+                        </div>
+                        <div className="text-sm text-card-foreground bg-muted/50 rounded-lg p-3">{t.description}</div>
                       </div>
-                      <span className={`text-[10px] font-bold ${t.status === 'resolved' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>
-                        {t.status.replace('_', ' ')}
-                      </span>
-                    </div>
-                    <div className="text-xs font-bold text-card-foreground mb-2">
-                      <Flag className="w-3 h-3 text-[hsl(var(--red))] inline mr-1" />
-                      Account for <span className="text-primary">{t.customerName}</span> has been flagged by ASP Pro+ Team for the following reasons:
-                    </div>
-                    <div className="text-sm text-card-foreground bg-muted/50 rounded-lg p-3">{t.issue}</div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         );
+      }
 
       case 'rejected': {
         const rejected = store.getRejectedProjects();

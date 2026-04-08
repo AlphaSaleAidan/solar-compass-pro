@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { PROJECTS } from '@/data/mockData';
-import { Save, RotateCcw, ChevronDown, ChevronRight, Pencil, UserPlus, Eye, Link2, CheckCircle, FileText, Send, AlertTriangle } from 'lucide-react';
+import { useDataSource } from '@/contexts/DataSourceProvider';
+import { Save, RotateCcw, Pencil, UserPlus, Eye, Link2, CheckCircle, FileText, Send, AlertTriangle } from 'lucide-react';
 
 const ProjectEditor = () => {
+  const store = useDataSource();
+  const projects = store.projects;
+
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [editedFields, setEditedFields] = useState<Record<string, Record<string, string>>>({});
   const [auroraAccounts, setAuroraAccounts] = useState<Record<string, { email: string; status: string }>>({});
@@ -10,7 +13,7 @@ const ProjectEditor = () => {
   const [auroraEmail, setAuroraEmail] = useState('');
   const [savedProjects, setSavedProjects] = useState<string[]>([]);
 
-  const project = PROJECTS.find(p => p.id === selectedProject);
+  const project = projects.find(p => p.id === selectedProject);
 
   const handleFieldChange = (projectId: string, field: string, value: string) => {
     setEditedFields(prev => ({
@@ -58,29 +61,36 @@ const ProjectEditor = () => {
         {/* Project List */}
         <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl overflow-hidden">
           <div className="px-4 py-3 bg-[hsl(var(--bg3))] border-b border-border text-xs font-extrabold text-foreground tracking-wider uppercase flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5" /> All Projects ({PROJECTS.length})
+            <FileText className="w-3.5 h-3.5" /> All Projects ({projects.length})
           </div>
-          <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
-            {PROJECTS.map(p => (
-              <div
-                key={p.id}
-                onClick={() => setSelectedProject(p.id)}
-                className={`px-4 py-3 border-b border-border cursor-pointer transition-all ${
-                  selectedProject === p.id ? 'bg-primary/5 border-l-[3px] border-l-primary' : 'hover:bg-[hsl(var(--bg3))]'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-bold text-foreground">{p.customerName}</div>
-                    <div className="text-[10px] text-muted-foreground">{p.id} · {p.stage}</div>
+          {projects.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">No projects in database yet. Projects appear here after conversion from the sales pipeline.</p>
+            </div>
+          ) : (
+            <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
+              {projects.map(p => (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedProject(p.id)}
+                  className={`px-4 py-3 border-b border-border cursor-pointer transition-all ${
+                    selectedProject === p.id ? 'bg-primary/5 border-l-[3px] border-l-primary' : 'hover:bg-[hsl(var(--bg3))]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-bold text-foreground">{p.customerName}</div>
+                      <div className="text-[10px] text-muted-foreground">{p.id} · {p.stage}</div>
+                    </div>
+                    {hasChanges(p.id) && (
+                      <span className="w-2 h-2 rounded-full bg-[hsl(var(--yellow))]" />
+                    )}
                   </div>
-                  {hasChanges(p.id) && (
-                    <span className="w-2 h-2 rounded-full bg-[hsl(var(--yellow))]" />
-                  )}
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Editor Panel */}

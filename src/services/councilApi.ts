@@ -481,20 +481,84 @@ export const CouncilAPI = {
 
     // Simulate each agent responding (staggered)
     for (const agent of councilState.agents) {
-      await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+      await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
 
-      const response = generateDirectiveResponse(agent, text);
+      const response = generateDirectiveResponse(agent, text, directive.responses);
       directive.responses.push(response);
       notify();
     }
 
     directive.status = 'completed';
+
+    // Auto-generate a consensus synthesis for this directive
+    const synthesis = this.buildDirectiveConsensus(directive);
     notify();
 
     return directive;
   },
 
-  // Build consensus from all agent recommendations
+  // Build consensus from a specific directive (synthesize all agent answers)
+  buildDirectiveConsensus(directive: Directive): ConsensusReport {
+    const responses = directive.responses;
+    if (responses.length === 0) return this.buildConsensus(directive.text);
+
+    // Find common themes across agent responses
+    const allRecTexts = responses.flatMap(r => r.recommendations);
+    const recFrequency: Record<string, AgentRole[]> = {};
+    responses.forEach(r => {
+      r.recommendations.forEach(rec => {
+        const key = rec.toLowerCase().slice(0, 40);
+        const existing = Object.keys(recFrequency).find(k => k.includes(key.slice(0, 20)) || key.includes(k.slice(0, 20)));
+        const finalKey = existing || key;
+        if (!recFrequency[finalKey]) recFrequency[finalKey] = [];
+        if (!recFrequency[finalKey].includes(r.agentId)) recFrequency[finalKey].push(r.agentId);
+      });
+    });
+
+    // High-confidence responses are agreements
+    const highConfidence = responses.filter(r => r.confidence >= 0.85);
+    const agreements = highConfidence.map(r => `${councilState.agents.find(a => a.id === r.agentId)?.name || r.agentId}: ${r.recommendations[0] || r.text.slice(0, 80)}`);
+
+    // Low confidence or differing priorities are disagreements
+    const lowConfidence = responses.filter(r => r.confidence < 0.7);
+    const disagreements = lowConfidence.map(r => `${councilState.agents.find(a => a.id === r.agentId)?.name || r.agentId} is uncertain (${Math.round(r.confidence * 100)}%)`);
+
+    // Synthesize a concise answer
+    const avgConf = responses.reduce((s, r) => s + r.confidence, 0) / Math.max(responses.length, 1);
+    const topRecs = [...new Set(allRecTexts)].slice(0, 5);
+
+    // Build a coherent summary that actually answers the question
+    const agentSummaries = responses.map(r => {
+      const name = councilState.agents.find(a => a.id === r.agentId)?.name || r.agentId;
+      const keyPoint = r.recommendations[0] || r.text.split('\n')[0].slice(0, 100);
+      return `${name}: ${keyPoint}`;
+    });
+
+    const summary = `Directive: "${directive.text.slice(0, 100)}${directive.text.length > 100 ? '...' : ''}"\n\nCouncil consensus (${Math.round(avgConf * 100)}% average confidence):\n${agentSummaries.join('\n')}\n\nKey actions: ${topRecs.slice(0, 3).join(' | ') || 'No specific actions recommended.'}`;
+
+    const prioritizedActions = topRecs.map((rec, i) => ({
+      action: rec,
+      priority: (i === 0 ? 'critical' : i < 3 ? 'high' : 'medium') as Priority,
+      agents: responses.filter(r => r.recommendations.some(rx => rx === rec)).map(r => r.agentId),
+    }));
+
+    const report: ConsensusReport = {
+      id: generateId(),
+      timestamp: new Date().toISOString(),
+      topic: directive.text.slice(0, 120),
+      agents: responses.map(r => r.agentId),
+      summary,
+      agreements,
+      disagreements,
+      prioritizedActions,
+      overallScore: Math.round(avgConf * 100),
+    };
+
+    councilState.consensusReports.unshift(report);
+    return report;
+  },
+
+  // Build consensus from all agent recommendations (full review)
   buildConsensus(topic: string): ConsensusReport {
     const allRecs = this.getAllRecommendations();
     const criticalRecs = allRecs.filter(r => r.priority === 'critical');
@@ -594,93 +658,166 @@ export const CouncilAPI = {
 /**
  * Dynamic directive response generator.
  *
- * Instead of returning canned text, this searches the code analysis
- * manifest for findings relevant to the user's question, then builds
- * a response that references actual implementation status, file paths,
- * and remaining work. This makes the council a real troubleshooting tool.
+ * Each agent responds from their unique perspective with real data-backed
+ * analysis. Responses avoid repetition by checking what previous agents
+ * already said and covering new ground. Each agent has distinct personality,
+ * concerns, and recommendations.
  */
-function generateDirectiveResponse(agent: CouncilAgent, directiveText: string): DirectiveResponse {
+function generateDirectiveResponse(agent: CouncilAgent, directiveText: string, previousResponses: DirectiveResponse[] = []): DirectiveResponse {
   const lower = directiveText.toLowerCase();
   const analysis = getAgentAnalysis(agent.id);
 
-  // ── 1. Find relevant findings ─────────────────────────────────
-  // Search the manifest for matches to the user's query
+  // Gather relevant findings from this agent's manifest
   const relevantFindings = analysis?.findings.filter(f => {
     const haystack = `${f.title} ${f.councilClaim} ${f.remainingWork || ''} ${f.evidence.map(e => e.notes || '').join(' ')}`.toLowerCase();
-    // Split query into keywords (3+ chars) and check if any match
     const keywords = lower.split(/\s+/).filter(w => w.length >= 3);
     return keywords.some(kw => haystack.includes(kw));
   }) || [];
 
-  // Also search across ALL agents if this agent has no specific matches
-  const crossAgentMatches = relevantFindings.length === 0
-    ? searchFindings(directiveText).slice(0, 3)
-    : [];
+  // Cross-agent search if this agent has no direct matches
+  const crossMatches = relevantFindings.length === 0 ? searchFindings(directiveText).slice(0, 3) : [];
+  const allMatches = relevantFindings.length > 0 ? relevantFindings : crossMatches;
 
-  // ── 2. Build context-aware response text ──────────────────────
-  const allMatches = relevantFindings.length > 0 ? relevantFindings : crossAgentMatches;
-  const fixedCount = allMatches.filter(f => f.realStatus === 'fixed').length;
-  const openCount = allMatches.filter(f => f.realStatus === 'open').length;
-  const partialCount = allMatches.filter(f => f.realStatus === 'partial').length;
+  // Avoid repeating what other agents already said
+  const prevTopics = new Set(previousResponses.flatMap(r => r.recommendations.map(x => x.toLowerCase().slice(0, 30))));
 
-  let text: string;
-  let recommendations: string[];
-  let confidence: number;
+  // ── Agent-specific perspectives ─────────────────────────────
+  const openItems = analysis?.findings.filter(f => f.realStatus === 'open') || [];
+  const partialItems = analysis?.findings.filter(f => f.realStatus === 'partial') || [];
+  const fixedItems = analysis?.findings.filter(f => f.realStatus === 'fixed') || [];
+  const score = analysis?.currentScore || 0;
 
-  if (allMatches.length > 0) {
-    // Build detailed response from real findings
-    const findingSummaries = allMatches.slice(0, 4).map(f => {
-      const status = f.realStatus === 'fixed' ? '✓ Fixed'
-        : f.realStatus === 'partial' ? '◐ Partial'
-        : f.realStatus === 'council_wrong' ? '✗ Not a bug'
-        : '○ Open';
-      const file = f.evidence[0]?.file || 'N/A';
-      const detail = f.realStatus === 'open' && f.remainingWork
-        ? ` — ${f.remainingWork}`
-        : f.realStatus === 'fixed' && f.evidence[0]?.notes
-        ? ` — ${f.evidence[0].notes}`
-        : '';
-      return `[${status}] ${f.title} (${file})${detail}`;
-    });
+  // Build unique, opinionated response per agent role
+  const agentResponders: Record<string, () => { text: string; recs: string[]; conf: number }> = {
+    design: () => {
+      const fixedDesign = fixedItems.map(f => f.title).join(', ') || 'none yet';
+      const openDesign = openItems.map(f => f.title);
+      const hasMatches = allMatches.length > 0;
 
-    const summary = analysis
-      ? `Score: ${analysis.currentScore}/100 across ${Object.keys(analysis.scoreBreakdown).join(', ')}.`
-      : '';
+      let text = `Aurora here. My visual audit scores us at ${score}/100.\n\n`;
+      if (hasMatches) {
+        text += `Regarding your question: I see ${allMatches.length} related finding(s).\n`;
+        allMatches.slice(0, 3).forEach(f => {
+          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
+          text += `\n${st} ${f.title} — ${f.evidence[0]?.notes || f.councilClaim}`;
+        });
+      } else {
+        text += `I don't have a direct finding for this, but here's my design perspective:`;
+      }
+      text += `\n\nBiggest visual gaps right now: ${openDesign.length > 0 ? openDesign.join(', ') : 'All major items resolved.'}`;
+      text += `\nRecently completed: ${fixedDesign}`;
+      text += `\n\nMy recommendation: ${openDesign.length > 0 ? `Prioritize ${openDesign[0]} — it's the most visible to users and affects first impressions.` : 'Focus on micro-interactions. The big pieces are done, but hover states, transitions, and loading sequences are what separate good from exceptional.'}`;
 
-    text = `Found ${allMatches.length} related finding(s) in my analysis. ${fixedCount} resolved, ${partialCount} in progress, ${openCount} remaining.\n\n${findingSummaries.join('\n\n')}\n\n${summary}`;
+      const recs = openDesign.length > 0
+        ? openDesign.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30))).slice(0, 3)
+        : ['Polish micro-interactions across all portals', 'Add loading choreography for data fetches'];
+      return { text, recs, conf: hasMatches ? 0.91 : 0.78 };
+    },
 
-    recommendations = allMatches
-      .filter(f => f.realStatus === 'open' || f.realStatus === 'partial')
-      .slice(0, 4)
-      .map(f => f.remainingWork || f.title);
+    engineering: () => {
+      let text = `Forge reporting. Engineering health: ${score}/100.\n\n`;
+      if (allMatches.length > 0) {
+        text += `Found ${allMatches.length} relevant findings:\n`;
+        allMatches.slice(0, 3).forEach(f => {
+          const st = f.realStatus === 'fixed' ? '✓ Resolved' : f.realStatus === 'partial' ? '◐ In Progress' : '○ Open';
+          text += `\n[${st}] ${f.title}`;
+          if (f.evidence[0]?.file) text += ` (${f.evidence[0].file})`;
+          if (f.remainingWork && f.realStatus !== 'fixed') text += `\n  → Next step: ${f.remainingWork}`;
+        });
+      } else {
+        text += `No direct code findings for this query, but from an architecture perspective:`;
+      }
 
-    confidence = allMatches.length > 2 ? 0.92 : allMatches.length > 0 ? 0.85 : 0.65;
-  } else {
-    // No specific matches — give general agent-perspective answer
-    const agentPerspectives: Record<string, string> = {
-      design: `From my analysis (score: ${analysis?.currentScore || '?'}/100), the key open areas are: ${analysis?.findings.filter(f => f.realStatus === 'open').map(f => f.title).join(', ') || 'none identified'}. For your specific question, I'd need more context about which portal or component you're referring to.`,
-      engineering: `Engineering health is at ${analysis?.currentScore || '?'}/100. Open items: ${analysis?.findings.filter(f => f.realStatus === 'open').map(f => f.title).join(', ') || 'none'}. The biggest architectural gaps are Zustand migration and Supabase RLS policies.`,
-      qa: `QA score: ${analysis?.currentScore || '?'}/100. Most critical bugs have been fixed. Remaining edge cases: ${analysis?.findings.filter(f => f.realStatus === 'open').map(f => f.title).join(', ') || 'none found'}. The notification persistence issue is the top remaining gap.`,
-      operations: `Operations compliance is at ${analysis?.currentScore || '?'}/100. State machine and audit trail are live. Open items: ${analysis?.findings.filter(f => f.realStatus === 'open' || f.realStatus === 'partial').map(f => f.title).join(', ') || 'all clear'}.`,
-      strategy: `Strategic score: ${analysis?.currentScore || '?'}/100. Biggest opportunity gaps: ${analysis?.findings.filter(f => f.realStatus === 'open').map(f => f.title).join(', ') || 'none'}. Risk mitigation positioning and social proof are already live.`,
-    };
+      const archGaps = openItems.map(f => f.title);
+      const partialWork = partialItems.map(f => `${f.title} (${f.remainingWork || 'in progress'})`);
+      if (archGaps.length > 0) text += `\n\nOpen architecture items: ${archGaps.join('; ')}`;
+      if (partialWork.length > 0) text += `\nPartially complete: ${partialWork.join('; ')}`;
 
-    text = agentPerspectives[agent.id] || `I don't have specific findings matching your query. My current score is ${analysis?.currentScore || '?'}/100.`;
+      text += `\n\nTechnical recommendation: ${archGaps.length > 0 ? `${archGaps[0]} is the highest-impact engineering task. It improves code quality and reduces future bug surface area.` : 'Core architecture is solid. Focus on Supabase RLS policies and Realtime channels for production readiness.'}`;
 
-    recommendations = analysis?.findings
-      .filter(f => f.realStatus === 'open')
-      .slice(0, 3)
-      .map(f => f.title) || [];
+      const recs = [...archGaps, ...partialItems.map(f => f.remainingWork || f.title)]
+        .filter(Boolean)
+        .filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30)))
+        .slice(0, 3);
+      return { text, recs: recs.length > 0 ? recs : ['Optimize bundle splitting', 'Add error boundaries to all portal routes'], conf: allMatches.length > 0 ? 0.93 : 0.75 };
+    },
 
-    confidence = 0.65;
-  }
+    qa: () => {
+      let text = `Sentinel here. QA confidence: ${score}/100.\n\n`;
+      if (allMatches.length > 0) {
+        text += `I found ${allMatches.length} QA-relevant finding(s):\n`;
+        allMatches.slice(0, 3).forEach(f => {
+          const st = f.realStatus === 'fixed' ? '✓ Verified fix' : f.realStatus === 'council_wrong' ? '✗ Was not a bug' : f.realStatus === 'partial' ? '◐ Partially addressed' : '○ Still open';
+          text += `\n[${st}] ${f.title}`;
+          if (f.evidence[0]?.notes) text += ` — ${f.evidence[0].notes}`;
+        });
+      } else {
+        text += `No specific QA findings match, but here's my risk assessment:`;
+      }
+
+      const bugCount = openItems.length;
+      const fixedBugs = fixedItems.length;
+      text += `\n\nBug status: ${fixedBugs} bugs fixed, ${bugCount} remain open.`;
+      text += `\nHighest risk: ${openItems.length > 0 ? openItems[0].title : 'No critical bugs remain. Edge cases are the focus now.'}`;
+      text += `\n\nQA recommendation: ${bugCount > 0 ? `Address "${openItems[0].title}" before next release — it affects user trust.` : 'All critical paths are clean. Recommend regression testing on milestone progression and fund release flows.'}`;
+
+      const recs = openItems.map(f => f.title).filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30))).slice(0, 2);
+      return { text, recs: recs.length > 0 ? recs : ['Run regression on milestone M1-M7 flow', 'Test edge: empty project conversion'], conf: allMatches.length > 0 ? 0.90 : 0.72 };
+    },
+
+    operations: () => {
+      let text = `Nexus here. Operational compliance: ${score}/100.\n\n`;
+      if (allMatches.length > 0) {
+        text += `Relevant operational findings:\n`;
+        allMatches.slice(0, 3).forEach(f => {
+          const st = f.realStatus === 'fixed' ? '✓' : f.realStatus === 'partial' ? '◐' : '○';
+          text += `\n${st} ${f.title}: ${f.councilClaim}`;
+          if (f.remainingWork && f.realStatus !== 'fixed') text += `\n  Action needed: ${f.remainingWork}`;
+        });
+      } else {
+        text += `From an operations standpoint on your question:`;
+      }
+
+      text += `\n\nSOP compliance status: State machine is live, audit trail is logging actions, milestone gates are enforced.`;
+      const opsGaps = [...openItems, ...partialItems];
+      if (opsGaps.length > 0) text += `\nGaps: ${opsGaps.map(f => f.title).join(', ')}`;
+      text += `\n\nOperational recommendation: ${opsGaps.length > 0 ? `Wire ${opsGaps[0].title} — this is needed for SOP compliance and audit readiness.` : 'Core operations are sound. Focus on notification routing so every stakeholder gets real-time updates on their projects.'}`;
+
+      const recs = opsGaps.map(f => f.remainingWork || f.title).filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30))).slice(0, 2);
+      return { text, recs: recs.length > 0 ? recs : ['Build persistent notification system', 'Add admin audit log viewer'], conf: allMatches.length > 0 ? 0.88 : 0.70 };
+    },
+
+    strategy: () => {
+      let text = `Oracle here. Strategic assessment: ${score}/100.\n\n`;
+      if (allMatches.length > 0) {
+        text += `Strategic relevance to your question:\n`;
+        allMatches.slice(0, 3).forEach(f => {
+          const st = f.realStatus === 'fixed' ? '✓ Addressed' : f.realStatus === 'partial' ? '◐ Underway' : '○ Opportunity';
+          text += `\n${st} ${f.title} — ${f.councilClaim}`;
+        });
+      } else {
+        text += `From a strategic perspective:`;
+      }
+
+      const opportunities = openItems.map(f => f.title);
+      text += `\n\nMarket positioning: ASP's moat is operational enforcement + risk mitigation. Every feature should reinforce this narrative.`;
+      text += `\nGrowth opportunities: ${opportunities.length > 0 ? opportunities.join(', ') : 'Core differentiators are built. Focus on customer onboarding and usage-based pricing.'}`;
+      text += `\n\nStrategic recommendation: ${opportunities.length > 0 ? `"${opportunities[0]}" has the highest ROI — it directly impacts customer acquisition and retention.` : 'Ship what we have. The platform is feature-complete for beta. Focus on getting real users, collecting feedback, and iterating.'}`;
+
+      const recs = opportunities.filter(r => !prevTopics.has(r.toLowerCase().slice(0, 30))).slice(0, 2);
+      return { text, recs: recs.length > 0 ? recs : ['Prioritize customer onboarding wizard', 'Build usage analytics for pricing decisions'], conf: allMatches.length > 0 ? 0.89 : 0.73 };
+    },
+  };
+
+  const responder = agentResponders[agent.id];
+  const result = responder ? responder() : { text: `Score: ${score}/100. No specific analysis available.`, recs: [], conf: 0.5 };
 
   return {
     agentId: agent.id,
-    text,
-    recommendations,
+    text: result.text,
+    recommendations: result.recs,
     timestamp: new Date().toISOString(),
-    confidence,
+    confidence: result.conf,
   };
 }
 

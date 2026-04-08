@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import { toast } from 'sonner';
-import { COMMISSIONS } from '@/data/mockData';
 import type { Project } from '@/data/mockData';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
@@ -112,7 +111,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
             const offset = getOffsetPercent(p);
             const offsetOk = offset >= 80;
             const milestoneState = store.getMilestoneState(p.id);
-            const comm = COMMISSIONS.find(c => c.projectId === p.id);
+            // Commission data will come from store when wired
             const section = getSection(p.id);
 
             return (
