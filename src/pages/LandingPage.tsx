@@ -89,23 +89,23 @@ const milestones = [
 
 /* ─── Stats ───────────────────────────────────────────────────────────── */
 const stats = [
-  { label: 'Milestone Gates', value: '7', suffix: '', icon: TrendingUp },
-  { label: 'Risk Mitigation', value: '99', suffix: '%', icon: Shield },
-  { label: 'Live Portals', value: '4', suffix: '', icon: Users },
-  { label: 'Real-Time Sync', value: '24/7', suffix: '', icon: Activity },
+  { label: 'Concierge Service', value: '24/7', suffix: '', icon: TrendingUp },
+  { label: 'Battery Requirement', value: '100', suffix: '%', icon: Shield },
+  { label: 'Year Service Contract', value: '5', suffix: '', icon: Users },
+  { label: 'Platform Any Installer', value: '1', suffix: '', icon: Activity },
 ];
 
 /* ─── Features ────────────────────────────────────────────────────────── */
 const features = [
   {
     icon: Sun,
-    title: 'Solar Intelligence',
+    title: 'Aurora Integrated',
     desc: 'Aurora-powered design proposals with real satellite data, shading analysis, and instant system sizing.',
   },
   {
     icon: Shield,
-    title: 'Risk Engine',
-    desc: 'Milestone-gated fund releases protect financiers, incentivize installers, and eliminate project abandonment.',
+    title: 'Risk Reduction Tools',
+    desc: 'Comprehensive risk mitigation stack that protects all parties and eliminates project abandonment.',
   },
   {
     icon: BarChart3,
@@ -292,14 +292,14 @@ const LandingPage = () => {
               </span>
             </div>
             <div className="hidden md:flex items-center gap-8 text-[13px] font-medium text-white/40">
-              {['about', 'features', 'portals', 'customers', 'milestones'].map((s) => (
+              {['about', 'features', 'customers'].map((s) => (
                 <a
                   key={s}
                   href={`#${s}`}
                   onClick={scrollTo(s)}
                   className="hover:text-white transition-colors duration-300 capitalize"
                 >
-                  {s === 'milestones' ? 'Process' : s}
+                  {s}
                 </a>
               ))}
             </div>
@@ -343,7 +343,7 @@ const LandingPage = () => {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-white/50 text-xs font-medium mb-10 backdrop-blur-sm"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Texas Solar Sales Infrastructure
+            Solar Risk Mitigation Platform
           </motion.div>
 
           {/* Oversized heading */}
@@ -369,7 +369,7 @@ const LandingPage = () => {
           >
             The operating system for solar sales organizations.
             Sales reps, ops, installers, and financiers — one platform,
-            milestone-gated fund releases, zero risk.
+            complete risk mitigation, zero gaps.
           </motion.p>
 
           {/* CTAs */}
@@ -447,9 +447,9 @@ const LandingPage = () => {
               </h2>
               <div className="space-y-5 text-[15px] text-white/40 leading-relaxed font-light">
                 <p>
-                  Alpha Sale Pro is a Texas-based solar sales organization and risk mitigation
-                  platform. We built ASP because we saw the same problem everywhere: disconnected
-                  systems, misaligned incentives, and zero transparency.
+                  Alpha Sale Pro is a solar risk mitigation platform with an internal sales structure
+                  and lead origination engine. We built ASP because we saw the same problem everywhere:
+                  disconnected systems, misaligned incentives, and zero transparency.
                 </p>
                 <p>
                   Our platform is engineered around <span className="text-white/70 font-medium">socioeconomic optimization</span> —
@@ -462,8 +462,8 @@ const LandingPage = () => {
             <RevealSection delay={0.15}>
               <div className="space-y-4">
                 {[
-                  { icon: Building2, label: 'Solar Sales Org', desc: 'Texas-based, scaling nationwide', color: 'text-primary' },
-                  { icon: Shield, label: 'Risk Mitigation', desc: 'Milestone-gated fund releases', color: 'text-blue-400' },
+                  { icon: Building2, label: 'Internal Sales Structure', desc: 'Lead Origination', color: 'text-primary' },
+                  { icon: Shield, label: 'Risk Mitigation', desc: 'Comprehensive protection stack', color: 'text-blue-400' },
                   { icon: Users, label: '4-Portal Platform', desc: 'Sales · Ops · Installer · Financier', color: 'text-violet-400' },
                   { icon: Handshake, label: 'Aligned Incentives', desc: 'Everyone wins by design', color: 'text-emerald-400' },
                 ].map((item, i) => (
@@ -526,51 +526,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ─── Portals Section ────────────────────────────────────────── */}
-      <section id="portals" className="relative py-32 lg:py-40">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <RevealSection className="text-center mb-20">
-            <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">Platform Architecture</div>
-            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-6">
-              Four portals.{' '}
-              <span className="bg-gradient-to-r from-primary to-cyan-300 bg-clip-text text-transparent">One ecosystem.</span>
-            </h2>
-            <p className="text-[15px] text-white/30 max-w-lg mx-auto font-light">
-              Every stakeholder gets their own optimized workspace, connected in real time.
-            </p>
-          </RevealSection>
-
-          <StaggerReveal className="grid md:grid-cols-2 gap-5 gsap-stagger-container">
-            {portals.map((p) => (
-              <motion.div key={p.name} variants={staggerChild}>
-                <GlassCard className={`relative p-8 overflow-hidden ${p.border}`}>
-                  {/* Accent glow */}
-                  <div
-                    className="absolute top-0 right-0 w-48 h-48 rounded-full blur-[80px] pointer-events-none"
-                    style={{ background: p.glow }}
-                  />
-                  <div className="relative">
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-white/[0.06] text-white/50 tracking-wider">
-                        {p.tag}
-                      </span>
-                      <h3 className="text-lg font-bold text-white/90">{p.name}</h3>
-                    </div>
-                    <p className="text-sm text-white/30 mb-6 leading-relaxed font-light">{p.desc}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {p.features.map(feat => (
-                        <span key={feat} className="px-3 py-1 text-[11px] font-medium rounded-lg bg-white/[0.03] text-white/40 border border-white/[0.05]">
-                          {feat}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </GlassCard>
-              </motion.div>
-            ))}
-          </StaggerReveal>
-        </div>
-      </section>
+      {/* Portals section removed — competitive sensitivity */}
 
       {/* ─── How We Help Customers ─────────────────────────────────── */}
       <section id="customers" className="relative py-32 lg:py-40 overflow-hidden">
@@ -591,13 +547,13 @@ const LandingPage = () => {
               {
                 icon: Shield,
                 title: 'Investment Protected',
-                desc: 'Funds are held in milestone-gated escrow. Installers get paid only when verified work is completed.',
+                desc: 'Funds are held in protected escrow. Installers get paid only when verified work is completed.',
                 highlight: 'Zero risk of abandonment',
                 color: 'text-primary',
               },
               {
                 icon: Star,
-                title: 'Vetted Installers',
+                title: 'Vetted Installer Network',
                 desc: 'Every installer is performance-scored. We route your project to top crews with proven track records.',
                 highlight: '100% battery storage',
                 color: 'text-amber-400',
@@ -628,61 +584,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ─── Milestone Process — Horizontal Timeline ────────────────── */}
-      <section id="milestones" className="relative py-32 lg:py-40">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <RevealSection className="text-center mb-20">
-            <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">The Process</div>
-            <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-6">
-              Milestone-gated.{' '}
-              <span className="bg-gradient-to-r from-primary to-cyan-300 bg-clip-text text-transparent">Risk-eliminated.</span>
-            </h2>
-            <p className="text-[15px] text-white/30 max-w-lg mx-auto font-light">
-              Funds are released only when verifiable milestones are completed. Every party is protected.
-            </p>
-          </RevealSection>
-
-          {/* Timeline */}
-          <div className="relative max-w-4xl mx-auto">
-            {/* Vertical line — GSAP animated */}
-            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-primary/30 via-primary/10 to-transparent md:-translate-x-px gsap-milestone-line origin-top" />
-
-            {milestones.map((m, i) => (
-              <RevealSection key={m.id} delay={i * 0.08}>
-                <div className={`relative flex items-start gap-8 mb-10 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
-                  {/* Timeline dot */}
-                  <div className="absolute left-6 md:left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-primary/80 border-2 border-[rgb(4,6,18)] z-10 shadow-[0_0_12px_rgba(0,212,200,0.3)]" />
-
-                  {/* Content */}
-                  <div className={`ml-16 md:ml-0 md:w-[calc(50%-32px)] ${i % 2 === 0 ? 'md:pr-10 md:text-right' : 'md:pl-10'}`}>
-                    <div className={`inline-flex items-center gap-2.5 mb-2 ${i % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
-                      <span className="text-xs font-black text-primary">{m.id}</span>
-                      <span className="text-[10px] font-bold text-white/25 uppercase tracking-wider">{m.pct} release</span>
-                    </div>
-                    <h3 className="text-base font-bold text-white/85 mb-1">{m.name}</h3>
-                    <p className="text-sm text-white/30 font-light">{m.desc}</p>
-                  </div>
-                </div>
-              </RevealSection>
-            ))}
-
-            {/* M7 Bonus */}
-            <RevealSection delay={0.5}>
-              <div className="relative flex items-start gap-8 md:flex-row">
-                <div className="absolute left-6 md:left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-gradient-to-r from-primary to-cyan-300 border-2 border-[rgb(4,6,18)] z-10 shadow-[0_0_20px_rgba(0,212,200,0.4)]" />
-                <div className="ml-16 md:ml-0 md:w-[calc(50%-32px)] md:pr-10 md:text-right">
-                  <div className="inline-flex items-center gap-2.5 md:flex-row-reverse">
-                    <span className="text-xs font-black text-amber-400">M7</span>
-                    <span className="text-[10px] font-bold text-amber-400/60 uppercase tracking-wider">+5% Bonus</span>
-                  </div>
-                  <h3 className="text-base font-bold text-white/85 mb-1">Customer Satisfaction</h3>
-                  <p className="text-sm text-white/30 font-light">30-day post-PTO review. Clean project = bonus release.</p>
-                </div>
-              </div>
-            </RevealSection>
-          </div>
-        </div>
-      </section>
+      {/* Milestone timeline removed — competitive sensitivity */}
 
       {/* ─── Financier Section ──────────────────────────────────────── */}
       <section className="relative py-32 lg:py-40 overflow-hidden">
@@ -699,12 +601,12 @@ const LandingPage = () => {
               <div className="space-y-5 text-[15px] text-white/40 leading-relaxed font-light mb-10">
                 <p>
                   The industry average default rate on residential solar is ~18%.
-                  ASP's milestone-gated escrow, mandatory battery storage,
-                  installer scoring, and 5-year service contracts reduce defaults by up to 30%.
+                  ASP's comprehensive risk reduction stack — protected escrow, mandatory battery storage,
+                  installer scoring, and 5-year service contracts — reduces defaults by up to 30%.
                 </p>
                 <p>
                   Real-time visibility into every funded project — from permit filing to PTO —
-                  with milestone-by-milestone fund release controls and a full audit trail.
+                  with structured verification controls and a full audit trail.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -736,20 +638,20 @@ const LandingPage = () => {
                 {/* Accent glow */}
                 <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full blur-[80px] bg-emerald-400/[0.06] pointer-events-none" />
                 <h3 className="text-base font-bold text-white/80 mb-6 flex items-center gap-2 relative">
-                  <Activity className="w-4 h-4 text-emerald-400" />
-                  Fund Release Flow
+                  <Shield className="w-4 h-4 text-emerald-400" />
+                  Risk Reduction Stack
                 </h3>
                 <div className="space-y-3 relative">
                   {[
-                    { milestone: 'M1 — SOW Confirmed', pct: '15%', desc: 'Contract signed, installer assigned' },
-                    { milestone: 'M2 — Permit + Materials', pct: '20%', desc: 'Permits filed, materials ordered' },
-                    { milestone: 'M3 — Install Scheduled', pct: '15%', desc: 'Installation date locked' },
-                    { milestone: 'M4 — Install Complete', pct: '20%', desc: 'Photos verified, panels installed' },
-                    { milestone: 'M5 — Inspection Passed', pct: '20%', desc: 'Utility inspection approved' },
-                    { milestone: 'M6 — PTO Granted', pct: '10%', desc: 'System live and generating' },
+                    { label: 'Mandatory Battery Storage', icon: '⚡', desc: '100% of installs include battery — higher home value, grid independence' },
+                    { label: 'Vetted Installer Network', icon: '🛡️', desc: 'Every installer is performance-scored and continuously monitored' },
+                    { label: '5-Year Service Contract', icon: '📋', desc: 'Post-install concierge: cleaning, monitoring, rate optimization' },
+                    { label: 'Real-Time Project Tracking', icon: '📡', desc: 'Every stakeholder sees live status — no black boxes' },
+                    { label: 'Aurora-Verified Designs', icon: '☀️', desc: 'Satellite data + shading analysis ensures optimal system sizing' },
+                    { label: 'Escrow-Protected Funding', icon: '🔒', desc: 'Funds released only on verified work completion — zero risk of abandonment' },
                   ].map((m, i) => (
                     <motion.div
-                      key={m.milestone}
+                      key={m.label}
                       initial={{ opacity: 0, x: -10 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
@@ -757,23 +659,14 @@ const LandingPage = () => {
                       className="flex items-center gap-4 group p-3 rounded-xl hover:bg-white/[0.02] transition-colors duration-300"
                     >
                       <div className="w-11 h-11 rounded-lg bg-emerald-400/[0.06] flex items-center justify-center shrink-0 group-hover:bg-emerald-400/[0.1] transition-colors duration-300">
-                        <span className="text-xs font-black text-emerald-400">{m.pct}</span>
+                        <span className="text-base">{m.icon}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-white/70">{m.milestone}</div>
+                        <div className="text-sm font-semibold text-white/70">{m.label}</div>
                         <div className="text-xs text-white/25 font-light">{m.desc}</div>
                       </div>
                     </motion.div>
                   ))}
-                </div>
-                <div className="mt-5 pt-5 border-t border-white/[0.04] flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-lg bg-gradient-to-r from-amber-400/[0.08] to-primary/[0.08] flex items-center justify-center shrink-0">
-                    <Star className="w-4 h-4 text-amber-400" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-amber-400/80">M7 — Speed Bonus (+5%)</div>
-                    <div className="text-xs text-white/25 font-light">PTO within 35 days = bonus release (paid by ASP)</div>
-                  </div>
                 </div>
               </GlassCard>
             </RevealSection>
@@ -796,7 +689,7 @@ const LandingPage = () => {
               ?
             </h2>
             <p className="text-base text-white/30 max-w-md mx-auto mb-12 font-light">
-              Join the platform that aligns every stakeholder in solar.
+              See how the sausage is made.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
