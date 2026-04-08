@@ -754,14 +754,60 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     setSellProjects(prev => prev.filter(p => p.id !== projectId));
   }, [sellProjects]);
 
+  // ─── Rejection & Reassignment (mirrors ProjectStore) ────────────────
+  const [rejectedProjects, setRejectedProjects] = useState<Array<{
+    project: typeof projects[0];
+    reason: string;
+    rejectedBy: string;
+    rejectedByRole: 'installer' | 'financier' | 'ops';
+    rejectedAt: string;
+    originalInstaller: string;
+    originalFinancier: string;
+  }>>([]);
+
+  const rejectProject = useCallback((projectId: string, reason: string, rejectedBy: string, rejectedByRole: 'installer' | 'financier' | 'ops') => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    setRejectedProjects(prev => [...prev, {
+      project,
+      reason,
+      rejectedBy,
+      rejectedByRole,
+      rejectedAt: new Date().toISOString(),
+      originalInstaller: project.installerName,
+      originalFinancier: 'ASP Capital',
+    }]);
+    // TODO: persist to Supabase `rejected_projects` table when created
+    // await supabase.from('rejected_projects').insert({ project_id: projectId, reason, rejected_by: rejectedBy, ... });
+  }, [projects]);
+
+  const reassignProject = useCallback((projectId: string, field: 'installer' | 'financier', newValue: string) => {
+    setRejectedProjects(prev => prev.filter(r => r.project.id !== projectId));
+    if (field === 'installer') {
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, installerName: newValue } : p));
+    }
+    // TODO: persist reassignment to Supabase
+    // await supabase.from('projects').update({ installer_name: newValue }).eq('id', projectId);
+  }, []);
+
+  const getRejectedProjects = useCallback(() => rejectedProjects, [rejectedProjects]);
+
+  const isMilestoneLocked = useCallback((projectId: string, milestoneIndex: number): boolean => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return true;
+    return milestoneIndex > project.currentMilestone;
+  }, [projects]);
+
   const value: ProjectStoreContextType = {
     projects, qcQueue, milestoneStates, tickets, financierUpdates, financierUploads, projectMessages, sellProjects,
+    rejectedProjects,
     acceptDeal, toggleChecklist, uploadFile, setTextEntry, setDateEntry, approveMilestone, submitMilestoneForQC, approveFundRelease,
     releaseFund, setOpsNotes, getMilestoneState, isMilestoneReady, getProjectsForInstaller, getProjectsForRep,
     getAllActiveProjects, createTicket, addTicketMessage, resolveTicket, getTicketsForProject,
     addFinancierUpdate, addFinancierUpload, addProjectMessage, deleteProject, deleteSellProject,
     addSellProject, updateSellProject,
     markSellProjectClean, markSellProjectDirty, getSellProjectsPendingApproval, getSellProjectsClean,
+    rejectProject, reassignProject, getRejectedProjects, isMilestoneLocked,
   };
 
   return (

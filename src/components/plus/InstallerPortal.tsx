@@ -1065,7 +1065,7 @@ const InstallerPortal = () => {
               const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
               const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
               return (
-                <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden">
+                <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden card-press">
                   <div className="flex gap-px h-1.5">
                     {Array.from({ length: p.totalMilestones }).map((_, i) => (
                       <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : 'bg-border'}`} />

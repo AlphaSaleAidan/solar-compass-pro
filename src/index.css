@@ -579,6 +579,46 @@ html {
   100% { transform: scale(2.5); opacity: 0; }
 }
 
+/* Card press — scale down on mousedown, lift on hover */
+.card-press {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+}
+.card-press:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 0 0 1px hsl(var(--border));
+}
+.card-press:active {
+  transform: scale(0.985) translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.asp-plus .card-press:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+}
+.asp-plus .card-press:active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+/* Tab content crossfade — smoother than abrupt swap */
+@keyframes tab-content-in {
+  from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.tab-content-enter {
+  animation: tab-content-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Shimmer loading placeholder */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--bg3)) 50%, hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════ */
 /*  PORTAL LAYOUT — Cinematic spacing and grid                            */
 /* ═══════════════════════════════════════════════════════════════════════ */
