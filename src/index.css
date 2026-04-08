@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Nunito:wght@400;500;600;700;800;900&family=Nunito+Sans:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --font-main: 'Nunito', sans-serif;
+    --font-main: 'Inter', sans-serif;
 
     /* ASP Dark Theme (default - Sales Rep / Backend Ops) */
     --background: 220 30% 4%;
@@ -429,4 +429,183 @@ html {
 
 .progress-animate {
   animation: progress-fill 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  CINEMATIC PORTAL — Premium glassmorphism + glow + depth               */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+/* Glass panel base — used on all portal cards */
+.glass-panel {
+  background: rgba(10, 14, 24, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glass-panel:hover {
+  background: rgba(10, 14, 24, 0.65);
+  border-color: rgba(0, 212, 200, 0.12);
+  box-shadow:
+    0 0 40px rgba(0, 212, 200, 0.04),
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transform: translateY(-2px);
+}
+
+.asp-plus .glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.asp-plus .glass-panel:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 212, 200, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
+}
+
+/* Stat card glow variant */
+.stat-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(0, 212, 200, 0.15), transparent 40%, transparent 60%, rgba(56, 189, 248, 0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.stat-glow:hover::before {
+  opacity: 1;
+}
+
+/* Animated gradient border for featured cards */
+@keyframes gradient-rotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+
+.gradient-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-border::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--angle, 0deg), transparent 40%, rgba(0, 212, 200, 0.3), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: gradient-rotate 4s linear infinite;
+  pointer-events: none;
+}
+
+/* Glowing CTA button effect */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, rgba(0, 212, 200, 0.4), rgba(56, 189, 248, 0.2));
+  border-radius: inherit;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.btn-glow:hover::before {
+  opacity: 1;
+}
+
+/* Portal section header styles */
+.portal-heading {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  background: linear-gradient(135deg, #fff 30%, rgba(0, 212, 200, 0.7));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.asp-plus .portal-heading {
+  background: linear-gradient(135deg, #111 30%, rgba(0, 180, 169, 0.8));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Smooth section reveal on scroll */
+.reveal-section {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tab pill animation upgrade */
+@keyframes tab-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 200, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(0, 212, 200, 0.15); }
+}
+
+/* Micro-interaction: ripple on click */
+@keyframes ripple-out {
+  0% { transform: scale(0); opacity: 0.3; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  PORTAL LAYOUT — Cinematic spacing and grid                            */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Number display - oversized, bold, Inter */
+.metric-display {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Subtle line separator with glow */
+.glow-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 200, 0.15), transparent);
+  border: none;
+  margin: 24px 0;
+}
+
+.asp-plus .glow-divider {
+  background: linear-gradient(90deg, transparent, rgba(0, 180, 169, 0.12), transparent);
 }
