@@ -17,10 +17,10 @@ const ShopSpin = () => {
     { id: 2, amount: 50, redeemed: false, label: 'Cash Drop $50' },
   ]);
   const [demoInventory, setDemoInventory] = useState([
-    { id: 'd1', name: 'ASP Stealth Tee', icon: 'ST', image: 'https://tinyurl.com/TsFrE5dTLs8YGTWuHT-img', value: 40, tier: 'normal', sellValue: 25 },
-    { id: 'd2', name: 'ASP Snapback', icon: 'SB', image: 'https://tinyurl.com/Rc4bmdpJRmP9RpAbcm-img', value: 25, tier: 'normal', sellValue: 15 },
-    { id: 'd3', name: 'AirPods Pro', icon: 'AP', image: 'https://tinyurl.com/ESUkvJWH7whz8k7buL-img', value: 150, tier: 'golden', sellValue: 100 },
-    { id: 'd4', name: 'ASP Elite Hoodie', icon: 'EH', image: 'https://tinyurl.com/cAS3ssjWRvtu2YW8Lq-img', value: 65, tier: 'normal', sellValue: 40 },
+    { id: 'd1', name: 'ASP Stealth Tee', icon: 'ST', image: 'https://tinyurl.com/G6czk3XUkzr55kh4oc-img', value: 40, tier: 'normal', sellValue: 25 },
+    { id: 'd2', name: 'ASP Snapback', icon: 'SB', image: 'https://tinyurl.com/fps3vK3EUax3LQZKu9-img', value: 25, tier: 'normal', sellValue: 15 },
+    { id: 'd3', name: 'AirPods Pro', icon: 'AP', image: 'https://tinyurl.com/SsNcDyo6izTQH62gNm-img', value: 150, tier: 'golden', sellValue: 100 },
+    { id: 'd4', name: 'ASP Elite Hoodie', icon: 'EH', image: 'https://tinyurl.com/EjJJTiz4S3fiPVkkG4-img', value: 65, tier: 'normal', sellValue: 40 },
   ]);
 
   const tickets = isDemo ? demoTickets : gamification.state.tickets;
@@ -271,7 +271,7 @@ const ShopSpin = () => {
               className={`shrink-0 w-[100px] h-[100px] rounded-xl flex flex-col items-center justify-center gap-1 border-2 backdrop-blur-sm overflow-hidden ${itemTierColors[item.tier]} hover:scale-105 transition-transform`}
             >
               {item.image ? (
-                <img src={item.image} alt={item.name} className="w-14 h-14 object-contain drop-shadow-lg" style={{ mixBlendMode: 'screen' }} loading="lazy" />
+                <img src={item.image} alt={item.name} className="w-14 h-14 object-contain drop-shadow-lg" style={{ mixBlendMode: 'multiply' }} loading="lazy" />
               ) : (
                 <span className="text-3xl leading-none drop-shadow-lg">{item.icon}</span>
               )}
@@ -305,7 +305,7 @@ const ShopSpin = () => {
       {wonPrize && (
         <div className="mt-4 p-4 rounded-xl border-2 border-primary bg-gradient-to-r from-primary/10 to-primary/5 flex items-center gap-3.5 animate-scale-in">
           {wonPrize.image ? (
-            <img src={wonPrize.image} alt={wonPrize.name} className="w-16 h-16 object-contain drop-shadow-lg rounded-lg" style={{ mixBlendMode: 'screen' }} />
+            <img src={wonPrize.image} alt={wonPrize.name} className="w-16 h-16 object-contain drop-shadow-lg rounded-lg" style={{ mixBlendMode: 'multiply' }} />
           ) : (
             <span className="text-5xl drop-shadow-lg">{wonPrize.icon}</span>
           )}
@@ -412,7 +412,7 @@ const ShopSpin = () => {
                 <div key={item.id} className="flex items-center justify-between py-2 px-3 bg-bg3 rounded-lg">
                   <div className="flex items-center gap-2">
                     {item.image ? (
-                      <img src={item.image} alt={item.item_name} className="w-8 h-8 object-contain rounded-lg border border-primary/20" style={{ mixBlendMode: 'screen' }} loading="lazy" />
+                      <img src={item.image} alt={item.item_name} className="w-8 h-8 object-contain rounded-lg border border-primary/20" style={{ mixBlendMode: 'multiply' }} loading="lazy" />
                     ) : (
                       <span className="text-[10px] font-black text-primary bg-primary/15 border border-primary/20 w-8 h-8 rounded-lg flex items-center justify-center">{item.icon || '??'}</span>
                     )}

@@ -497,25 +497,54 @@ const InstallerPortal = () => {
 
             {popupTab === 'uploads' && (
               <div className="space-y-4">
+                {/* Drag & Drop Upload Zone */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-primary', 'bg-primary/10', 'scale-[1.01]'); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'scale-[1.01]'); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'scale-[1.01]');
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      if (!['image/jpeg','image/png','image/webp','application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type)) {
+                        toast.error('Invalid file type. Accepted: JPG, PNG, WebP, PDF, DOC/DOCX');
+                        return;
+                      }
+                      if (file.size > 25 * 1024 * 1024) { toast.error('File too large. Maximum: 25MB'); return; }
+                      const type = file.type.startsWith('image/') ? 'photo' : 'document';
+                      store.addFinancierUpload(p.id, file.name, type as any, installerName);
+                      toast.success(`Uploaded: ${file.name}`);
+                      // Brief success flash
+                      e.currentTarget.classList.add('ring-2', 'ring-[hsl(var(--green))]', 'bg-[hsl(var(--green))]/10');
+                      setTimeout(() => e.currentTarget?.classList.remove('ring-2', 'ring-[hsl(var(--green))]', 'bg-[hsl(var(--green))]/10'), 1200);
+                    }
+                  }}
+                  className="border-2 border-dashed border-border rounded-xl p-5 text-center transition-all duration-300 cursor-pointer hover:border-primary/40 hover:bg-primary/5"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-7 h-7 text-muted-foreground mx-auto mb-2 transition-transform group-hover:scale-110" />
+                  <p className="text-xs font-bold text-muted-foreground">Drag & drop files here or click to browse</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">JPG, PNG, WebP, PDF, DOC · Max 25MB</p>
+                </div>
+
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleDocUpload(p.id)}
-                    className="px-3 py-2 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center gap-1.5"
+                    className="px-3 py-2 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center gap-1.5 active:scale-[0.97]"
                   >
                     <FileText className="w-3.5 h-3.5" /> Upload Document
                   </button>
                   <button
                     onClick={() => handlePhotoUpload(p.id)}
-                    className="px-3 py-2 bg-[hsl(var(--blue))]/10 border border-[hsl(var(--blue))]/25 rounded-lg text-xs font-bold text-[hsl(var(--blue))] hover:bg-[hsl(var(--blue))]/20 transition-all flex items-center gap-1.5"
+                    className="px-3 py-2 bg-[hsl(var(--blue))]/10 border border-[hsl(var(--blue))]/25 rounded-lg text-xs font-bold text-[hsl(var(--blue))] hover:bg-[hsl(var(--blue))]/20 transition-all flex items-center gap-1.5 active:scale-[0.97]"
                   >
                     <Camera className="w-3.5 h-3.5" /> Upload Photo
                   </button>
                 </div>
 
                 {projectUploads.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-xs text-muted-foreground">No uploads yet. Upload documents or photos above.</p>
+                  <div className="text-center py-4">
+                    <p className="text-xs text-muted-foreground">No uploads yet</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
