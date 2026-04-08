@@ -724,18 +724,51 @@ const FinancierPortal = () => {
         );
       }
 
-      case 'portfolio':
+      case 'portfolio': {
+        // Merge store.projects with NTP-approved sell portfolioProjects
+        const ntpApprovedSellProjects = store.sellProjects
+          .filter(sp => sp.convertedToSale && sp.qcInitialApproved && sp.documentsSigned && sp.lifecycleState !== 'rejected')
+          .map(sp => ({
+            id: sp.id,
+            customerName: `${sp.firstName} ${sp.lastName}`,
+            address: sp.address || 'Pending',
+            email: sp.email || '',
+            phone: sp.phone || '',
+            systemSize: sp.auroraData?.systemSize || '8.4 kW',
+            battery: sp.auroraData?.battery || 'None',
+            financier: sp.auroraData?.financier || 'TBD',
+            monthlyPayment: sp.auroraData?.monthlyPayment || '$0',
+            soldPPW: 3.20,
+            contractValue: (sp.highBill || 200) * 12 * 20,
+            projectCost: (sp.highBill || 200) * 12 * 15,
+            repName: 'Sales Rep',
+            installerName: 'Unassigned',
+            status: 'active' as const,
+            stage: 'Active — NTP Approved',
+            currentMilestone: 1,
+            totalMilestones: 7,
+            annualUsage: (sp.highBill || 200) * 12,
+            documentsSignedCount: 3,
+            totalDocuments: 5,
+            dates: { submitted: sp.createdAt?.slice(0, 10) || 'N/A', siteSurvey: '', sowConfirmed: '', permitSubmitted: '', lastHOContact: 'N/A' },
+            milestoneDetails: [],
+            checklist: { creditPassed: sp.creditStatus === 'credit_passed', financeDocsSigned: true, welcomeCallCompleted: !!sp.welcomeCallComplete, siteSurveyDone: !!sp.siteSurveyComplete, aspOnboarding: false },
+          })) as typeof portfolioProjects;
+        const portfolioProjects = [
+          ...portfolioProjects,
+          ...ntpApprovedSellProjects.filter(sp => !portfolioProjects.some(p => p.id === sp.id)),
+        ];
         return (
           <div className="space-y-3">
             {/* Portfolio Summary Header */}
             <div className="glass-panel p-4">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {[
-                  { label: 'Total Projects', value: projects.length.toString(), color: 'text-primary' },
-                  { label: 'Portfolio Value', value: `$${Math.round(projects.reduce((s, p) => s + p.contractValue, 0) / 1000)}k`, color: 'text-primary' },
-                  { label: 'Capital Deployed', value: `$${Math.round(projects.reduce((s, p) => s + p.projectCost * (p.currentMilestone / Math.max(p.totalMilestones, 1)), 0) / 1000)}k`, color: 'text-[hsl(var(--green))]' },
-                  { label: 'Active', value: projects.filter(p => p.status === 'active').length.toString(), color: 'text-[hsl(var(--green))]' },
-                  { label: 'At Risk', value: projects.filter(p => p.status === 'delayed' || p.status === 'on_hold').length.toString(), color: 'text-[hsl(var(--yellow))]' },
+                  { label: 'Total Projects', value: portfolioProjects.length.toString(), color: 'text-primary' },
+                  { label: 'Portfolio Value', value: `$${Math.round(portfolioProjects.reduce((s, p) => s + p.contractValue, 0) / 1000)}k`, color: 'text-primary' },
+                  { label: 'Capital Deployed', value: `$${Math.round(portfolioProjects.reduce((s, p) => s + p.projectCost * (p.currentMilestone / Math.max(p.totalMilestones, 1)), 0) / 1000)}k`, color: 'text-[hsl(var(--green))]' },
+                  { label: 'Active', value: portfolioProjects.filter(p => p.status === 'active').length.toString(), color: 'text-[hsl(var(--green))]' },
+                  { label: 'At Risk', value: portfolioProjects.filter(p => p.status === 'delayed' || p.status === 'on_hold').length.toString(), color: 'text-[hsl(var(--yellow))]' },
                 ].map((s, i) => (
                   <div key={i} className="text-center">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">{s.label}</div>
@@ -744,14 +777,14 @@ const FinancierPortal = () => {
                 ))}
               </div>
             </div>
-            {projects.length === 0 && (
+            {portfolioProjects.length === 0 && (
               <div className="glass-panel p-8 text-center">
                 <BarChart3 className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
                 <p className="text-sm font-bold text-card-foreground mb-1">No Projects in Portfolio</p>
                 <p className="text-xs text-muted-foreground">Projects will appear here once they are created through the Sales portal and funded.</p>
               </div>
             )}
-            {projects.map(p => {
+            {portfolioProjects.map(p => {
               const isExpanded = expandedProject === p.id;
               const ms = store.getMilestoneState(p.id);
               const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
@@ -992,6 +1025,7 @@ const FinancierPortal = () => {
             })}
           </div>
         );
+      }
 
       case 'escrow': {
         // Build escrow data from real MILESTONE_SOPS + project data
@@ -1197,6 +1231,27 @@ const FinancierPortal = () => {
 
       case 'rejected': {
         const rejected = store.getRejectedProjects();
+        // Also include NTP-rejected sell projects
+        const ntpRejectedSellProjects = store.sellProjects
+          .filter(sp => sp.lifecycleState === 'rejected')
+          .map(sp => ({
+            project: {
+              id: sp.id,
+              customerName: `${sp.firstName} ${sp.lastName}`,
+              systemSize: sp.auroraData?.systemSize || '8.4 kW',
+              projectCost: (sp.highBill || 200) * 12 * 15,
+            },
+            reason: sp.approvalNotes || 'NTP Rejected',
+            rejectedBy: 'Financier',
+            rejectedByRole: 'Financier',
+            rejectedAt: sp.updatedAt || new Date().toISOString(),
+            originalInstaller: 'Unassigned',
+            originalFinancier: 'ASP Capital',
+          }));
+        const allRejected = [
+          ...rejected,
+          ...ntpRejectedSellProjects.filter(r => !rejected.some(er => er.project.id === r.project.id)),
+        ];
         return (
           <div className="space-y-4">
             <div className="glass-panel p-5">
@@ -1205,12 +1260,12 @@ const FinancierPortal = () => {
               </h3>
               <p className="text-xs text-muted-foreground mb-4">Deals rejected by an installer or financier. Reassign to route to a new party.</p>
 
-              {rejected.length === 0 ? (
+              {allRejected.length === 0 ? (
                 <div className="text-center py-8">
                   <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto" />
                   <p className="text-xs text-muted-foreground mt-2">No rejected projects — portfolio is clean</p>
                 </div>
-              ) : rejected.map((r) => (
+              ) : allRejected.map((r) => (
                 <div key={r.project.id} className="bg-muted rounded-xl border border-border p-4 mb-3">
                   <div className="flex items-center justify-between mb-2">
                     <div>
