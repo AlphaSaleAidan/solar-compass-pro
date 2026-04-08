@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import CinematicBackground from '@/components/landing/CinematicBackground';
+// CinematicBackground is now global in App.tsx — no need to import here
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -272,8 +272,7 @@ const LandingPage = () => {
 
   return (
     <div ref={landingRef} className="min-h-screen text-white overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Cinematic scroll-reactive background */}
-      <CinematicBackground />
+      {/* Cinematic background is now global in App.tsx */}
 
       {/* ─── Navigation ─────────────────────────────────────────────── */}
       <motion.nav

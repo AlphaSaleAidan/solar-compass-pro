@@ -18,7 +18,7 @@ import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
 import PlusPortal from '@/components/plus/PlusPortal';
 import ActivityFeed from '@/components/shared/ActivityFeed';
 import PageTransition from '@/components/shared/PageTransition';
-import PortalAmbient3D from '@/components/shared/PortalAmbient3D';
+// PortalAmbient3D removed — CinematicBackground is now global in App.tsx
 import { useDataSource } from '@/contexts/DataSourceProvider';
 
 const Dashboard = () => {
@@ -101,10 +101,9 @@ const Dashboard = () => {
   };
 
   return (
-    <div className={isPlus ? 'asp-plus' : ''}>
-      <div className="min-h-screen bg-background relative">
-        {/* 3D ambient background */}
-        <PortalAmbient3D theme={isPlus ? 'light' : 'dark'} />
+    <div>
+      <div className="min-h-screen relative">
+        {/* 3D background is now global in App.tsx */}
         <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="relative mt-[58px] p-6">
           <PageTransition pageKey={activeTab} variant="wave">

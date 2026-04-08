@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth, AuthProvider } from '@/contexts/AuthContext';
 import { DataSourceProvider } from '@/contexts/DataSourceProvider';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import CinematicBackground from '@/components/shared/CinematicBackground';
 import LandingPage from '@/pages/LandingPage';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -86,6 +87,8 @@ const App = () => (
         <AuthProvider>
           <DataSourceProvider>
             <TooltipProvider>
+              {/* Global 3D background — persists across ALL pages */}
+              <CinematicBackground />
               <Toaster />
               <Sonner />
               <AppContent />

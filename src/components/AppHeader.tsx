@@ -109,9 +109,9 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
     <header
       className="fixed top-0 left-0 right-0 z-50 h-[58px] flex items-center px-6 gap-2 border-b backdrop-blur-2xl"
       style={{
-        background: isPlus ? 'rgba(255,255,255,0.8)' : 'rgba(6,8,17,0.65)',
-        borderColor: isPlus ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)',
-        boxShadow: isPlus ? '0 1px 24px rgba(0,0,0,0.04)' : '0 1px 24px rgba(0,0,0,0.3), inset 0 -1px 0 rgba(255,255,255,0.02)'
+        background: 'rgba(6,8,17,0.65)',
+        borderColor: 'rgba(255,255,255,0.04)',
+        boxShadow: '0 1px 24px rgba(0,0,0,0.3), inset 0 -1px 0 rgba(255,255,255,0.02)'
       }}
     >
       {/* Logo */}
@@ -119,7 +119,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center">
           <Zap className="w-4 h-4 text-primary-foreground" />
         </div>
-        <span className={`text-base font-black whitespace-nowrap ${isPlus ? 'text-gray-900' : 'text-foreground'}`}>
+        <span className={`text-base font-black whitespace-nowrap ${'text-foreground'}`}>
           ASP {isPlus && <span className="text-primary">+</span>}
         </span>
       </div>
@@ -129,7 +129,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         {/* Sliding indicator pill */}
         <motion.div
           className="absolute top-1/2 -translate-y-1/2 h-[30px] rounded-md"
-          style={{ background: isPlus ? 'rgba(0,212,200,0.08)' : 'rgba(0,212,200,0.1)' }}
+          style={{ background: 'rgba(0,212,200,0.1)' }}
           animate={{ left: indicator.left, width: indicator.width }}
           transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
         />
@@ -141,7 +141,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
             className={`relative z-10 px-3 py-1.5 text-[13px] font-semibold rounded-md transition-colors duration-200 whitespace-nowrap ${
               activeTab === tab
                 ? 'text-primary'
-                : isPlus ? 'text-gray-500 hover:text-gray-900' : 'text-muted-foreground hover:text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {getTabDisplay(tab)}
@@ -177,7 +177,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
                 className={`px-2 py-1 text-[10px] font-bold rounded transition-all duration-200 ${
                   user.role === r
                     ? 'bg-primary/10 text-primary'
-                    : isPlus ? 'text-gray-400 hover:text-gray-700' : 'text-gray-500 hover:text-gray-300'
+                    : 'text-gray-500 hover:text-gray-300'
                 }`}>
                 {r === 'sales_rep' ? 'SR' : r === 'backend_ops' ? 'OPS' : r === 'installer' ? 'INS' : 'FIN'}
               </button>
@@ -194,7 +194,7 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
         )}
         <button
           onClick={() => setShowSettings(true)}
-          className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-sm border-2 transition-all duration-200 hover:border-primary hover:scale-105 ${isPlus ? 'bg-gray-100 border-gray-200' : 'bg-bg4 border-border2'}`}
+          className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-sm border-2 transition-all duration-200 hover:border-primary hover:scale-105 ${'bg-bg4 border-border2'}`}
           title="Settings"
         >
           {avatarUrl ? (
@@ -203,11 +203,11 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
             <User className="w-4 h-4" />
           )}
         </button>
-        <span className={`text-xs font-bold ${isPlus ? 'text-gray-700' : 'text-gray-300'}`}>{user.name}</span>
+        <span className={`text-xs font-bold ${'text-gray-300'}`}>{user.name}</span>
         <button
           onClick={handleLogout}
           className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-all duration-200 flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] ${
-            isPlus ? 'bg-gray-50 border-gray-200 text-gray-500 hover:border-red-300 hover:text-red-500' : 'bg-bg3 border-border text-muted-foreground hover:border-asp-red hover:text-asp-red'
+            'bg-bg3 border-border text-muted-foreground hover:border-asp-red hover:text-asp-red'
           }`}
         >
           <LogOut className="w-3 h-3" />
