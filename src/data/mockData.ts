@@ -148,6 +148,8 @@ export interface SellProject {
   // Two-phase QC workflow
   qcInitialApproved?: boolean;
   documentsSigned?: boolean;
+  // Lifecycle state machine (inferred if not set)
+  lifecycleState?: 'lead' | 'qualified' | 'qc_review' | 'active' | 'completed' | 'archived' | 'rejected';
 }
 
 // Demo-only sample data — only loaded for demo users via ProjectStore

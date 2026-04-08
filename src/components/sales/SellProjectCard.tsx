@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { SellProject } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { ProjectLifecycleBar } from '@/components/ProjectLifecycleBar';
+import { inferState, type ProjectState } from '@/lib/projectStateMachine';
 import { validateWelcomeCall, getPreSubmissionChecklist, type WelcomeCallAnswers, type WelcomeCallFlag } from '@/data/sopEngine';
 import ConvertToSaleDialog from './ConvertToSaleDialog';
 import SiteSurveyDialog from './SiteSurveyDialog';
@@ -252,6 +254,19 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
 
         {expanded && (
           <div className="border-t border-white/[0.06] p-4 space-y-4">
+            {/* Lifecycle state bar */}
+            <ProjectLifecycleBar
+              currentState={(project.lifecycleState || inferState({
+                firstName: project.firstName,
+                lastName: project.lastName,
+                creditStatus: project.creditStatus === 'credit_passed' ? 'passed' : project.creditStatus,
+                auroraSynced: project.auroraSynced,
+                auroraData: project.auroraData as Record<string, unknown> | null | undefined,
+                convertedToSale: project.convertedToSale,
+                qcInitialApproved: project.qcInitialApproved,
+                approvalStatus: project.approvalStatus === 'dirty' ? 'rejected' : undefined,
+              })) as ProjectState}
+            />
             {/* Contact info */}
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-white/30" /> <span className="text-white/70">{project.email}</span></div>

@@ -10,6 +10,7 @@ import type {
   ProjectMessage,
 } from '@/contexts/ProjectStore';
 import type { Project, SellProject } from '@/data/mockData';
+import { inferState, type ProjectState } from '@/lib/projectStateMachine';
 import { useQueryClient } from '@tanstack/react-query';
 
 // This store provides the SAME interface as ProjectStore but reads/writes Supabase
@@ -152,6 +153,16 @@ function mapDbSellProjectToUI(row: any): SellProject {
     qcInitialApproved: row.qc_initial_approved || false,
     documentsSigned: row.documents_signed || false,
     _dbId: row.id,
+    lifecycleState: inferState({
+      firstName: row.first_name,
+      lastName: row.last_name,
+      creditStatus: row.credit_status === 'passed' ? 'passed' : row.credit_status,
+      auroraSynced: row.aurora_synced || false,
+      auroraData: row.aurora_data,
+      convertedToSale: row.converted_to_sale || false,
+      qcInitialApproved: row.qc_initial_approved || false,
+      approvalStatus: row.approval_status === 'rejected' ? 'rejected' : undefined,
+    }) as ProjectState,
   } as SellProject & { _dbId: string };
 }
 
