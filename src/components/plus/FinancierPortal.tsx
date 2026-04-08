@@ -725,7 +725,7 @@ const FinancierPortal = () => {
       }
 
       case 'portfolio': {
-        // Merge store.projects with NTP-approved sell portfolioProjects
+        // Merge store.projects with NTP-approved sell projects
         const ntpApprovedSellProjects = store.sellProjects
           .filter(sp => sp.convertedToSale && sp.qcInitialApproved && sp.documentsSigned && sp.lifecycleState !== 'rejected')
           .map(sp => ({
@@ -753,10 +753,10 @@ const FinancierPortal = () => {
             dates: { submitted: sp.createdAt?.slice(0, 10) || 'N/A', siteSurvey: '', sowConfirmed: '', permitSubmitted: '', lastHOContact: 'N/A' },
             milestoneDetails: [],
             checklist: { creditPassed: sp.creditStatus === 'credit_passed', financeDocsSigned: true, welcomeCallCompleted: !!sp.welcomeCallComplete, siteSurveyDone: !!sp.siteSurveyComplete, aspOnboarding: false },
-          })) as typeof portfolioProjects;
+          })) as typeof projects;
         const portfolioProjects = [
-          ...portfolioProjects,
-          ...ntpApprovedSellProjects.filter(sp => !portfolioProjects.some(p => p.id === sp.id)),
+          ...projects,
+          ...ntpApprovedSellProjects.filter(sp => !projects.some(p => p.id === sp.id)),
         ];
         return (
           <div className="space-y-3">
