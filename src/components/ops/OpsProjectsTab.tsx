@@ -21,8 +21,8 @@ interface OpsProjectsTabProps {
 const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
   const store = useDataSource();
   // Merge store.projects + accepted deals + NTP-approved sell projects (SOP wave function)
-  const existingIds = useMemo(() => new Set(store.projects.map(p => p.id)), [store.projects]);
-  const sellDerivedProjects = useMemo(() => getActiveSellProjects(store.sellProjects, existingIds), [store.sellProjects, existingIds]);
+  const existingSellProjectIds = useMemo(() => new Set(store.projects.map(p => (p as any)._sellProjectId).filter(Boolean)), [store.projects]);
+  const sellDerivedProjects = useMemo(() => getActiveSellProjects(store.sellProjects, existingSellProjectIds), [store.sellProjects, existingSellProjectIds]);
   const allProjects = useMemo(() => [
     ...store.projects,
     ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id)),

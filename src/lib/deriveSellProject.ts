@@ -78,14 +78,15 @@ export function deriveSellProjectToProject(sp: SellProject): Project {
 
 /**
  * Given the full list of sell projects, return Project-shaped records for all NTP-approved ones.
- * Deduplicates against existing store.projects by ID.
+ * Deduplicates against existing projects by checking their sell_project_id linkage.
+ * `existingSellProjectIds` should be a set of sell_project IDs that already have a real project row.
  */
 export function getActiveSellProjects(
   sellProjects: SellProject[],
-  existingProjectIds: Set<string>
+  existingSellProjectIds: Set<string>
 ): Project[] {
   return sellProjects
     .filter(isNTPApproved)
-    .filter(sp => !existingProjectIds.has(sp.id))
+    .filter(sp => !existingSellProjectIds.has(sp.id))
     .map(deriveSellProjectToProject);
 }

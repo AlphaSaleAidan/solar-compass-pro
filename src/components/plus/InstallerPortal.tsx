@@ -49,8 +49,8 @@ const InstallerPortal = () => {
   // Merge store.projects with NTP-approved sell projects (SOP wave function)
   // This ensures active deals are visible on the installer portal for M1-M7 workflow
   const installerName = user?.companyName || user?.name || 'Installer';
-  const existingIds = useMemo(() => new Set(store.projects.map(p => p.id)), [store.projects]);
-  const sellDerivedProjects = useMemo(() => getActiveSellProjects(store.sellProjects, existingIds), [store.sellProjects, existingIds]);
+  const existingSellProjectIds = useMemo(() => new Set(store.projects.map(p => (p as any)._sellProjectId).filter(Boolean)), [store.projects]);
+  const sellDerivedProjects = useMemo(() => getActiveSellProjects(store.sellProjects, existingSellProjectIds), [store.sellProjects, existingSellProjectIds]);
   const installerProjects = useMemo(() => [...store.projects, ...sellDerivedProjects], [store.projects, sellDerivedProjects]);
   const completedCount = installerProjects.filter(p => p.currentMilestone >= 5).length;
   const activeCount = installerProjects.filter(p => p.status !== 'completed').length;

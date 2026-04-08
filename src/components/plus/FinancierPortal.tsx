@@ -730,8 +730,8 @@ const FinancierPortal = () => {
 
       case 'portfolio': {
         // Merge store.projects with NTP-approved sell projects via shared SOP wave function
-        const existingIds = new Set(projects.map(p => p.id));
-        const ntpApprovedSellProjects = getActiveSellProjects(store.sellProjects, existingIds);
+        const existingSellProjectIds = new Set(projects.map(p => (p as any)._sellProjectId).filter(Boolean));
+        const ntpApprovedSellProjects = getActiveSellProjects(store.sellProjects, existingSellProjectIds);
         const portfolioProjects = [
           ...projects,
           ...ntpApprovedSellProjects,
