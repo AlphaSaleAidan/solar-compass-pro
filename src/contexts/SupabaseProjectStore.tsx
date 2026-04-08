@@ -711,12 +711,41 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     return sellProjects.filter(p => p.approvalStatus === 'clean');
   }, [sellProjects]);
 
+  // ─── Delete actions (cross-portal sync) ───────────────────────────
+  const deleteProject = useCallback(async (projectId: string) => {
+    // Delete from Supabase
+    const tables = [
+      'milestone_states', 'project_milestones', 'project_messages',
+      'project_documents', 'project_checklist_items', 'project_activity_log',
+      'financier_updates', 'site_surveys', 'fund_releases',
+    ] as const;
+    for (const table of tables) {
+      await supabase.from(table).delete().eq('project_id', projectId);
+    }
+    await supabase.from('projects').delete().eq('id', projectId);
+    // Sync in-memory state
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+    setQcQueue(prev => prev.filter(p => p.id !== projectId));
+    setMilestoneStates(prev => { const next = { ...prev }; delete next[projectId]; return next; });
+    setTickets(prev => prev.filter(t => t.projectId !== projectId));
+    setFinancierUpdates(prev => { const next = { ...prev }; delete next[projectId]; return next; });
+    setFinancierUploads(prev => { const next = { ...prev }; delete next[projectId]; return next; });
+    setProjectMessages(prev => { const next = { ...prev }; delete next[projectId]; return next; });
+  }, []);
+
+  const deleteSellProject = useCallback(async (projectId: string) => {
+    const dbId = getSellDbId(projectId);
+    await supabase.from('sell_projects').delete().eq('id', dbId);
+    setSellProjects(prev => prev.filter(p => p.id !== projectId));
+  }, [sellProjects]);
+
   const value: ProjectStoreContextType = {
     projects, qcQueue, milestoneStates, tickets, financierUpdates, financierUploads, projectMessages, sellProjects,
     acceptDeal, toggleChecklist, uploadFile, setTextEntry, setDateEntry, approveMilestone, approveFundRelease,
     releaseFund, setOpsNotes, getMilestoneState, isMilestoneReady, getProjectsForInstaller, getProjectsForRep,
     getAllActiveProjects, createTicket, addTicketMessage, resolveTicket, getTicketsForProject,
-    addFinancierUpdate, addFinancierUpload, addProjectMessage, addSellProject, updateSellProject,
+    addFinancierUpdate, addFinancierUpload, addProjectMessage, deleteProject, deleteSellProject,
+    addSellProject, updateSellProject,
     markSellProjectClean, markSellProjectDirty, getSellProjectsPendingApproval, getSellProjectsClean,
   };
 

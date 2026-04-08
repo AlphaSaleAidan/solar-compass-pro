@@ -10,6 +10,8 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import { Trash2, AlertTriangle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -35,6 +37,8 @@ const DeleteProjectDialog = ({
 }: DeleteProjectDialogProps) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [deleting, setDeleting] = useState(false);
+  const { user } = useAuth();
+  const store = useDataSource();
 
   const handleClose = (val: boolean) => {
     if (!val) setStep(1);
@@ -48,29 +52,47 @@ const DeleteProjectDialog = ({
   const handleFinalDelete = async () => {
     setDeleting(true);
     try {
-      if (projectType === 'project') {
-        // Delete related records first
-        const tables = [
-          'milestone_states',
-          'project_milestones',
-          'project_messages',
-          'project_documents',
-          'project_checklist_items',
-          'project_activity_log',
-          'financier_updates',
-          'site_surveys',
-          'fund_releases',
-        ] as const;
+      const isDemo = user?.isDemo;
 
-        for (const table of tables) {
-          await supabase.from(table).delete().eq('project_id', projectId);
+      if (isDemo) {
+        // Demo mode: delete from in-memory store (syncs across ALL portals instantly)
+        if (projectType === 'project') {
+          store.deleteProject(projectId);
+        } else {
+          store.deleteSellProject(projectId);
+        }
+      } else {
+        // Production mode: delete from Supabase
+        if (projectType === 'project') {
+          const tables = [
+            'milestone_states',
+            'project_milestones',
+            'project_messages',
+            'project_documents',
+            'project_checklist_items',
+            'project_activity_log',
+            'financier_updates',
+            'site_surveys',
+            'fund_releases',
+          ] as const;
+
+          for (const table of tables) {
+            await supabase.from(table).delete().eq('project_id', projectId);
+          }
+
+          const { error } = await supabase.from('projects').delete().eq('id', projectId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('sell_projects').delete().eq('id', projectId);
+          if (error) throw error;
         }
 
-        const { error } = await supabase.from('projects').delete().eq('id', projectId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('sell_projects').delete().eq('id', projectId);
-        if (error) throw error;
+        // Also update the in-memory store to sync the UI immediately
+        if (projectType === 'project') {
+          store.deleteProject(projectId);
+        } else {
+          store.deleteSellProject(projectId);
+        }
       }
 
       toast({

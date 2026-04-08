@@ -86,6 +86,9 @@ interface ProjectStoreActions {
   addFinancierUpdate: (projectId: string, text: string, author: string) => void;
   addFinancierUpload: (projectId: string, fileName: string, type: 'document' | 'photo', uploadedBy: string) => void;
   addProjectMessage: (projectId: string, message: ProjectMessage) => void;
+  // Delete actions (cross-portal sync)
+  deleteProject: (projectId: string) => void;
+  deleteSellProject: (projectId: string) => void;
   // Sell project actions
   addSellProject: (project: SellProject) => void;
   updateSellProject: (project: SellProject) => void;
@@ -345,6 +348,44 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, []);
 
+  // ─── Delete actions (cross-portal sync) ───────────────────────────
+  const deleteProject = useCallback((projectId: string) => {
+    // Remove from projects list
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+    // Remove from QC queue
+    setQcQueue(prev => prev.filter(p => p.id !== projectId));
+    // Remove milestone state
+    setMilestoneStates(prev => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
+    // Remove all tickets for this project
+    setTickets(prev => prev.filter(t => t.projectId !== projectId));
+    // Remove financier updates
+    setFinancierUpdates(prev => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
+    // Remove financier uploads
+    setFinancierUploads(prev => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
+    // Remove project messages
+    setProjectMessages(prev => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
+  }, []);
+
+  const deleteSellProject = useCallback((projectId: string) => {
+    setSellProjects(prev => prev.filter(p => p.id !== projectId));
+  }, []);
+
   // Sell project actions
   const addSellProject = useCallback((project: SellProject) => {
     setSellProjects(prev => [project, ...prev]);
@@ -452,6 +493,8 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     addFinancierUpdate,
     addFinancierUpload,
     addProjectMessage,
+    deleteProject,
+    deleteSellProject,
     addSellProject,
     updateSellProject,
     markSellProjectClean,
