@@ -10,12 +10,13 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, Shield, Paintbrush, Code, ClipboardCheck, Activity,
   ChevronDown, ChevronRight, CheckCircle2, Circle, Clock,
   AlertTriangle, Star, Zap, MessageSquare, Settings, Eye,
-  ArrowRight, BarChart3, Users, Layers, RefreshCw, Send,
+  ArrowRight, ArrowLeft, BarChart3, Users, Layers, RefreshCw, Send,
   Play, Pause, Target, TrendingUp, FileText, Sparkles,
   Filter, Search, X, Hash, Compass
 } from 'lucide-react';
@@ -59,6 +60,7 @@ type Tab = 'overview' | 'agents' | 'directives' | 'consensus';
 /* ─── Main Component ──────────────────────────────────────────────── */
 
 const CouncilDashboard = () => {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('overview');
   const [state, setState] = useState(CouncilAPI.getState());
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
@@ -139,6 +141,13 @@ const CouncilDashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-4 mb-6"
       >
+        <button
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center hover:bg-white/[0.08] hover:border-white/[0.15] transition-all duration-200 active:scale-95 group"
+          title="Back"
+        >
+          <ArrowLeft className="w-4.5 h-4.5 text-gray-400 group-hover:text-white transition-colors" />
+        </button>
         <div className="w-12 h-12 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center">
           <Brain className="w-6 h-6 text-primary" />
         </div>
