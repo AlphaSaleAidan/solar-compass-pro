@@ -301,7 +301,7 @@ const FinancierPortal = () => {
                 { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, valueSuffix: '', icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / Math.max(totalPortfolioContract, 1)) * 100)}% margin` },
                 { label: 'Pending Releases', value: pendingReleases.length.toString(), valueSuffix: '', icon: Clock, color: pendingReleases.length > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]', sub: pendingReleases.length > 0 ? 'Action required' : 'All clear' },
               ].map((s, i) => (
-                <div key={i} className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-5 stat-card-hover transition-all duration-300 portal-section-enter" style={{ animationDelay: `${i * 60}ms` }}>
+                <div key={i} className="glass-panel stat-glow p-5 stat-card-hover transition-all duration-300 portal-section-enter" style={{ animationDelay: `${i * 60}ms` }}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
                       <s.icon className={`w-4 h-4 ${s.color}`} />
@@ -336,7 +336,7 @@ const FinancierPortal = () => {
             )}
 
             {/* Portfolio Projects */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="glass-panel overflow-hidden">
               <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
                 <h3 className="text-sm font-extrabold text-card-foreground flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> Portfolio Projects</h3>
                 <button onClick={() => setActiveSection('portfolio')} className="text-xs text-primary font-bold hover:underline">View All →</button>
@@ -388,7 +388,7 @@ const FinancierPortal = () => {
             </div>
 
             {/* Escrow Summary */}
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
                 <Lock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Escrow Fund Status
               </h3>
@@ -412,7 +412,7 @@ const FinancierPortal = () => {
       case 'pending':
         return (
           <div className="space-y-4">
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-1 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Pending Fund Releases
               </h3>
@@ -499,7 +499,7 @@ const FinancierPortal = () => {
               const isFlagged = flaggedProjects.has(p.id);
 
               return (
-                <div key={p.id} className={`bg-card border rounded-2xl overflow-hidden hover:shadow-md transition-shadow ${isFlagged ? 'border-[hsl(var(--red))]/40' : 'border-border'}`}>
+                <div key={p.id} className={`glass-panel overflow-hidden hover:shadow-md transition-shadow ${isFlagged ? 'border-[hsl(var(--red))]/40' : 'border-border'}`}>
                   <div className="flex gap-px h-1.5">
                     {Array.from({ length: p.totalMilestones }).map((_, i) => (
                       <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : 'bg-border'}`} />
@@ -736,7 +736,7 @@ const FinancierPortal = () => {
       case 'escrow':
         return (
           <div className="space-y-5">
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
                 <Lock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Milestone-Gated Capital Structure
               </h3>
@@ -753,7 +753,7 @@ const FinancierPortal = () => {
             </div>
 
             {/* Funds Released History */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="glass-panel overflow-hidden">
               <div className="px-5 py-3.5 border-b border-border text-sm font-extrabold text-card-foreground flex items-center gap-2">
                 <ClipboardCheck className="w-4 h-4 text-[hsl(var(--green))]" /> Funds Released History
               </div>
@@ -822,7 +822,7 @@ const FinancierPortal = () => {
       case 'risk':
         return (
           <div className="space-y-5">
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
                 <Shield className="w-4 h-4 text-primary" /> 7-Layer Default Reduction Stack
               </h3>
@@ -843,7 +843,7 @@ const FinancierPortal = () => {
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-3 flex items-center gap-2">
                 <Flag className="w-4 h-4 text-[hsl(var(--red))]" /> Flagged Accounts
               </h3>
@@ -874,7 +874,7 @@ const FinancierPortal = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="glass-panel p-5">
                 <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Portfolio Health</h4>
                 <div className="space-y-3">
                   {[
@@ -889,7 +889,7 @@ const FinancierPortal = () => {
                   ))}
                 </div>
               </div>
-              <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="glass-panel p-5">
                 <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">At-Risk Projects</h4>
                 <div className="space-y-3">
                   {projects.filter(p => p.status === 'delayed' || p.status === 'on_hold').map(p => (

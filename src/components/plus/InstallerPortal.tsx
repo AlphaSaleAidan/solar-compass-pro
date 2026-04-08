@@ -794,14 +794,14 @@ const InstallerPortal = () => {
                 { label: 'On-Time Rate', value: `${onTimeRate}%`, icon: TrendingUp, color: 'text-primary' },
                 { label: 'Pending Actions', value: pendingActions.toString(), icon: AlertTriangle, color: pendingActions > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]' },
               ].map((s, i) => (
-                <div key={i} className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-5 stat-card-hover transition-all duration-300 portal-section-enter" style={{ animationDelay: `${i * 60}ms` }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                      <s.icon className={`w-4 h-4 ${s.color}`} />
+                <div key={i} className="glass-panel stat-glow p-5 stat-card-hover transition-all duration-300 portal-section-enter" style={{ animationDelay: `${i * 60}ms` }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+                      <s.icon className={`w-4.5 h-4.5 ${s.color}`} />
                     </div>
                     <span className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">{s.label}</span>
                   </div>
-                  <div className={`text-3xl font-black ${s.color} tracking-tight`}>{s.value}</div>
+                  <div className={`metric-display ${s.color}`}>{s.value}</div>
                 </div>
               ))}
             </div>
@@ -825,7 +825,7 @@ const InstallerPortal = () => {
 
             {/* Speed Bonus & Tier */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="glass-panel p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Zap className="w-4 h-4 text-[hsl(var(--yellow))]" />
                   <h3 className="text-sm font-extrabold text-card-foreground">35-Day Speed Bonus</h3>
@@ -849,7 +849,7 @@ const InstallerPortal = () => {
                 </div>
               </div>
 
-              <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="glass-panel p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy className="w-4 h-4 text-[hsl(var(--yellow))]" />
                   <h3 className="text-sm font-extrabold text-card-foreground">Loyalty Tier</h3>
@@ -880,8 +880,8 @@ const InstallerPortal = () => {
             </div>
 
             {/* Active Projects */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
+            <div className="glass-panel overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-white/[0.04] flex items-center justify-between">
                 <h3 className="text-sm font-extrabold text-card-foreground flex items-center gap-2"><Wrench className="w-4 h-4 text-primary" /> Active Projects</h3>
                 <button onClick={() => setActiveSection('projects')} className="text-xs text-primary font-bold hover:underline">View All →</button>
               </div>

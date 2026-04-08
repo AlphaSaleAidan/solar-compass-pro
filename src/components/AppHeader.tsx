@@ -107,8 +107,12 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 h-[58px] flex items-center px-6 gap-2 border-b border-border backdrop-blur-xl"
-      style={{ background: isPlus ? 'rgba(255,255,255,0.97)' : 'rgba(7,9,13,0.97)' }}
+      className="fixed top-0 left-0 right-0 z-50 h-[58px] flex items-center px-6 gap-2 border-b backdrop-blur-2xl"
+      style={{
+        background: isPlus ? 'rgba(255,255,255,0.8)' : 'rgba(6,8,17,0.65)',
+        borderColor: isPlus ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)',
+        boxShadow: isPlus ? '0 1px 24px rgba(0,0,0,0.04)' : '0 1px 24px rgba(0,0,0,0.3), inset 0 -1px 0 rgba(255,255,255,0.02)'
+      }}
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 mr-3 shrink-0">
