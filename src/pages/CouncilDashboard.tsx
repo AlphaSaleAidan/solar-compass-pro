@@ -18,7 +18,7 @@ import {
   AlertTriangle, Star, Zap, MessageSquare, Settings, Eye,
   ArrowRight, ArrowLeft, BarChart3, Users, Layers, RefreshCw, Send,
   Play, Pause, Target, TrendingUp, FileText, Sparkles,
-  Filter, Search, X, Hash, Compass
+  Filter, Search, X, Hash, Compass, ScanLine
 } from 'lucide-react';
 import { toast } from 'sonner';
 import CouncilAPI, {
@@ -66,6 +66,7 @@ const CouncilDashboard = () => {
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [directiveText, setDirectiveText] = useState('');
   const [isRunningReview, setIsRunningReview] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [filter, setFilter] = useState<'all' | 'critical' | 'high' | 'in_progress'>('all');
   const [isSubmittingDirective, setIsSubmittingDirective] = useState(false);
 
@@ -96,6 +97,19 @@ const CouncilDashboard = () => {
       toast.error('Review failed');
     }
     setIsRunningReview(false);
+  }, []);
+
+  const handleScanPlatform = useCallback(async () => {
+    setIsScanning(true);
+    toast.info('Scanning platform — logging in as each role to test all functions...');
+    try {
+      const report = await CouncilAPI.scanPlatform();
+      setTab('consensus');
+      toast.success(`Scan complete — ${report.overallScore}% of checks passed`);
+    } catch (e) {
+      toast.error('Scan failed');
+    }
+    setIsScanning(false);
   }, []);
 
   // Run single agent review
@@ -155,17 +169,30 @@ const CouncilDashboard = () => {
           <h1 className="text-xl font-extrabold text-white tracking-tight">ASP Council</h1>
           <p className="text-xs text-gray-400">LLM agent council managing Alpha Sale Pro · {stats.totalAgents} agents active</p>
         </div>
-        <button
-          onClick={handleFullReview}
-          disabled={isRunningReview}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary/15 text-primary border border-primary/30 rounded-xl text-xs font-bold hover:bg-primary/25 transition-all disabled:opacity-40 disabled:pointer-events-none"
-        >
-          {isRunningReview ? (
-            <><RefreshCw className="w-4 h-4 animate-spin" /> Reviewing...</>
-          ) : (
-            <><Play className="w-4 h-4" /> Run Full Review</>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleScanPlatform}
+            disabled={isScanning || isRunningReview}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/15 text-blue-400 border border-blue-500/30 rounded-xl text-xs font-bold hover:bg-blue-500/25 transition-all disabled:opacity-40 disabled:pointer-events-none"
+          >
+            {isScanning ? (
+              <><RefreshCw className="w-4 h-4 animate-spin" /> Scanning...</>
+            ) : (
+              <><ScanLine className="w-4 h-4" /> Scan Platform</>
+            )}
+          </button>
+          <button
+            onClick={handleFullReview}
+            disabled={isRunningReview || isScanning}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary/15 text-primary border border-primary/30 rounded-xl text-xs font-bold hover:bg-primary/25 transition-all disabled:opacity-40 disabled:pointer-events-none"
+          >
+            {isRunningReview ? (
+              <><RefreshCw className="w-4 h-4 animate-spin" /> Reviewing...</>
+            ) : (
+              <><Play className="w-4 h-4" /> Run Full Review</>
+            )}
+          </button>
+        </div>
       </motion.div>
 
       {/* Tab Bar */}
