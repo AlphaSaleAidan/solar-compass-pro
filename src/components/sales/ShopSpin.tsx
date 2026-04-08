@@ -271,7 +271,7 @@ const ShopSpin = () => {
               className={`shrink-0 w-[100px] h-[100px] rounded-xl flex flex-col items-center justify-center gap-1 border-2 backdrop-blur-sm overflow-hidden ${itemTierColors[item.tier]} hover:scale-105 transition-transform`}
             >
               {item.image ? (
-                <img src={item.image} alt={item.name} className="w-14 h-14 object-contain drop-shadow-lg" loading="lazy" />
+                <img src={item.image} alt={item.name} className="w-14 h-14 object-contain drop-shadow-lg" style={{ mixBlendMode: 'screen' }} loading="lazy" />
               ) : (
                 <span className="text-3xl leading-none drop-shadow-lg">{item.icon}</span>
               )}
@@ -305,7 +305,7 @@ const ShopSpin = () => {
       {wonPrize && (
         <div className="mt-4 p-4 rounded-xl border-2 border-primary bg-gradient-to-r from-primary/10 to-primary/5 flex items-center gap-3.5 animate-scale-in">
           {wonPrize.image ? (
-            <img src={wonPrize.image} alt={wonPrize.name} className="w-16 h-16 object-contain drop-shadow-lg rounded-lg" />
+            <img src={wonPrize.image} alt={wonPrize.name} className="w-16 h-16 object-contain drop-shadow-lg rounded-lg" style={{ mixBlendMode: 'screen' }} />
           ) : (
             <span className="text-5xl drop-shadow-lg">{wonPrize.icon}</span>
           )}
@@ -412,7 +412,7 @@ const ShopSpin = () => {
                 <div key={item.id} className="flex items-center justify-between py-2 px-3 bg-bg3 rounded-lg">
                   <div className="flex items-center gap-2">
                     {item.image ? (
-                      <img src={item.image} alt={item.item_name} className="w-8 h-8 object-contain rounded-lg bg-black/30 border border-primary/20" loading="lazy" />
+                      <img src={item.image} alt={item.item_name} className="w-8 h-8 object-contain rounded-lg border border-primary/20" style={{ mixBlendMode: 'screen' }} loading="lazy" />
                     ) : (
                       <span className="text-[10px] font-black text-primary bg-primary/15 border border-primary/20 w-8 h-8 rounded-lg flex items-center justify-center">{item.icon || '??'}</span>
                     )}
