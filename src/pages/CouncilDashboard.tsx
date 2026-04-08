@@ -236,7 +236,7 @@ const CouncilDashboard = () => {
       <AnimatePresence mode="wait">
         {tab === 'overview' && (
           <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <OverviewTab stats={stats} agents={state.agents} filteredRecs={filteredRecs} filter={filter} setFilter={setFilter} directives={state.directives} />
+            <OverviewTab stats={stats} agents={state.agents} filteredRecs={filteredRecs} filter={filter} setFilter={setFilter} directives={state.directives} onRefreshRecs={handleRefreshRecs} isRefreshingRecs={isRefreshingRecs} />
           </motion.div>
         )}
         {tab === 'agents' && (
@@ -276,13 +276,15 @@ const AGENT_COLORS: Record<string, string> = {
   strategy: '#6366f1',
 };
 
-const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter, directives }: {
+const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter, directives, onRefreshRecs, isRefreshingRecs }: {
   stats: ReturnType<typeof CouncilAPI.getStats>;
   agents: CouncilAgent[];
   filteredRecs: Recommendation[];
   filter: string;
   setFilter: (f: any) => void;
   directives: Directive[];
+  onRefreshRecs: () => void;
+  isRefreshingRecs: boolean;
 }) => {
   // Get latest agent thoughts from directives
   // Show thoughts from ANY directive (including in-progress ones) — most recent first
@@ -445,7 +447,7 @@ const OverviewTab = ({ stats, agents, filteredRecs, filter, setFilter, directive
             <span className="text-xs font-bold text-white">All Recommendations</span>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-gray-400 font-bold">{filteredRecs.length}</span>
             <button
-              onClick={handleRefreshRecs}
+              onClick={onRefreshRecs}
               disabled={isRefreshingRecs}
               className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-[10px] font-bold hover:bg-blue-500/20 transition-all disabled:opacity-40 disabled:pointer-events-none ml-2"
             >
