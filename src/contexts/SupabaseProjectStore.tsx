@@ -708,7 +708,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       // system_size (numeric), battery, system_cost, contract_value, ppw, financier, usage_kwh, rep_id, sell_project_id, organization_id
       const systemSize = parseFloat(sp.auroraData?.systemSize || '0');
       const systemCost = systemSize * 1000 * 2.35;
-      await supabase.from('projects').insert({
+      const { data: newProj, error: projErr } = await supabase.from('projects').insert({
         customer_name: `${sp.firstName} ${sp.lastName}`,
         address: sp.address,
         status: 'active' as any,
@@ -725,7 +725,20 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
         rep_id: createdByUserId,
         sell_project_id: getSellDbId(projectId),
         organization_id: ORG_ID_CONST,
-      });
+      }).select('id').single();
+      if (projErr) console.error('markSellProjectClean project insert failed:', projErr.message);
+
+      // Create milestone_states row for this project so milestone operations work immediately
+      if (newProj?.id) {
+        await supabase.from('milestone_states').insert({
+          project_id: newProj.id,
+          checklist_done: {},
+          installer_submitted: {},
+          ops_approved: {},
+          fund_status: {},
+          ops_notes: {},
+        });
+      }
 
       // Update leaderboard for the sales rep who created this deal
       const dealRevenue = Number((sp as any).auroraData?.systemPrice) || Number((sp as any).auroraData?.contractValue) || 0;
