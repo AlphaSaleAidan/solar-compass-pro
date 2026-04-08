@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Clock, Lock, Circle } from 'lucide-react';
+import { CheckCircle, Clock, Lock, Circle, DollarSign } from 'lucide-react';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 
 interface MilestoneTimelineProps {
@@ -9,15 +9,23 @@ interface MilestoneTimelineProps {
 }
 
 const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ currentMilestone, fundStatus, compact }) => {
+  const totalMilestones = MILESTONE_SOPS.length;
+  const progressPercent = Math.max(0, Math.min(100, (currentMilestone / (totalMilestones - 1)) * 100));
+
   return (
     <div className={`w-full ${compact ? 'py-2' : 'py-4'}`}>
       <div className="relative flex items-center justify-between">
         {/* Background track */}
-        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-border -translate-y-1/2 z-0" />
-        {/* Progress track */}
+        <div className="absolute top-1/2 left-0 right-0 h-1 bg-border/50 -translate-y-1/2 z-0 rounded-full" />
+        {/* Progress track — animated gradient */}
         <div
-          className="absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-[hsl(var(--green))] via-primary to-primary -translate-y-1/2 z-0 transition-all duration-700 ease-out"
-          style={{ width: `${Math.max(0, Math.min(100, (currentMilestone / (MILESTONE_SOPS.length - 1)) * 100))}%` }}
+          className="absolute top-1/2 left-0 h-1 -translate-y-1/2 z-0 rounded-full"
+          style={{
+            width: `${progressPercent}%`,
+            background: 'linear-gradient(90deg, hsl(var(--green)), hsl(var(--primary)), hsl(var(--primary)))',
+            transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            boxShadow: '0 0 8px hsl(var(--primary) / 0.4)',
+          }}
         />
 
         {MILESTONE_SOPS.map((sop, i) => {
@@ -25,25 +33,40 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ currentMilestone,
           const isCurrent = i === currentMilestone;
           const isLocked = i > currentMilestone;
           const released = fundStatus[i] === 'released';
+          const approved = fundStatus[i] === 'approved';
+          const pending = fundStatus[i] === 'pending';
 
           return (
             <div key={sop.id} className="relative z-10 flex flex-col items-center group">
+              {/* Pulse ring for current milestone */}
+              {isCurrent && !compact && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full animate-ping bg-primary/20" style={{ animationDuration: '2s' }} />
+              )}
+
               {/* Node */}
               <div
                 className={`
-                  ${compact ? 'w-7 h-7' : 'w-9 h-9'} rounded-full flex items-center justify-center transition-all duration-300
+                  ${compact ? 'w-7 h-7' : 'w-10 h-10'} rounded-full flex items-center justify-center relative
                   ${isComplete
-                    ? 'bg-[hsl(var(--green))] text-white shadow-[0_0_12px_hsl(var(--green)/0.4)]'
+                    ? 'bg-[hsl(var(--green))] text-white'
                     : isCurrent
-                      ? 'bg-primary text-primary-foreground shadow-[0_0_16px_hsl(var(--primary)/0.5)] ring-2 ring-primary/30 ring-offset-2 ring-offset-card animate-pulse'
-                      : 'bg-muted border border-border text-muted-foreground'
+                      ? 'bg-primary text-primary-foreground ring-2 ring-primary/40 ring-offset-2 ring-offset-card'
+                      : 'bg-muted border-2 border-border text-muted-foreground'
                   }
                 `}
+                style={{
+                  transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  boxShadow: isComplete
+                    ? '0 0 12px hsl(var(--green) / 0.35), 0 2px 4px rgba(0,0,0,0.2)'
+                    : isCurrent
+                      ? '0 0 20px hsl(var(--primary) / 0.45), 0 2px 8px rgba(0,0,0,0.3)'
+                      : '0 1px 3px rgba(0,0,0,0.2)',
+                }}
               >
                 {isComplete ? (
-                  <CheckCircle className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                  <CheckCircle className={compact ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'} />
                 ) : isCurrent ? (
-                  <Clock className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                  <Clock className={compact ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'} />
                 ) : isLocked ? (
                   <Lock className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
                 ) : (
@@ -53,33 +76,38 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ currentMilestone,
 
               {/* Label */}
               {!compact && (
-                <div className="mt-2 text-center max-w-[80px]">
+                <div className="mt-2.5 text-center max-w-[80px]">
                   <div className={`text-[9px] font-extrabold tracking-wider uppercase ${
                     isComplete ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-primary' : 'text-muted-foreground'
                   }`}>
                     {sop.id}
                   </div>
-                  <div className={`text-[8px] leading-tight ${
+                  <div className={`text-[8px] leading-tight mt-0.5 ${
                     isComplete || isCurrent ? 'text-card-foreground' : 'text-muted-foreground'
                   }`}>
                     {sop.shortName}
                   </div>
-                  {/* Fund badge */}
-                  <div className={`mt-0.5 text-[7px] font-bold px-1.5 py-0.5 rounded-full inline-block ${
+                  {/* Fund badge with status */}
+                  <div className={`mt-1 text-[7px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-0.5 ${
                     released
-                      ? 'bg-[hsl(var(--green))]/10 text-[hsl(var(--green))]'
-                      : isComplete
-                        ? 'bg-[hsl(var(--green))]/5 text-[hsl(var(--green))]/60'
-                        : 'bg-muted text-muted-foreground'
+                      ? 'bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] shadow-[0_0_6px_hsl(var(--green)/0.2)]'
+                      : approved
+                        ? 'bg-primary/15 text-primary'
+                        : pending
+                          ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]'
+                          : isComplete
+                            ? 'bg-[hsl(var(--green))]/5 text-[hsl(var(--green))]/60'
+                            : 'bg-muted text-muted-foreground'
                   }`}>
-                    {sop.fundPercent}%{released ? ' ✓' : ''}
+                    {released && <DollarSign className="w-2.5 h-2.5" />}
+                    {sop.fundPercent}%{released ? ' ✓' : approved ? ' ◉' : pending ? ' ◌' : ''}
                   </div>
                 </div>
               )}
 
               {/* Tooltip on hover for compact mode */}
               {compact && (
-                <div className="absolute -bottom-8 opacity-0 group-hover:opacity-100 transition-opacity bg-card border border-border rounded px-2 py-1 shadow-lg whitespace-nowrap z-50 pointer-events-none">
+                <div className="absolute -bottom-9 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-card border border-border rounded-lg px-2.5 py-1.5 shadow-lg whitespace-nowrap z-50 pointer-events-none">
                   <span className="text-[9px] font-bold text-card-foreground">{sop.id}: {sop.shortName}</span>
                   <span className="text-[8px] text-muted-foreground ml-1">({sop.fundPercent}%)</span>
                 </div>
@@ -88,6 +116,18 @@ const MilestoneTimeline: React.FC<MilestoneTimelineProps> = ({ currentMilestone,
           );
         })}
       </div>
+
+      {/* Progress summary bar */}
+      {!compact && (
+        <div className="mt-4 flex items-center justify-between text-[9px]">
+          <span className="text-muted-foreground">
+            <span className="text-[hsl(var(--green))] font-bold">{currentMilestone}</span> of {totalMilestones} milestones complete
+          </span>
+          <span className="text-muted-foreground font-bold">
+            {Math.round(progressPercent)}% complete
+          </span>
+        </div>
+      )}
     </div>
   );
 };

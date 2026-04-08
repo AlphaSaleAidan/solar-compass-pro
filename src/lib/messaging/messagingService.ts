@@ -19,6 +19,9 @@ import type {
 } from './types';
 import { InAppProvider } from './providers';
 
+const STORAGE_KEY_CONVOS = 'asp_messaging_conversations';
+const STORAGE_KEY_MSGS = 'asp_messaging_messages';
+
 class MessagingServiceClass {
   private providers = new Map<ChannelType, MessageProvider>();
   private conversations = new Map<string, Conversation>();
@@ -29,6 +32,30 @@ class MessagingServiceClass {
   constructor() {
     // Register the in-app provider by default
     this.registerProvider(new InAppProvider());
+    // Restore from localStorage
+    this.loadFromStorage();
+  }
+
+  private loadFromStorage(): void {
+    try {
+      const convosJson = localStorage.getItem(STORAGE_KEY_CONVOS);
+      const msgsJson = localStorage.getItem(STORAGE_KEY_MSGS);
+      if (convosJson) {
+        const arr = JSON.parse(convosJson) as [string, Conversation][];
+        arr.forEach(([k, v]) => this.conversations.set(k, v));
+      }
+      if (msgsJson) {
+        const arr = JSON.parse(msgsJson) as [string, Message[]][];
+        arr.forEach(([k, v]) => this.messages.set(k, v));
+      }
+    } catch { /* ignore corrupt storage */ }
+  }
+
+  private saveToStorage(): void {
+    try {
+      localStorage.setItem(STORAGE_KEY_CONVOS, JSON.stringify(Array.from(this.conversations.entries())));
+      localStorage.setItem(STORAGE_KEY_MSGS, JSON.stringify(Array.from(this.messages.entries())));
+    } catch { /* storage full or blocked */ }
   }
 
   /* ─── Provider Management ──────────────────────────────────────── */
@@ -75,7 +102,7 @@ class MessagingServiceClass {
 
     this.conversations.set(id, conversation);
     this.messages.set(id, []);
-    this.notify();
+    this.notify(); this.saveToStorage();
     return conversation;
   }
 
@@ -202,7 +229,7 @@ class MessagingServiceClass {
       }
     }
 
-    this.notify();
+    this.notify(); this.saveToStorage();
   }
 
   getTotalUnreadCount(userId: string): number {
@@ -265,7 +292,7 @@ class MessagingServiceClass {
       convo.unreadCount = msgs.filter(m => !m.readBy.includes('current')).length;
     }
 
-    this.notify();
+    this.notify(); this.saveToStorage();
   }
 
   private getExternalChannel(conversation: Conversation): ChannelType | null {
@@ -386,7 +413,7 @@ class MessagingServiceClass {
       ],
     });
 
-    this.notify();
+    this.notify(); this.saveToStorage();
   }
 }
 

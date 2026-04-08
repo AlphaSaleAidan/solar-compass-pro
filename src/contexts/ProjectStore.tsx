@@ -12,6 +12,8 @@ export interface ProjectMilestoneState {
   opsNotes: Record<number, string>;
   /** Installer marks milestone as submitted for QC review */
   installerSubmitted: Record<number, boolean>;
+  /** Dual approval tracking for fund releases above $10K */
+  dualApproval: Record<number, { firstApprover?: string; firstApprovedAt?: string; secondApprover?: string; secondApprovedAt?: string; required: boolean }>;
 }
 
 // Shared ticket type
@@ -131,6 +133,7 @@ const createDefaultMilestoneState = (): ProjectMilestoneState => ({
   fundStatus: {},
   opsNotes: {},
   installerSubmitted: {},
+  dualApproval: {},
 });
 
 // Initial mock messages per project
@@ -291,12 +294,54 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [updateMilestoneState]);
 
-  const releaseFund = useCallback((projectId: string, milestoneIndex: number) => {
-    updateMilestoneState(projectId, prev => ({
-      ...prev,
-      fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'released' },
-    }));
-  }, [updateMilestoneState]);
+  const releaseFund = useCallback((projectId: string, milestoneIndex: number, approverName?: string) => {
+    const project = projects.find(p => p.id === projectId);
+    const sop = MILESTONE_SOPS[milestoneIndex];
+    const releaseAmount = project ? Math.round(project.projectCost * ((sop?.fundPercent || 0) / 100)) : 0;
+    const DUAL_APPROVAL_THRESHOLD = 10000;
+
+    if (releaseAmount > DUAL_APPROVAL_THRESHOLD) {
+      // Check dual approval state
+      updateMilestoneState(projectId, prev => {
+        const existing = prev.dualApproval[milestoneIndex] || { required: true };
+        if (!existing.firstApprover) {
+          // First approval
+          return {
+            ...prev,
+            dualApproval: {
+              ...prev.dualApproval,
+              [milestoneIndex]: {
+                ...existing,
+                required: true,
+                firstApprover: approverName || 'Financier',
+                firstApprovedAt: new Date().toISOString(),
+              },
+            },
+          };
+        } else {
+          // Second approval — release the funds
+          return {
+            ...prev,
+            fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'released' },
+            dualApproval: {
+              ...prev.dualApproval,
+              [milestoneIndex]: {
+                ...existing,
+                secondApprover: approverName || 'Senior Financier',
+                secondApprovedAt: new Date().toISOString(),
+              },
+            },
+          };
+        }
+      });
+    } else {
+      // Under threshold — single approval release
+      updateMilestoneState(projectId, prev => ({
+        ...prev,
+        fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'released' },
+      }));
+    }
+  }, [updateMilestoneState, projects]);
 
   const setOpsNotes = useCallback((projectId: string, milestoneIndex: number, notes: string) => {
     updateMilestoneState(projectId, prev => ({

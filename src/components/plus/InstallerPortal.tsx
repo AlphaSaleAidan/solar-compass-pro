@@ -90,9 +90,29 @@ const InstallerPortal = () => {
     return count + sop.checklist.filter(c => c.actor === 'installer' && !ms.checklistDone[c.id]).length;
   }, 0);
 
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const MAX_FILE_SIZE_MB = 25;
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!pendingUpload || !e.target.files?.length) return;
-    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, e.target.files[0].name);
+    const file = e.target.files[0];
+
+    // File type validation
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      toast.error(`Invalid file type. Accepted: JPG, PNG, WebP, PDF, DOC/DOCX`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // File size validation
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      toast.error(`File too large. Maximum size: ${MAX_FILE_SIZE_MB}MB`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, file.name);
+    toast.success(`Uploaded: ${file.name}`);
     setPendingUpload(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
