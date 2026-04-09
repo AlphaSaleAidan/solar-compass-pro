@@ -221,6 +221,10 @@ const LandingPage = () => {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.7], [1, 0.95]);
 
+  // Global scroll progress for top bar
+  const { scrollYProgress: globalProgress } = useScroll();
+  const progressWidth = useTransform(globalProgress, [0, 1], ['0%', '100%']);
+
   /* ─── GSAP ScrollTrigger animations ──────────────────────────────── */
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -262,6 +266,12 @@ const LandingPage = () => {
   return (
     <div ref={landingRef} className="min-h-screen text-white overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Cinematic background is now global in App.tsx */}
+
+      {/* ─── Scroll Progress ──────────────────────────────────────────── */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-cyan-400 to-blue-500 z-[60] origin-left"
+        style={{ width: progressWidth }}
+      />
 
       {/* ─── Navigation ─────────────────────────────────────────────── */}
       <motion.nav
