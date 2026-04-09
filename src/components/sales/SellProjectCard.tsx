@@ -328,7 +328,7 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
               return (
                 <div className="bg-white/[0.03] rounded-lg p-3">
                   <div className="text-[10px] text-white/30 font-bold tracking-wider uppercase mb-2">Aurora System Data</div>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                     <div><span className="text-white/40">System:</span> <span className="text-white font-bold">{resolved.systemSize || '—'}</span></div>
                     <div><span className="text-white/40">Battery:</span> <span className="text-white font-bold">{resolved.battery || '—'}</span></div>
                     <div><span className="text-white/40">Financier:</span> <span className="text-[hsl(150,60%,50%)] font-bold">{resolved.financier || '—'}</span></div>

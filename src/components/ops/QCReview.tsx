@@ -137,7 +137,7 @@ const QCReview = () => {
                   {/* Bill info */}
                   <div className="bg-background/50 rounded-lg p-3">
                     <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Utility Info</div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                       <div><span className="text-muted-foreground">High Bill:</span> <span className="text-foreground font-bold">${p.highBill}</span></div>
                       <div><span className="text-muted-foreground">Low Bill:</span> <span className="text-foreground font-bold">${p.lowBill}</span></div>
                       <div><span className="text-muted-foreground">All Electric:</span> <span className="text-foreground font-bold">{p.allElectric ? 'Yes' : 'No'}</span></div>
@@ -147,7 +147,7 @@ const QCReview = () => {
                   {/* QC Review Summary — quick snapshot before action */}
                   <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
                     <div className="text-[10px] text-primary font-bold tracking-wider uppercase mb-2 flex items-center gap-1"><Zap className="w-3 h-3" /> QC Review Summary</div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                       <div><span className="text-muted-foreground">Customer:</span> <span className="text-white font-bold">{p.firstName} {p.lastName}</span></div>
                       <div><span className="text-muted-foreground">System:</span> <span className="text-white font-bold">{resolved?.systemSize || '—'} kW</span></div>
                       <div><span className="text-muted-foreground">Financier:</span> <span className="text-primary font-bold">{resolved?.financier || '—'}</span></div>

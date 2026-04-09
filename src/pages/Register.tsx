@@ -62,7 +62,7 @@ const Register = () => {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="w-[480px] max-w-[95vw] rounded-2xl p-12 text-center"
+          className="w-[480px] max-w-[95vw] rounded-2xl p-6 sm:p-12 text-center"
           style={{ background: 'hsl(222, 25%, 7%)', border: '1px solid hsl(222, 30%, 18%)' }}
         >
           <motion.div
@@ -115,7 +115,7 @@ const Register = () => {
         initial={{ opacity: 0, y: 20, scale: 0.97, filter: 'blur(6px)' }}
         animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-[520px] max-w-[95vw] rounded-2xl p-10"
+        className="relative w-[520px] max-w-[95vw] rounded-2xl p-6 sm:p-10"
         style={{ background: 'hsl(222, 25%, 7%)', border: '1px solid hsl(222, 30%, 18%)', boxShadow: '0 24px 80px rgba(0,0,0,0.7)' }}
       >
         <motion.div

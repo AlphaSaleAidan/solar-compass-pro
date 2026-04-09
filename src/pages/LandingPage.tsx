@@ -270,8 +270,8 @@ const LandingPage = () => {
         transition={{ duration: 0.6, delay: 0.1 }}
         className="fixed top-0 left-0 right-0 z-50"
       >
-        <div className="mx-auto max-w-[1400px] px-6 pt-4">
-          <div className="flex items-center justify-between h-14 px-6 rounded-2xl backdrop-blur-2xl bg-white/[0.03] border border-white/[0.06]">
+        <div className="mx-auto max-w-[1400px] px-3 sm:px-6 pt-3 sm:pt-4">
+          <div className="flex items-center justify-between h-12 sm:h-14 px-3 sm:px-6 rounded-2xl backdrop-blur-2xl bg-white/[0.03] border border-white/[0.06]">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-cyan-400 flex items-center justify-center">
                 <Zap className="w-4 h-4 text-black" />
@@ -322,7 +322,7 @@ const LandingPage = () => {
 
         <motion.div
           style={{ y: heroY, opacity: heroOpacity, scale: heroScale }}
-          className="relative z-10 text-center max-w-5xl mx-auto px-6"
+          className="relative z-10 text-center max-w-5xl mx-auto px-4 sm:px-6"
         >
           {/* Badge */}
           <motion.div
@@ -407,7 +407,7 @@ const LandingPage = () => {
       {/* ─── Stats Bar ──────────────────────────────────────────────── */}
       <section className="relative">
         <div className="border-y border-white/[0.04]">
-          <div className="max-w-[1400px] mx-auto px-6">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gsap-stagger-container">
               {stats.map((s, i) => (
                 <div
@@ -424,8 +424,8 @@ const LandingPage = () => {
 
       {/* ─── About Section ──────────────────────────────────────────── */}
       <section id="about" className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             <RevealSection>
               <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">Who We Are</div>
               <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-8">
@@ -484,7 +484,7 @@ const LandingPage = () => {
 
       {/* ─── Features Section ───────────────────────────────────────── */}
       <section id="features" className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="max-w-[1400px] mx-auto px-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
           <RevealSection className="text-center mb-20">
             <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">What We Do</div>
             <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-6">
@@ -521,7 +521,7 @@ const LandingPage = () => {
 
       {/* ─── How We Help Customers ─────────────────────────────────── */}
       <section id="customers" className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="max-w-[1400px] mx-auto px-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
           <RevealSection className="text-center mb-20">
             <div className="text-[11px] text-primary font-bold uppercase tracking-[0.25em] mb-6">For Homeowners</div>
             <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-6">
@@ -579,8 +579,8 @@ const LandingPage = () => {
 
       {/* ─── Financier Section ──────────────────────────────────────── */}
       <section className="relative py-32 lg:py-40 overflow-hidden">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             <RevealSection>
               <div className="text-[11px] text-emerald-400 font-bold uppercase tracking-[0.25em] mb-6">For Financiers</div>
               <h2 className="text-[clamp(2.2rem,4.5vw,3.5rem)] font-black leading-[1.05] tracking-[-0.03em] gsap-section-title mb-8">
@@ -600,7 +600,7 @@ const LandingPage = () => {
                   with structured verification controls and a full audit trail.
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[
                   { value: '30%', label: 'Default Reduction', icon: Shield },
                   { value: '100%', label: 'Battery Attach', icon: Sun },
@@ -667,7 +667,7 @@ const LandingPage = () => {
 
       {/* ─── CTA Section ────────────────────────────────────────────── */}
       <section className="relative py-32 lg:py-40">
-        <div className="max-w-3xl mx-auto px-6 text-center relative z-10">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center relative z-10">
           <RevealSection>
             {/* Decorative line */}
             <div className="w-16 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent mx-auto mb-12" />
@@ -702,7 +702,7 @@ const LandingPage = () => {
 
       {/* ─── Footer ─────────────────────────────────────────────────── */}
       <footer className="border-t border-white/[0.04]">
-        <div className="max-w-[1400px] mx-auto px-6 py-10">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-cyan-400 flex items-center justify-center">

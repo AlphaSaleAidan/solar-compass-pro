@@ -95,7 +95,7 @@ const FinancierPortal = () => {
           </div>
           <div className="p-6 space-y-5">
             {/* Financial Summary */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {[
                 { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}`, color: 'text-primary' },
                 { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
@@ -118,7 +118,7 @@ const FinancierPortal = () => {
             {/* System & Project Details */}
             <div className="bg-muted/50 border border-border rounded-xl p-4">
               <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3">System & Project Details</h3>
-              <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-6 gap-y-2 text-xs">
                 <div className="flex justify-between"><span className="text-muted-foreground">System Size</span><span className="font-bold text-card-foreground">{p.systemSize}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Battery</span><span className="font-bold text-card-foreground">{p.battery}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Sold PPW</span><span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
@@ -184,7 +184,7 @@ const FinancierPortal = () => {
 
             {/* Milestones */}
             <TooltipProvider delayDuration={200}>
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
               {MILESTONE_SOPS.map((sop, i) => {
                 const isPassed = i < p.currentMilestone;
                 const isCurrent = i === p.currentMilestone;
@@ -448,7 +448,7 @@ const FinancierPortal = () => {
               <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
                 <Lock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Escrow Fund Status
               </h3>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                 <div className="bg-muted rounded-xl p-4">
                   <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-1">In Escrow</div>
                   <div className="text-xl font-black text-[hsl(var(--yellow))]">${Math.round((totalSystemCost - totalFunded) / 1000)}k</div>
@@ -658,7 +658,7 @@ const FinancierPortal = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 text-center">
                       <div className="p-2 rounded-lg bg-bg2">
                         <div className="text-[10px] text-muted-foreground">Credit</div>
                         <div className={`text-xs font-bold ${sp.creditStatus === 'credit_passed' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>
@@ -819,7 +819,7 @@ const FinancierPortal = () => {
                   {isExpanded && (
                     <div className="border-t border-border">
                       {/* Quick Info */}
-                      <div className="px-5 py-3 bg-muted/50 border-b border-border grid grid-cols-7 gap-3 text-xs">
+                      <div className="px-5 py-3 bg-muted/50 border-b border-border grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3 text-xs">
                         <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-card-foreground">{p.systemSize}</span></div>
                         <div><span className="text-muted-foreground">Battery:</span> <span className="font-bold text-card-foreground">{p.battery}</span></div>
                         <div><span className="text-muted-foreground">PPW:</span> <span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
@@ -831,7 +831,7 @@ const FinancierPortal = () => {
 
                       {/* Financial Summary */}
                       <div className="px-5 py-3 border-b border-border">
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                           {[
                             { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}`, color: 'text-primary' },
                             { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
@@ -1048,7 +1048,7 @@ const FinancierPortal = () => {
                 <Lock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Milestone-Gated Capital Structure
               </h3>
               <p className="text-xs text-muted-foreground mb-4">Funds held in ASP-managed escrow. 7 milestone gates — each requires documented ASP verification.</p>
-              <div className="grid grid-cols-7 gap-3">
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3">
                 {escrowMilestones.map((m, i) => (
                   <div key={i} className="bg-muted rounded-xl p-4 text-center border border-border">
                     <div className="text-base font-black text-primary mb-1">M{i + 1}</div>
@@ -1178,7 +1178,7 @@ const FinancierPortal = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="glass-panel p-5">
                 <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Portfolio Health</h4>
                 <div className="space-y-3">

@@ -214,7 +214,7 @@ const InstallerPortal = () => {
             {popupTab === 'details' && (
               <div className="space-y-4">
                 {/* Financial Summary */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                   {[
                     { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
                     { label: 'Capital Released', value: `$${funded.toLocaleString()}`, color: 'text-[hsl(var(--green))]' },
@@ -267,7 +267,7 @@ const InstallerPortal = () => {
 
                 {/* M1-7 Quick View */}
                 <TooltipProvider delayDuration={200}>
-                  <div className="grid grid-cols-7 gap-1.5">
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
                     {MILESTONE_SOPS.map((sop, i) => {
                       const isPassed = i < p.currentMilestone;
                       const isCurrent = i === p.currentMilestone;
@@ -1234,7 +1234,7 @@ const InstallerPortal = () => {
                       {/* M1-M7 Visual Timeline */}
                       <MilestoneTimeline currentMilestone={p.currentMilestone} fundStatus={ms.fundStatus} />
                       {/* Quick Info */}
-                      <div className="grid grid-cols-7 gap-3 text-xs bg-muted/50 rounded-xl p-3">
+                      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3 text-xs bg-muted/50 rounded-xl p-3">
                         <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-card-foreground">{p.systemSize}</span></div>
                         <div><span className="text-muted-foreground">Battery:</span> <span className="font-bold text-card-foreground">{p.battery}</span></div>
                         <div><span className="text-muted-foreground">PPW:</span> <span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
@@ -1254,7 +1254,7 @@ const InstallerPortal = () => {
                       {/* Milestone Payments */}
                       <div>
                         <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Milestone Payments</h4>
-                        <div className="grid grid-cols-7 gap-2">
+                        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                           {MILESTONE_SOPS.map((sop, i) => {
                             const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
                             const isPassed = i < p.currentMilestone;
@@ -1300,7 +1300,7 @@ const InstallerPortal = () => {
       case 'payments':
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="bg-card border border-border rounded-2xl p-5">
                 <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase mb-1.5">Total Earned</div>
                 <div className="text-2xl font-black text-[hsl(var(--green))]">${Math.round(totalInstallValue * 0.7).toLocaleString()}</div>

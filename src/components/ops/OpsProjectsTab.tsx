@@ -187,7 +187,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                 {isExpanded && (
                   <div className="border-t border-border">
                     {/* Quick Info Bar */}
-                    <div className="px-5 py-3 bg-[hsl(var(--bg3))]/50 border-b border-border grid grid-cols-6 gap-4 text-xs">
+                    <div className="px-5 py-3 bg-[hsl(var(--bg3))]/50 border-b border-border grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-4 text-xs">
                       <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-foreground">{p.systemSize}</span></div>
                       <div><span className="text-muted-foreground">Battery:</span> <span className="font-bold text-foreground">{p.battery}</span></div>
                       <div><span className="text-muted-foreground">Installer:</span> <span className="font-bold text-foreground">{p.installerName}</span></div>
@@ -449,7 +449,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                           <h4 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3 flex items-center gap-1.5">
                             <Pencil className="w-3 h-3" /> Customer & Project Information
                           </h4>
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                             {[
                               { label: 'First Name', field: 'firstName', value: p.customerName.split(' ')[0] },
                               { label: 'Last Name', field: 'lastName', value: p.customerName.split(' ').slice(1).join(' ') },
@@ -492,7 +492,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                               </span>
                             )}
                           </div>
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                             <div className="bg-[hsl(var(--bg2))] border border-border rounded-lg p-3">
                               <div className="text-[10px] text-muted-foreground mb-1">Design Status</div>
                               <div className="text-sm font-bold text-foreground">{p.currentMilestone >= 2 ? 'Design Complete' : 'Awaiting Survey'}</div>

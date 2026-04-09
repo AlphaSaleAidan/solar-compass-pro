@@ -107,7 +107,7 @@ const CouncilDashboard = () => {
     <div className="min-h-screen bg-[#0a0a0f] text-white">
       {/* Header */}
       <div className="border-b border-white/[0.06] bg-black/30 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* Exit Button */}
@@ -218,7 +218,7 @@ const DashboardView = ({
   filteredFindings, activeReport, allFindings,
   isScanning = false, visibleFindings = Infinity,
 }: DashboardViewProps) => (
-  <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+  <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6">
     {/* Overall Score */}
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_OUT }}
       className="flex items-center gap-6 p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl">
@@ -253,7 +253,7 @@ const DashboardView = ({
     </motion.div>
 
     {/* Agent Cards */}
-    <div className="grid grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
       {council.reports.map((report, i) => {
         const isSelected = selectedAgent === report.agent.id;
         return (
@@ -453,7 +453,7 @@ const ChatView = ({ projects, sellProjects, milestoneStates }: ChatViewProps) =>
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-6 flex flex-col" style={{ height: 'calc(100vh - 72px)' }}>
+    <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex flex-col" style={{ height: 'calc(100vh - 72px)' }}>
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pb-4 scrollbar-thin scrollbar-thumb-white/10">
         {messages.map(msg => (
@@ -567,7 +567,7 @@ const DiagnosticView = ({ projects, sellProjects, milestoneStates, tickets }: Di
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+    <div className="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6">
       {/* Start Button / Summary */}
       <div className="flex items-center justify-between p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
         <div>
@@ -593,7 +593,7 @@ const DiagnosticView = ({ projects, sellProjects, milestoneStates, tickets }: Di
 
       {/* Result Summary Bar */}
       {result && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-4 gap-3">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           {([
             { label: 'Passed', value: result.summary.pass, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
             { label: 'Failed', value: result.summary.fail, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },

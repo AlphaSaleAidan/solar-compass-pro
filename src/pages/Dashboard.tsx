@@ -54,8 +54,8 @@ const Dashboard = () => {
       switch (activeTab) {
         case 'Dashboard':
           return (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <div className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
+              <div className="space-y-4 md:space-y-5">
                 <PuzzleGame />
                 <RepStats />
               </div>
@@ -109,7 +109,7 @@ const Dashboard = () => {
       <div className="min-h-screen relative">
         {/* 3D background is now global in App.tsx */}
         <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
-        <main className="relative mt-[58px] p-6">
+        <main className="relative mt-[58px] p-3 sm:p-4 md:p-6">
           <ErrorBoundary section={activeTab}>
             <PageTransition pageKey={activeTab} variant="wave">
               {renderContent()}

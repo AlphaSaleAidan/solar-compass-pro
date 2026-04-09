@@ -277,7 +277,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                   <Map className="w-3.5 h-3.5 text-primary" />
                   <strong className="text-primary">Address:</strong> {address}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { label: 'First Name', key: 'firstName', type: 'text', required: true },
                     { label: 'Last Name', key: 'lastName', type: 'text', required: true },
@@ -414,7 +414,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
                         </div>
                         <span className="text-[10px] text-asp-green font-bold px-2 py-0.5 bg-asp-green/10 rounded border border-asp-green/20">SOLD</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-3 text-[11px]">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 text-[11px]">
                         <div>
                           <div className="text-white/40 font-bold uppercase text-[9px]">System</div>
                           <div className="text-white font-bold">{deal.systemSize}</div>

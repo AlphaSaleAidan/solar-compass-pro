@@ -878,3 +878,50 @@ html {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
+
+/* ─── Mobile / Tablet Responsive Utilities ─── */
+
+/* Hide scrollbar utility */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch-friendly minimum tap targets */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 36px;
+  }
+
+  /* Prevent horizontal overflow */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Reduce padding on glass panels for mobile */
+  .glass-panel {
+    padding: 12px;
+  }
+
+  /* Tighter spacing for stat cards */
+  .stat-glow {
+    padding: 12px;
+  }
+}
+
+/* iPad-specific tweaks (768px-1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .glass-panel {
+    padding: 14px;
+  }
+}
+
+/* Safe area padding for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

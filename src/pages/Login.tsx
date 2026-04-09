@@ -32,7 +32,7 @@ const Login = () => {
         initial={{ opacity: 0, y: 20, scale: 0.97, filter: 'blur(6px)' }}
         animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-[480px] max-w-[95vw] rounded-2xl p-12 backdrop-blur-2xl"
+        className="relative w-[480px] max-w-[95vw] rounded-2xl p-6 sm:p-12 backdrop-blur-2xl"
         style={{
           background: 'rgba(6,8,18,0.65)',
           border: '1px solid rgba(255,255,255,0.06)',
