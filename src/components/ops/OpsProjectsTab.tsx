@@ -13,6 +13,8 @@ import {
   Pencil, UserPlus, Link2, AlertTriangle, Trash2
 } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { cascadeMilestoneVerified } from '@/lib/notificationCascade';
 
 interface OpsProjectsTabProps {
   acceptedDeals?: Project[];
@@ -20,6 +22,7 @@ interface OpsProjectsTabProps {
 
 const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
   const store = useDataSource();
+  const { user } = useAuth();
   // Merge store.projects + accepted deals + NTP-approved sell projects (SOP wave function)
   const existingSellProjectIds = useMemo(() => new Set(store.projects.map(p => (p as any)._sellProjectId).filter(Boolean)), [store.projects]);
   const sellDerivedProjects = useMemo(() => getActiveSellProjects(store.sellProjects, existingSellProjectIds), [store.sellProjects, existingSellProjectIds]);
@@ -368,8 +371,12 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                                             onClick={() => {
                                               store.approveMilestone(p.id, milestoneIdx);
                                               toast.success(`M${milestoneIdx + 1} approved — fund release queued for Financier`);
-                                              setTimeout(() => toast.info('Financier notified: Fund release pending'), 800);
-                                              setTimeout(() => toast.info('Installer notified: Milestone verified'), 1600);
+                                              // Real notification cascade
+                                              if (user && !user.isDemo) {
+                                                const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
+                                                const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
+                                                cascadeMilestoneVerified(p.id, user.id, p.customerName || `Project ${p.id}`, mNames[milestoneIdx] || `M${milestoneIdx+1}`, pcts[milestoneIdx] || '');
+                                              }
                                             }}
                                             className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5"
                                           >

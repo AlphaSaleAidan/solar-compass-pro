@@ -14,6 +14,7 @@ import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { toast } from 'sonner';
 import { resolveAuroraData } from '@/lib/auroraDataResolver';
 import { cascadeDealSubmitted } from '@/lib/notificationCascade';
+import { useGamification } from '@/hooks/useGamification';
 
 interface SellProjectCardProps {
   project: SellProject;
@@ -29,6 +30,7 @@ const statusStyles: Record<string, { bg: string; text: string; label: string }> 
 
 const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjectCardProps) => {
   const { user } = useAuth();
+  const gamification = useGamification();
   const [expanded, setExpanded] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
   const [showSiteSurvey, setShowSiteSurvey] = useState(false);
@@ -102,7 +104,7 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
     onUpdateProject({ ...project, auroraSynced: true, auroraData });
   };
 
-  const handleConvertConfirm = () => {
+  const handleConvertConfirm = async () => {
     // Convert to Sale → sends to Action ASAP QC Review
     onUpdateProject({
       ...project,
@@ -112,6 +114,19 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
       checklist: { ...project.checklist, creditPassed: true },
     });
     toast.success('Deal sent to Backend Ops for QC Review');
+
+    // Award gamification — puzzle piece + streak + tickets
+    try {
+      const result = await gamification.recordDeal();
+      if (result?.prizeWon) {
+        toast.success(`🎉 Puzzle complete! You won: ${result.prizeWon.name}`, { duration: 5000 });
+      }
+      if (result?.boostedTickets) {
+        toast.info(`🎟️ +${result.boostedTickets} tickets earned!`);
+      }
+    } catch {
+      // Gamification is non-critical — don't block conversion
+    }
   };
 
   const handleWelcomeCallComplete = (answers: WelcomeCallAnswer[]) => {

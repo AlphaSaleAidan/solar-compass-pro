@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2, XCircle, RefreshCw, Lock } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { CelebrationAnimation } from '@/components/shared/CelebrationAnimation';
+import { cascadeMilestoneCompleted } from '@/lib/notificationCascade';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const INSTALLER_MILESTONES = [
@@ -478,6 +479,11 @@ const InstallerPortal = () => {
                                     disabled={!allDone}
                                     onClick={() => {
                                       store.submitMilestoneForQC(p.id, i);
+                                      if (user && !user.isDemo) {
+                                        const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
+                                        const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
+                                        cascadeMilestoneCompleted(p.id, user.id, p.customerName, mNames[i] || `M${i+1}`, pcts[i] || '');
+                                      }
                                       setShowCelebration(true);
                                       toast.success(`M${i + 1} submitted for QC review`);
                                     }}
@@ -906,6 +912,11 @@ const InstallerPortal = () => {
                               disabled={!allDone}
                               onClick={() => {
                                 store.submitMilestoneForQC(p.id, p.currentMilestone);
+                                if (user && !user.isDemo) {
+                                  const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
+                                  const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
+                                  cascadeMilestoneCompleted(p.id, user.id, p.customerName, mNames[p.currentMilestone] || `M${p.currentMilestone+1}`, pcts[p.currentMilestone] || '');
+                                }
                                 setShowCelebration(true);
                                 toast.success(`M${p.currentMilestone + 1} submitted for QC review`);
                               }}
@@ -973,14 +984,14 @@ const InstallerPortal = () => {
       case 'overview':
         return (
           <div className="space-y-5">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
               {[
                 { label: 'Active Projects', value: activeCount.toString(), icon: Wrench, color: 'text-primary' },
                 { label: 'Avg Days to PTO', value: `${avgDaysToPTO}d`, icon: Timer, color: 'text-[hsl(var(--blue))]' },
                 { label: 'On-Time Rate', value: `${onTimeRate}%`, icon: TrendingUp, color: 'text-primary' },
                 { label: 'Pending Actions', value: pendingActions.toString(), icon: AlertTriangle, color: pendingActions > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]' },
               ].map((s, i) => (
-                <div key={i} className="glass-panel stat-glow p-5 stat-card-hover transition-all duration-300 portal-section-enter" style={{ animationDelay: `${i * 60}ms` }}>
+                <div key={i} className="glass-panel stat-glow p-5 stat-card-hover transition-all duration-300 hover-lift">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
                       <s.icon className={`w-4.5 h-4.5 ${s.color}`} />

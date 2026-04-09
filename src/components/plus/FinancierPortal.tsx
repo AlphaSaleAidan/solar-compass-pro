@@ -334,14 +334,14 @@ const FinancierPortal = () => {
       case 'overview':
         return (
           <div className="space-y-5">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
               {[
                 { label: 'Portfolio Value', value: `$${Math.round(totalPortfolioContract / 1000)}k`, valueSuffix: '', icon: DollarSign, color: 'text-primary', sub: `${projects.length} projects` },
                 { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k`, valueSuffix: `of $${Math.round(totalSystemCost / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / Math.max(totalSystemCost, 1)) * 100)}% deployed` },
                 { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, valueSuffix: '', icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / Math.max(totalPortfolioContract, 1)) * 100)}% margin` },
                 { label: 'Pending Releases', value: pendingReleases.length.toString(), valueSuffix: '', icon: Clock, color: pendingReleases.length > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]', sub: pendingReleases.length > 0 ? 'Action required' : 'All clear' },
               ].map((s, i) => (
-                <div key={i} className="glass-panel stat-glow p-5 stat-card-hover transition-all duration-300 portal-section-enter" style={{ animationDelay: `${i * 60}ms` }}>
+                <div key={i} className="glass-panel stat-glow p-5 stat-card-hover transition-all duration-300 hover-lift">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
                       <s.icon className={`w-4 h-4 ${s.color}`} />
