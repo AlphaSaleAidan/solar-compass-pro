@@ -60,6 +60,7 @@ interface ProjectStoreState {
   financierUploads: Record<string, FinancierUpload[]>;
   projectMessages: Record<string, ProjectMessage[]>;
   sellProjects: SellProject[];
+  dataReady?: boolean;
 }
 
 type ProjectStoreContextType = ProjectStoreState & ProjectStoreActions;
@@ -191,6 +192,7 @@ function mapDbSellProjectToUI(row: any): SellProject {
 export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [dataReady, setDataReady] = useState(false);
   const [qcQueue, setQcQueue] = useState<Project[]>([]);
   const [milestoneStates, setMilestoneStates] = useState<Record<string, ProjectMilestoneState>>({});
   const [tickets, setTickets] = useState<SharedTicket[]>([]);
@@ -205,6 +207,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     const fetchProjects = async () => {
       const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
       if (data) setProjects(data.map(mapDbProjectToUI));
+      setDataReady(true);
     };
     fetchProjects();
 
@@ -873,7 +876,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
 
   const value: ProjectStoreContextType = {
     projects, qcQueue, milestoneStates, tickets, financierUpdates, financierUploads, projectMessages, sellProjects,
-    rejectedProjects,
+    rejectedProjects, dataReady,
     acceptDeal, toggleChecklist, uploadFile, setTextEntry, setDateEntry, approveMilestone, submitMilestoneForQC, approveFundRelease,
     releaseFund, setOpsNotes, getMilestoneState, isMilestoneReady, getProjectsForInstaller, getProjectsForRep,
     getAllActiveProjects, createTicket, addTicketMessage, resolveTicket, getTicketsForProject,
