@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { runCouncilAnalysis, AGENTS, SEVERITY_CONFIG, type AgentId, type Finding, type CouncilState, type Severity } from '@/services/councilEngine';
-import { processChat, type ChatMessage } from '@/services/councilChat';
+import { processChat, processChatAsync, isLLMEnabled, type ChatMessage } from '@/services/councilChat';
 import { runDiagnostic, type DiagnosticPhase, type DiagnosticResult, type TestStatus } from '@/services/councilDiagnostic';
 import {
   Shield, Activity, ChevronRight, ExternalLink,
@@ -424,9 +424,12 @@ const ChatView = ({ projects, sellProjects, milestoneStates }: ChatViewProps) =>
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = useCallback(() => {
+  const [isThinking, setIsThinking] = useState(false);
+  const llmEnabled = isLLMEnabled();
+
+  const handleSend = useCallback(async () => {
     const q = input.trim();
-    if (!q) return;
+    if (!q || isThinking) return;
 
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -437,10 +440,22 @@ const ChatView = ({ projects, sellProjects, milestoneStates }: ChatViewProps) =>
     setMessages(prev => [...prev, userMsg]);
     setInput('');
 
-    // Process immediately — no artificial delay
-    const response = processChat(q, projects, sellProjects, milestoneStates);
-    setMessages(prev => [...prev, response]);
-  }, [input, projects, sellProjects, milestoneStates]);
+    if (llmEnabled) {
+      // LLM mode — show thinking indicator, then stream response
+      setIsThinking(true);
+      const history = messages.filter(m => m.role === 'user' || m.role === 'agent').map(m => ({
+        role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.text,
+      }));
+      const response = await processChatAsync(q, projects, sellProjects, milestoneStates, history);
+      setMessages(prev => [...prev, response]);
+      setIsThinking(false);
+    } else {
+      // Rule-based mode — instant response
+      const response = processChat(q, projects, sellProjects, milestoneStates);
+      setMessages(prev => [...prev, response]);
+    }
+  }, [input, projects, sellProjects, milestoneStates, messages, isThinking, llmEnabled]);
 
   const suggestions = [
     'What\'s broken?',
@@ -490,7 +505,28 @@ const ChatView = ({ projects, sellProjects, milestoneStates }: ChatViewProps) =>
             </div>
           </motion.div>
         ))}
-        {/* Responses are instant — no typing indicator needed */}
+        {/* Thinking indicator when LLM is processing */}
+        {isThinking && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+            <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mr-3 mt-1 flex-shrink-0">
+              <motion.span animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} className="text-sm">⚡</motion.span>
+            </div>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl rounded-bl-md px-4 py-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400">Pantheon</span>
+                <span className="text-[10px] text-gray-600">is thinking…</span>
+              </div>
+              <div className="flex gap-1 mt-2">
+                {[0, 1, 2].map(i => (
+                  <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-purple-400/50"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Quick Suggestions */}
@@ -507,6 +543,12 @@ const ChatView = ({ projects, sellProjects, milestoneStates }: ChatViewProps) =>
 
       {/* Input */}
       <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+        {llmEnabled && (
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20" title="Groq LLM active">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[9px] font-bold text-emerald-400 uppercase">AI</span>
+          </div>
+        )}
         <input
           ref={inputRef}
           value={input}
@@ -515,7 +557,7 @@ const ChatView = ({ projects, sellProjects, milestoneStates }: ChatViewProps) =>
           placeholder="Ask the Pantheon anything..."
           className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
         />
-        <button onClick={handleSend} disabled={!input.trim()}
+        <button onClick={handleSend} disabled={!input.trim() || isThinking}
           className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
             input.trim() ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 btn-press' : 'text-gray-600'
           }`}>

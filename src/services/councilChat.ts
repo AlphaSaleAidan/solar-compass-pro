@@ -10,6 +10,7 @@ import type { Project, SellProject } from '@/data/mockData';
 import type { ProjectMilestoneState } from '@/contexts/ProjectStore';
 import { AGENTS, type AgentId, runCouncilAnalysis } from './councilEngine';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import { isLLMEnabled, queryLLM } from './councilLLM';
 
 // Helper — the Project type doesn't declare all DB fields, so we access extras safely
 const pf = (p: Project, field: string): string | undefined => (p as Record<string, unknown>)[field] as string | undefined;
@@ -413,3 +414,41 @@ export function processChat(
     timestamp: new Date().toISOString(),
   };
 }
+
+// ─── Async Chat Handler (LLM-enhanced) ──────────────────────────────
+// Tries Groq LLM first. Falls back to rule-based if no key or on error.
+
+export async function processChatAsync(
+  query: string,
+  projects: Project[],
+  sellProjects: SellProject[],
+  milestoneStates: Record<string, ProjectMilestoneState>,
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
+): Promise<ChatMessage & { llmUsed?: boolean; latencyMs?: number }> {
+  // Try LLM first if enabled
+  if (isLLMEnabled()) {
+    const groqHistory = (conversationHistory || []).map(m => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
+
+    const llmResult = await queryLLM(query, groqHistory, projects, sellProjects, milestoneStates);
+    if (llmResult) {
+      return {
+        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        role: 'agent',
+        agentId: llmResult.agentId,
+        text: llmResult.text,
+        timestamp: new Date().toISOString(),
+        llmUsed: true,
+        latencyMs: llmResult.latencyMs,
+      };
+    }
+  }
+
+  // Fallback to rule-based
+  return { ...processChat(query, projects, sellProjects, milestoneStates), llmUsed: false };
+}
+
+/** Check if LLM is available */
+export { isLLMEnabled };
