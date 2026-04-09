@@ -33,8 +33,9 @@ export interface CommissionCalc {
  */
 export const calculateCommission = (project: Project, splitPercent = 1.0): CommissionCalc => {
   const redline = 2.35;
-  const watts = parseFloat(project.systemSize) * 1000;
-  const adderCost = project.adders.reduce((s, a) => s + a.cost, 0);
+  const watts = parseFloat(project.systemSize || '0') * 1000;
+  const adders = Array.isArray(project.adders) ? project.adders : [];
+  const adderCost = adders.reduce((s, a) => s + (a?.cost || 0), 0);
   const systemCostPerWatt = watts * redline;
   const soldTotal = watts * project.soldPPW;
   const commission = soldTotal - systemCostPerWatt - adderCost;

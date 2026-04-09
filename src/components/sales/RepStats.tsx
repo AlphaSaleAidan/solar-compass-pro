@@ -18,7 +18,7 @@ const RepStats = () => {
 
   // Calculate pipeline deals with commissions (same formula as Pipeline/Commissions tabs)
   // Used for BOTH demo and production to ensure pending pipeline always matches Commissions tab
-  const pipelineDeals = store.projects
+  const pipelineDeals = (store.projects || [])
     .map(p => {
       const comm = calculateCommission(p);
       return {

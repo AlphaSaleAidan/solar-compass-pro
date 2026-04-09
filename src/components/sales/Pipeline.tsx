@@ -38,6 +38,15 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
       totalDocuments: 5,
       dates: { submitted: sp.createdAt?.slice(0, 10) || 'N/A', siteSurvey: sp.siteSurveyComplete ? 'Done' : '', sowConfirmed: '', permitSubmitted: '', lastHOContact: 'N/A' },
       milestoneDetails: [],
+      adders: [],
+      siteSurveyPhotos: [],
+      roofCondition: 'good' as const,
+      roofIssues: [],
+      permitStatus: 'pending' as const,
+      annualUsage: 0,
+      interestRate: 0,
+      loanTerms: '',
+      addedDate: sp.createdAt?.slice(0, 10) || '',
       checklist: sp.checklist || { creditPassed: sp.creditStatus === 'credit_passed', financeDocsSigned: !!sp.documentsSigned, welcomeCallCompleted: !!sp.welcomeCallComplete, siteSurveyDone: !!sp.siteSurveyComplete, aspOnboarding: false },
     } as Project));
   const allProjects = [

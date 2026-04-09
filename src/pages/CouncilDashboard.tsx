@@ -172,30 +172,29 @@ const CouncilDashboard = () => {
         </div>
       </div>
 
-      {/* Content */}
-      <AnimatePresence mode="wait">
+      {/* Content — no AnimatePresence, just cross-fade via key swap */}
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      >
         {activeTab === 'dashboard' && (
-          <motion.div key="dashboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <DashboardView
-              council={council} projects={projects} sellProjects={sellProjects}
-              selectedAgent={selectedAgent} setSelectedAgent={setSelectedAgent}
-              severityFilter={severityFilter} setSeverityFilter={setSeverityFilter}
-              filteredFindings={filteredFindings} activeReport={activeReport} allFindings={allFindings}
-              isScanning={isScanning} visibleFindings={visibleFindings}
-            />
-          </motion.div>
+          <DashboardView
+            council={council} projects={projects} sellProjects={sellProjects}
+            selectedAgent={selectedAgent} setSelectedAgent={setSelectedAgent}
+            severityFilter={severityFilter} setSeverityFilter={setSeverityFilter}
+            filteredFindings={filteredFindings} activeReport={activeReport} allFindings={allFindings}
+            isScanning={isScanning} visibleFindings={visibleFindings}
+          />
         )}
         {activeTab === 'chat' && (
-          <motion.div key="chat" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <ChatView projects={projects} sellProjects={sellProjects} milestoneStates={milestoneStates} />
-          </motion.div>
+          <ChatView projects={projects} sellProjects={sellProjects} milestoneStates={milestoneStates} />
         )}
         {activeTab === 'diagnostic' && (
-          <motion.div key="diagnostic" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <DiagnosticView projects={projects} sellProjects={sellProjects} milestoneStates={milestoneStates} tickets={tickets} />
-          </motion.div>
+          <DiagnosticView projects={projects} sellProjects={sellProjects} milestoneStates={milestoneStates} tickets={tickets} />
         )}
-      </AnimatePresence>
+      </motion.div>
     </div>
   );
 };
@@ -540,8 +539,17 @@ const DiagnosticView = ({ projects, sellProjects, milestoneStates, tickets }: Di
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [currentPhase, setCurrentPhase] = useState(-1);
+  const hasAutoRun = useRef(false);
 
-  const startDiagnostic = async () => {
+  // Auto-run diagnostic on first view
+  useEffect(() => {
+    if (!hasAutoRun.current && projects.length > 0) {
+      hasAutoRun.current = true;
+      startDiagnosticFn();
+    }
+  }, [projects]);
+
+  const startDiagnosticFn = async () => {
     setIsRunning(true);
     setResult(null);
     setPhases([]);
@@ -579,7 +587,7 @@ const DiagnosticView = ({ projects, sellProjects, milestoneStates, tickets }: Di
           </div>
         </div>
         <button
-          onClick={startDiagnostic}
+          onClick={startDiagnosticFn}
           disabled={isRunning}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all btn-press ${
             isRunning

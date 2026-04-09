@@ -109,7 +109,7 @@ const Dashboard = () => {
       <div className="min-h-screen relative">
         {/* 3D background is now global in App.tsx */}
         <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
-        <main className="relative mt-[58px] p-3 sm:p-4 md:p-6">
+        <main className="relative pt-[66px] px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6">
           <ErrorBoundary section={activeTab}>
             <PageTransition pageKey={activeTab} variant="wave">
               {renderContent()}
