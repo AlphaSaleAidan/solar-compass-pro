@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { cascadeMilestoneVerified } from '@/lib/notificationCascade';
+import { cascadeMilestoneVerified, cascadeFundsReleased, cascadePTOGranted } from '@/lib/notificationCascade';
 
 interface OpsProjectsTabProps {
   acceptedDeals?: Project[];
@@ -368,14 +368,23 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                                           </div>
                                           <button
                                             disabled={!allReady}
-                                            onClick={() => {
+                                            onClick={async () => {
                                               store.approveMilestone(p.id, milestoneIdx);
-                                              toast.success(`M${milestoneIdx + 1} approved — fund release queued for Financier`);
-                                              // Real notification cascade
+                                              // Auto-release fund for this milestone
+                                              store.releaseFund(p.id, milestoneIdx);
+                                              const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
+                                              const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
+                                              const fundAmount = ((p.projectCost || 0) * (MILESTONE_SOPS[milestoneIdx]?.fundPercent || 0) / 100).toFixed(0);
+                                              toast.success(`M${milestoneIdx + 1} approved — $${Number(fundAmount).toLocaleString()} released`);
+                                              // Real notification cascades
                                               if (user && !user.isDemo) {
-                                                const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
-                                                const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
-                                                cascadeMilestoneVerified(p.id, user.id, p.customerName || `Project ${p.id}`, mNames[milestoneIdx] || `M${milestoneIdx+1}`, pcts[milestoneIdx] || '');
+                                                const projName = p.customerName || `Project ${p.id}`;
+                                                cascadeMilestoneVerified(p.id, user.id, projName, mNames[milestoneIdx] || `M${milestoneIdx+1}`, pcts[milestoneIdx] || '');
+                                                cascadeFundsReleased(p.id, user.id, projName, fundAmount, mNames[milestoneIdx] || `M${milestoneIdx+1}`);
+                                                // M6 = PTO Granted — fire the big one
+                                                if (milestoneIdx === 5) {
+                                                  cascadePTOGranted(p.id, user.id, projName);
+                                                }
                                               }
                                             }}
                                             className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5"

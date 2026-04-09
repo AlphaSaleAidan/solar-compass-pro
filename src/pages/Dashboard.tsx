@@ -1,31 +1,34 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AppHeader from '@/components/AppHeader';
-import PuzzleGame from '@/components/sales/PuzzleGame';
-import RepStats from '@/components/sales/RepStats';
-import ShopSpin from '@/components/sales/ShopSpin';
-import Pipeline from '@/components/sales/Pipeline';
-import Commissions from '@/components/sales/Commissions';
-import CalendarTab from '@/components/sales/CalendarTab';
-import RankingsTab from '@/components/sales/RankingsTab';
-import SellTab from '@/components/sales/SellTab';
-import QCReview from '@/components/ops/QCReview';
-import Communication from '@/components/ops/Communication';
-import MilestoneVerification from '@/components/ops/MilestoneVerification';
-import OpsProjectsTab from '@/components/ops/OpsProjectsTab';
-import SuperSupport from '@/components/ops/SuperSupport';
-import FinalApprovalQueue from '@/components/ops/FinalApprovalQueue';
-import ExecutiveDashboard from '@/components/ops/ExecutiveDashboard';
-import PlusPortal from '@/components/plus/PlusPortal';
-import ActivityFeed from '@/components/shared/ActivityFeed';
 import PageTransition from '@/components/shared/PageTransition';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { DashboardSkeleton, PageLoadingSkeleton } from '@/components/shared/SkeletonLoader';
+
+// Lazy-load heavy portal tabs — splits the 1.5MB bundle
+const PuzzleGame = lazy(() => import('@/components/sales/PuzzleGame'));
+const RepStats = lazy(() => import('@/components/sales/RepStats'));
+const ShopSpin = lazy(() => import('@/components/sales/ShopSpin'));
+const Pipeline = lazy(() => import('@/components/sales/Pipeline'));
+const Commissions = lazy(() => import('@/components/sales/Commissions'));
+const CalendarTab = lazy(() => import('@/components/sales/CalendarTab'));
+const RankingsTab = lazy(() => import('@/components/sales/RankingsTab'));
+const SellTab = lazy(() => import('@/components/sales/SellTab'));
+const QCReview = lazy(() => import('@/components/ops/QCReview'));
+const Communication = lazy(() => import('@/components/ops/Communication'));
+const MilestoneVerification = lazy(() => import('@/components/ops/MilestoneVerification'));
+const OpsProjectsTab = lazy(() => import('@/components/ops/OpsProjectsTab'));
+const SuperSupport = lazy(() => import('@/components/ops/SuperSupport'));
+const FinalApprovalQueue = lazy(() => import('@/components/ops/FinalApprovalQueue'));
+const ExecutiveDashboard = lazy(() => import('@/components/ops/ExecutiveDashboard'));
+const PlusPortal = lazy(() => import('@/components/plus/PlusPortal'));
+const ActivityFeed = lazy(() => import('@/components/shared/ActivityFeed'));
 // PortalAmbient3D removed — CinematicBackground is now global in App.tsx
 import { useDataSource } from '@/contexts/DataSourceProvider';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { sellProjects, markSellProjectClean, markSellProjectDirty } = useDataSource();
+  const { sellProjects, markSellProjectClean, markSellProjectDirty, dataReady } = useDataSource();
   const isPlus = user?.portalMode === 'asp_plus';
   const isSalesRep = user?.role === 'sales_rep';
   const defaultTab = isPlus ? 'Projects' : isSalesRep ? 'Dashboard' : 'QC Review';
@@ -110,11 +113,17 @@ const Dashboard = () => {
         {/* 3D background is now global in App.tsx */}
         <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="relative pt-[66px] px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6">
-          <ErrorBoundary section={activeTab}>
-            <PageTransition pageKey={activeTab} variant="wave">
-              {renderContent()}
-            </PageTransition>
-          </ErrorBoundary>
+          {!dataReady ? (
+            <DashboardSkeleton />
+          ) : (
+            <ErrorBoundary section={activeTab}>
+              <Suspense fallback={<PageLoadingSkeleton label={`Loading ${activeTab}…`} />}>
+                <PageTransition pageKey={activeTab} variant="wave">
+                  {renderContent()}
+                </PageTransition>
+              </Suspense>
+            </ErrorBoundary>
+          )}
         </main>
       </div>
     </div>

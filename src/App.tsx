@@ -1,17 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { useAuth, AuthProvider } from '@/contexts/AuthContext';
 import { DataSourceProvider } from '@/contexts/DataSourceProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import LandingPage from '@/pages/LandingPage';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
-import Dashboard from '@/pages/Dashboard';
-import CouncilDashboard from '@/pages/CouncilDashboard';
+
+// Lazy-load pages for code splitting
+const LandingPage = lazy(() => import('@/pages/LandingPage'));
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const CouncilDashboard = lazy(() => import('@/pages/CouncilDashboard'));
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -82,18 +84,20 @@ const RouteTransition = ({ children }: { children: React.ReactNode }) => (
 const AppContent = () => {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<RouteTransition><LandingPage /></RouteTransition>} />
-        <Route path="/login" element={<PublicRoute><RouteTransition><Login /></RouteTransition></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><RouteTransition><Register /></RouteTransition></PublicRoute>} />
-        <Route path="/forgot-password" element={<PublicRoute><RouteTransition><ForgotPassword /></RouteTransition></PublicRoute>} />
-        <Route path="/reset-password" element={<RouteTransition><ResetPassword /></RouteTransition>} />
-        <Route path="/dashboard" element={<ProtectedRoute><RouteTransition><Dashboard /></RouteTransition></ProtectedRoute>} />
-        <Route path="/council" element={<ProtectedRoute><RouteTransition><CouncilDashboard /></RouteTransition></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnimatePresence>
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<RouteTransition><LandingPage /></RouteTransition>} />
+          <Route path="/login" element={<PublicRoute><RouteTransition><Login /></RouteTransition></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><RouteTransition><Register /></RouteTransition></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><RouteTransition><ForgotPassword /></RouteTransition></PublicRoute>} />
+          <Route path="/reset-password" element={<RouteTransition><ResetPassword /></RouteTransition>} />
+          <Route path="/dashboard" element={<ProtectedRoute><RouteTransition><Dashboard /></RouteTransition></ProtectedRoute>} />
+          <Route path="/council" element={<ProtectedRoute><RouteTransition><CouncilDashboard /></RouteTransition></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AnimatePresence>
+    </Suspense>
   );
 };
 
