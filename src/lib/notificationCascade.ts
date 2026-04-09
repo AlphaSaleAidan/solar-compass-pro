@@ -11,6 +11,35 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+/* ─── In-Memory Fallback Store ───────────────────────────────────────── */
+// Used when the `notifications` Supabase table hasn't been created yet.
+let _memoryStore: Notification[] = [];
+let _listeners: ((n: Notification) => void)[] = [];
+let _tableExists: boolean | null = null;
+
+/** Get all in-memory notifications */
+export function getInMemoryNotifications(): Notification[] { return _memoryStore; }
+
+function addToMemory(n: Notification) {
+  const full = { ...n, id: n.id || crypto.randomUUID(), created_at: n.created_at || new Date().toISOString() };
+  _memoryStore = [full, ..._memoryStore].slice(0, 100);
+  _listeners.forEach(fn => fn(full));
+}
+
+/** Subscribe to in-memory notifications */
+export function subscribeMemory(cb: (n: Notification) => void): () => void {
+  _listeners.push(cb);
+  return () => { _listeners = _listeners.filter(f => f !== cb); };
+}
+
+/** Mark notification read in memory */
+export function markReadInMemory(id: string) {
+  _memoryStore = _memoryStore.map(n => n.id === id ? { ...n, read: true } : n);
+}
+export function markAllReadInMemory() {
+  _memoryStore = _memoryStore.map(n => ({ ...n, read: true }));
+}
+
 /* ─── Types ──────────────────────────────────────────────────────────── */
 
 export type NotificationType =
@@ -116,11 +145,24 @@ export async function triggerCascade(params: {
       metadata,
     };
 
+    // Try Supabase first; fall back to in-memory if table doesn't exist
+    if (_tableExists === false) {
+      addToMemory(notification as Notification);
+      notified.push(role);
+      continue;
+    }
+
     const { error } = await supabase
       .from('notifications')
       .insert(notification);
 
     if (!error) {
+      notified.push(role);
+      _tableExists = true;
+    } else if (error.code === '42P01' || error.message?.includes('notifications')) {
+      // Table doesn't exist — switch to in-memory for all future calls
+      _tableExists = false;
+      addToMemory(notification as Notification);
       notified.push(role);
     } else {
       console.warn(`[Cascade] Failed to notify ${role}:`, error.message);

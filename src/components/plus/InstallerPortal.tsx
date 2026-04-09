@@ -10,6 +10,7 @@ import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronD
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { CelebrationAnimation } from '@/components/shared/CelebrationAnimation';
 import { cascadeMilestoneCompleted } from '@/lib/notificationCascade';
+import { useGamification } from '@/hooks/useGamification';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const INSTALLER_MILESTONES = [
@@ -26,6 +27,7 @@ const INSTALLER_MILESTONES = [
 const InstallerPortal = () => {
   const store = useDataSource();
   const { user } = useAuth();
+  const gamification = useGamification();
   const isDemo = user?.isDemo;
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones' | 'rejected'>('overview');
@@ -484,6 +486,8 @@ const InstallerPortal = () => {
                                         const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
                                         cascadeMilestoneCompleted(p.id, user.id, p.customerName, mNames[i] || `M${i+1}`, pcts[i] || '');
                                       }
+                                      // Gamification: award tickets for milestone submission
+                                      gamification.earnTickets(3).catch(() => {});
                                       setShowCelebration(true);
                                       toast.success(`M${i + 1} submitted for QC review`);
                                     }}
@@ -917,6 +921,7 @@ const InstallerPortal = () => {
                                   const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
                                   cascadeMilestoneCompleted(p.id, user.id, p.customerName, mNames[p.currentMilestone] || `M${p.currentMilestone+1}`, pcts[p.currentMilestone] || '');
                                 }
+                                gamification.earnTickets(3).catch(() => {});
                                 setShowCelebration(true);
                                 toast.success(`M${p.currentMilestone + 1} submitted for QC review`);
                               }}

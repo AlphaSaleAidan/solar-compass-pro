@@ -9,7 +9,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Bell, X, CheckCircle, AlertTriangle, FileText, DollarSign, Clock, Zap, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { subscribeToNotifications, type Notification, type NotificationType } from '@/lib/notificationCascade';
+import {
+  subscribeToNotifications, getInMemoryNotifications, subscribeMemory,
+  markReadInMemory, markAllReadInMemory,
+  type Notification, type NotificationType,
+} from '@/lib/notificationCascade';
 import { useAuth } from '@/contexts/AuthContext';
 
 /* ─── Icon mapping ───────────────────────────────────────────────────── */
@@ -60,47 +64,71 @@ export default function NotificationCenter() {
   const role = profile?.role || 'sales_rep';
   const userId = user?.id || '';
 
-  // Fetch existing notifications
+  // Fetch existing notifications — try Supabase first, fallback to in-memory
   const fetchNotifications = useCallback(async () => {
     if (!userId || !role) return;
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .or(`to_role.eq.${role},to_user_id.eq.${userId}`)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .or(`to_role.eq.${role},to_user_id.eq.${userId}`)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-    if (!error && data) {
-      setNotifications(data as Notification[]);
+      if (!error && data) {
+        setNotifications(data as Notification[]);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      // Table likely doesn't exist
     }
+
+    // Fallback: use in-memory notifications
+    const mem = getInMemoryNotifications().filter(
+      n => n.to_role === role || n.to_user_id === userId,
+    );
+    setNotifications(mem);
     setLoading(false);
   }, [userId, role]);
 
-  // Subscribe to real-time notifications
+  // Subscribe to real-time + in-memory notifications
   useEffect(() => {
     fetchNotifications();
 
     if (!userId || !role) return;
-    const unsub = subscribeToNotifications(role, userId, (notif) => {
+
+    // Subscribe to Supabase real-time (works when table exists)
+    const unsubRT = subscribeToNotifications(role, userId, (notif) => {
       setNotifications(prev => [notif, ...prev]);
     });
 
-    return unsub;
+    // Also subscribe to in-memory notifications (always works)
+    const unsubMem = subscribeMemory((notif) => {
+      if (notif.to_role === role || notif.to_user_id === userId) {
+        setNotifications(prev => [notif, ...prev.filter(n => n.id !== notif.id)]);
+      }
+    });
+
+    return () => { unsubRT(); unsubMem(); };
   }, [userId, role, fetchNotifications]);
 
   // Mark a notification as read
   const markRead = async (id: string) => {
-    await supabase.from('notifications').update({ read: true }).eq('id', id);
+    markReadInMemory(id);
+    supabase.from('notifications').update({ read: true }).eq('id', id).then(() => {});
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
   // Mark all as read
   const markAllRead = async () => {
+    markAllReadInMemory();
     const unreadIds = notifications.filter(n => !n.read).map(n => n.id).filter(Boolean);
-    if (unreadIds.length === 0) return;
-    await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
+    if (unreadIds.length > 0) {
+      supabase.from('notifications').update({ read: true }).in('id', unreadIds).then(() => {});
+    }
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 

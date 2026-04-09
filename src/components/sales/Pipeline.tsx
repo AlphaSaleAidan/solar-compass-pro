@@ -12,43 +12,54 @@ interface PipelineProps {
 
 const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
   const store = useDataSource();
-  // Derive pipeline entries from converted sell projects when store.projects is empty
+
+  // Derive pipeline entries from converted sell projects that DON'T already
+  // exist in the real projects table (avoid duplicates / stale data).
+  const realProjectSellIds = new Set(
+    store.projects.map(p => (p as any)._sellProjectId || (p as any).sell_project_id).filter(Boolean)
+  );
   const sellDerivedProjects: Project[] = store.sellProjects
-    .filter(sp => sp.convertedToSale)
-    .map(sp => ({
-      id: sp.id,
-      customerName: `${sp.firstName} ${sp.lastName}`,
-      address: sp.address || 'Pending',
-      email: sp.email || '',
-      phone: sp.phone || '',
-      systemSize: sp.auroraData?.systemSize || '8.4 kW',
-      battery: sp.auroraData?.battery || 'None',
-      financier: sp.auroraData?.financier || 'TBD',
-      monthlyPayment: sp.auroraData?.monthlyPayment || '$0',
-      soldPPW: 3.20,
-      contractValue: (sp.highBill || 200) * 12 * 20,
-      projectCost: (sp.highBill || 200) * 12 * 15,
-      repName: 'You',
-      installerName: 'Unassigned',
-      status: sp.documentsSigned ? 'active' as const : sp.approvalStatus === 'rejected' ? 'on_hold' as const : 'delayed' as const,
-      stage: !sp.qcInitialApproved ? 'QC Review' : !sp.documentsSigned ? 'Awaiting NTP' : sp.documentsSigned ? 'Active — M1' : 'Lead',
-      currentMilestone: sp.documentsSigned ? 1 : 0,
-      totalMilestones: 7,
-      documentsSignedCount: sp.documentsSigned ? 3 : 0,
-      totalDocuments: 5,
-      dates: { submitted: sp.createdAt?.slice(0, 10) || 'N/A', siteSurvey: sp.siteSurveyComplete ? 'Done' : '', sowConfirmed: '', permitSubmitted: '', lastHOContact: 'N/A' },
-      milestoneDetails: [],
-      adders: [],
-      siteSurveyPhotos: [],
-      roofCondition: 'good' as const,
-      roofIssues: [],
-      permitStatus: 'pending' as const,
-      annualUsage: 0,
-      interestRate: 0,
-      loanTerms: '',
-      addedDate: sp.createdAt?.slice(0, 10) || '',
-      checklist: sp.checklist || { creditPassed: sp.creditStatus === 'credit_passed', financeDocsSigned: !!sp.documentsSigned, welcomeCallCompleted: !!sp.welcomeCallComplete, siteSurveyDone: !!sp.siteSurveyComplete, aspOnboarding: false },
-    } as Project));
+    .filter(sp => sp.convertedToSale && !realProjectSellIds.has(sp.id))
+    .filter(sp => !store.projects.some(rp => rp.customerName === `${sp.firstName} ${sp.lastName}`))
+    .map(sp => {
+      const sysKw = parseFloat(sp.auroraData?.systemSize || '8.4');
+      const ppw = sp.auroraData?.financier ? (sysKw > 10 ? 3.00 : 3.20) : 0;
+      return {
+        id: sp.id,
+        customerName: `${sp.firstName} ${sp.lastName}`,
+        address: sp.address || 'Pending',
+        email: sp.email || '',
+        phone: sp.phone || '',
+        systemSize: sp.auroraData?.systemSize || '8.4 kW',
+        battery: sp.auroraData?.battery || 'None',
+        financier: sp.auroraData?.financier || 'TBD',
+        monthlyPayment: sp.auroraData?.monthlyPayment || '$0',
+        soldPPW: ppw,
+        contractValue: ppw > 0 ? Math.round(sysKw * 1000 * ppw) : (sp.highBill || 200) * 12 * 20,
+        projectCost: ppw > 0 ? Math.round(sysKw * 1000 * ppw * 0.75) : (sp.highBill || 200) * 12 * 15,
+        repName: sp.repId || 'You',
+        installerName: 'Unassigned',
+        status: sp.documentsSigned ? 'active' as const : sp.approvalStatus === 'rejected' ? 'on_hold' as const : 'delayed' as const,
+        stage: !sp.qcInitialApproved ? 'QC Review' : !sp.documentsSigned ? 'Awaiting NTP' : sp.documentsSigned ? 'Active — M1' : 'Lead',
+        currentMilestone: sp.documentsSigned ? 1 : 0,
+        totalMilestones: 7,
+        documentsSignedCount: sp.documentsSigned ? 3 : 0,
+        totalDocuments: 5,
+        dates: { submitted: sp.createdAt?.slice(0, 10) || 'N/A', siteSurvey: sp.siteSurveyComplete ? 'Done' : '', sowConfirmed: '', permitSubmitted: '', lastHOContact: 'N/A' },
+        milestoneDetails: [],
+        adders: [],
+        siteSurveyPhotos: [],
+        roofCondition: 'good' as const,
+        roofIssues: [],
+        permitStatus: 'pending' as const,
+        annualUsage: 0,
+        interestRate: 0,
+        loanTerms: '',
+        addedDate: sp.createdAt?.slice(0, 10) || '',
+        checklist: sp.checklist || { creditPassed: sp.creditStatus === 'credit_passed', financeDocsSigned: !!sp.documentsSigned, welcomeCallCompleted: !!sp.welcomeCallComplete, siteSurveyDone: !!sp.siteSurveyComplete, aspOnboarding: false },
+      } as Project;
+    });
+  // Real projects first, then accepted deals, then sell-derived fallback (no dupes)
   const allProjects = [
     ...store.projects,
     ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id)),
