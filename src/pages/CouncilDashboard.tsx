@@ -69,10 +69,30 @@ const CouncilDashboard = () => {
   const [selectedAgent, setSelectedAgent] = useState<AgentId | null>(null);
   const [severityFilter, setSeverityFilter] = useState<Severity | 'all'>('all');
   const [scanKey, setScanKey] = useState(0);
+  const [isScanning, setIsScanning] = useState(true);
+  const [visibleFindings, setVisibleFindings] = useState(0);
 
   const council: CouncilState = useMemo(() => {
     return runCouncilAnalysis(projects, sellProjects, milestoneStates);
   }, [projects, sellProjects, milestoneStates, scanKey]);
+
+  // Progressive reveal — findings appear one by one on load/re-scan
+  useEffect(() => {
+    setIsScanning(true);
+    setVisibleFindings(0);
+    const allCount = council.reports.flatMap(r => r.findings).length;
+    if (allCount === 0) { setIsScanning(false); return; }
+    let count = 0;
+    const interval = setInterval(() => {
+      count++;
+      setVisibleFindings(count);
+      if (count >= allCount) {
+        clearInterval(interval);
+        setTimeout(() => setIsScanning(false), 300);
+      }
+    }, 80); // 80ms per finding = fast but visible
+    return () => clearInterval(interval);
+  }, [council, scanKey]);
 
   const activeReport = selectedAgent ? council.reports.find(r => r.agent.id === selectedAgent) : null;
   const allFindings = council.reports.flatMap(r => r.findings);
@@ -131,9 +151,11 @@ const CouncilDashboard = () => {
 
             <div className="flex items-center gap-3">
               {activeTab === 'dashboard' && (
-                <button onClick={() => setScanKey(k => k + 1)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-semibold text-gray-400 hover:text-white hover:border-white/20 transition-all btn-press">
-                  <RefreshCw className="w-3.5 h-3.5" /> Re-scan
+                <button onClick={() => setScanKey(k => k + 1)} disabled={isScanning}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all btn-press ${
+                    isScanning ? 'bg-purple-500/10 border border-purple-500/20 text-purple-300' : 'bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white hover:border-white/20'
+                  }`}>
+                  <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} /> {isScanning ? 'Scanning…' : 'Re-scan'}
                 </button>
               )}
               <a href="https://linear.app/alpha-sale-pro-hub/team/ALP/active" target="_blank" rel="noopener noreferrer"
@@ -159,6 +181,7 @@ const CouncilDashboard = () => {
               selectedAgent={selectedAgent} setSelectedAgent={setSelectedAgent}
               severityFilter={severityFilter} setSeverityFilter={setSeverityFilter}
               filteredFindings={filteredFindings} activeReport={activeReport} allFindings={allFindings}
+              isScanning={isScanning} visibleFindings={visibleFindings}
             />
           </motion.div>
         )}
@@ -185,6 +208,7 @@ interface DashboardViewProps {
   selectedAgent: AgentId | null; setSelectedAgent: (a: AgentId | null) => void;
   severityFilter: Severity | 'all'; setSeverityFilter: (s: Severity | 'all') => void;
   filteredFindings: Finding[]; activeReport: any; allFindings: Finding[];
+  isScanning?: boolean; visibleFindings?: number;
 }
 
 const DashboardView = ({
@@ -192,6 +216,7 @@ const DashboardView = ({
   selectedAgent, setSelectedAgent,
   severityFilter, setSeverityFilter,
   filteredFindings, activeReport, allFindings,
+  isScanning = false, visibleFindings = Infinity,
 }: DashboardViewProps) => (
   <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
     {/* Overall Score */}
@@ -308,18 +333,24 @@ const DashboardView = ({
             <Activity className="w-4 h-4 text-gray-500" />
             <span className="text-sm font-bold text-gray-300">{selectedAgent ? `${AGENTS[selectedAgent].name}'s Findings` : 'All Findings'}</span>
             <span className="text-xs text-gray-600">({filteredFindings.length})</span>
+            {isScanning && (
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20">
+                <Loader2 className="w-3 h-3 text-purple-400 animate-spin" />
+                <span className="text-[10px] text-purple-300 font-bold">Scanning…</span>
+              </motion.span>
+            )}
           </div>
           {selectedAgent && <button onClick={() => setSelectedAgent(null)} className="text-xs text-gray-500 hover:text-white transition-colors">Show all</button>}
         </div>
         <AnimatePresence mode="popLayout">
-          {filteredFindings.length === 0 ? (
+          {filteredFindings.length === 0 && !isScanning ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-16 text-center">
               <CheckCircle2 className="w-10 h-10 text-teal-500/30 mb-3" />
               <div className="text-sm font-bold text-gray-500">All Clear</div>
               <div className="text-xs text-gray-600 mt-1">{selectedAgent ? `${AGENTS[selectedAgent].name} found no issues` : 'No findings match filter'}</div>
             </motion.div>
           ) : (
-            filteredFindings.map((finding, i) => <FindingCard key={finding.id} finding={finding} index={i} showAgent={!selectedAgent} />)
+            filteredFindings.slice(0, visibleFindings).map((finding, i) => <FindingCard key={finding.id} finding={finding} index={i} showAgent={!selectedAgent} />)
           )}
         </AnimatePresence>
       </div>
