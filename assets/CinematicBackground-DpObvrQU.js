@@ -1,4 +1,4 @@
-import{r as xe,g as Dy,j as Pe}from"./index-plq1QGGy.js";/**
+import{r as xe,g as Dy,j as Pe}from"./index-C-NI2YIs.js";/**
  * @license
  * Copyright 2010-2026 Three.js Authors
  * SPDX-License-Identifier: MIT
