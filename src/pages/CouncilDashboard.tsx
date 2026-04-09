@@ -387,7 +387,6 @@ const ChatView = ({ projects, sellProjects, milestoneStates }: ChatViewProps) =>
     },
   ]);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -407,23 +406,19 @@ const ChatView = ({ projects, sellProjects, milestoneStates }: ChatViewProps) =>
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setIsTyping(true);
 
-    // Simulate slight thinking delay for natural feel
-    setTimeout(() => {
-      const response = processChat(q, projects, sellProjects, milestoneStates);
-      setMessages(prev => [...prev, response]);
-      setIsTyping(false);
-    }, 600 + Math.random() * 400);
+    // Process immediately — no artificial delay
+    const response = processChat(q, projects, sellProjects, milestoneStates);
+    setMessages(prev => [...prev, response]);
   }, [input, projects, sellProjects, milestoneStates]);
 
   const suggestions = [
+    'What\'s broken?',
     'Show me the pipeline',
-    'What\'s the SOP process?',
     'Tell me about M3',
     'QC review status',
     'Fund release status',
-    'How do portals work?',
+    'What\'s the SOP process?',
   ];
 
   return (
@@ -465,14 +460,7 @@ const ChatView = ({ projects, sellProjects, milestoneStates }: ChatViewProps) =>
             </div>
           </motion.div>
         ))}
-        {isTyping && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
-              <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
-            </div>
-            <div className="text-xs text-gray-500">Council is analyzing...</div>
-          </motion.div>
-        )}
+        {/* Responses are instant — no typing indicator needed */}
       </div>
 
       {/* Quick Suggestions */}

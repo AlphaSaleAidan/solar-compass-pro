@@ -98,7 +98,7 @@ export async function runDiagnostic(
     // Check if each converted lead has a matching project
     const unlinked = converted.filter(sp => {
       const name = `${sp.firstName} ${sp.lastName}`;
-      return !projects.some(p => p.customerName === name || p.sellProjectId === sp.id);
+      return !projects.some(p => p.customerName === name || ((p as any)._sellProjectId || (p as any).sellProjectId) === sp.id);
     });
     if (unlinked.length === 0) return { status: 'pass', detail: `All ${converted.length} converted leads have matching projects.` };
     return { status: 'fail', detail: `${unlinked.length} converted lead(s) missing project: ${unlinked.map(sp => `${sp.firstName} ${sp.lastName}`).join(', ')}. Conversion → project creation link may be broken.` };
@@ -115,7 +115,7 @@ export async function runDiagnostic(
     projects.forEach(p => {
       if (!p.contractValue) issues.push(`${p.customerName}: missing contract value`);
       if (!p.systemSize) issues.push(`${p.customerName}: missing system size`);
-      if (!p.financier) issues.push(`${p.customerName}: missing financier`);
+      if (!(p as any).financier) issues.push(`${p.customerName}: missing financier`);
     });
     if (projects.length === 0) return { status: 'skip', detail: 'No projects.' };
     if (issues.length === 0) return { status: 'pass', detail: `All ${projects.length} projects have complete data.` };
@@ -245,7 +245,7 @@ export async function runDiagnostic(
   }));
 
   zeusTests.push(runTest('z3', 'zeus', 'financier', 'Financier assignment', 'Every project should have a financier', () => {
-    const noFin = projects.filter(p => !p.financier);
+    const noFin = projects.filter(p => !(p as any).financier);
     if (projects.length === 0) return { status: 'skip', detail: 'No projects.' };
     if (noFin.length === 0) return { status: 'pass', detail: `All projects assigned to a financier.` };
     return { status: 'fail', detail: `${noFin.length} project(s) missing financier: ${noFin.map(p => p.customerName).join(', ')}` };
@@ -267,7 +267,7 @@ export async function runDiagnostic(
 
   apolloTests.push(runTest('ap2', 'apollo', 'cross', 'Sell project → Project sync', 'Converted sell projects should be linked to their project via sellProjectId', () => {
     const converted = sellProjects.filter(sp => sp.convertedToSale);
-    const linked = converted.filter(sp => projects.some(p => p.sellProjectId === sp.id));
+    const linked = converted.filter(sp => projects.some(p => ((p as any)._sellProjectId || (p as any).sellProjectId) === sp.id));
     if (converted.length === 0) return { status: 'skip', detail: 'No converted deals.' };
     if (linked.length === converted.length) return { status: 'pass', detail: `All ${converted.length} converted leads linked to projects via sellProjectId.` };
     return { status: 'warn', detail: `${converted.length - linked.length} converted lead(s) not linked by sellProjectId. Sync between portals may be inconsistent.` };
@@ -277,7 +277,7 @@ export async function runDiagnostic(
     const clean = sellProjects.filter(sp => sp.approvalStatus === 'clean');
     if (clean.length === 0) return { status: 'skip', detail: 'No QC-approved deals.' };
     const withProject = clean.filter(sp => projects.some(p =>
-      p.sellProjectId === sp.id || p.customerName === `${sp.firstName} ${sp.lastName}`
+      ((p as any)._sellProjectId || (p as any).sellProjectId) === sp.id || p.customerName === `${sp.firstName} ${sp.lastName}`
     ));
     if (withProject.length === clean.length) return { status: 'pass', detail: `All ${clean.length} clean deals have installer-accessible projects.` };
     return { status: 'warn', detail: `${clean.length - withProject.length} clean deal(s) without matching project. Installer won't see them.` };
