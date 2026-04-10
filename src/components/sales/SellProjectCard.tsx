@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SellProject } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -224,7 +225,12 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
 
   return (
     <>
-      <div className="bg-black/20 backdrop-blur-xl border border-white/[0.08] rounded-xl overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        whileHover={{ scale: 1.005, borderColor: 'rgba(255,255,255,0.12)' }}
+        className="bg-black/20 backdrop-blur-xl border border-white/[0.08] rounded-xl overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-shadow duration-500">
         <button
           onClick={() => setExpanded(!expanded)}
           className="w-full flex items-center gap-4 p-4 text-left hover:bg-white/[0.02] transition-colors"
@@ -267,7 +273,15 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
           <span className="text-white/30 text-sm">{expanded ? '▲' : '▼'}</span>
         </button>
 
+        <AnimatePresence>
         {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
           <div className="border-t border-white/[0.06] p-4 space-y-4">
             {/* Lifecycle state bar */}
             <ProjectLifecycleBar
@@ -524,8 +538,10 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
               <Trash2 className="w-3.5 h-3.5" /> Delete Project
             </button>
           </div>
+          </motion.div>
         )}
-      </div>
+        </AnimatePresence>
+      </motion.div>
 
       {/* Dialogs */}
       <ConvertToSaleDialog

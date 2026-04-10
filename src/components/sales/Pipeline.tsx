@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import type { Project } from '@/data/mockData';
@@ -92,9 +93,13 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
             const ms = store.getMilestoneState(p.id);
 
             return (
-              <div
+              <motion.div
                 key={p.id}
-                className="group relative bg-bg2 border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-[0_8px_32px_rgba(0,212,200,0.08),0_2px_8px_rgba(0,0,0,0.4)] hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out cursor-pointer card-press"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.05 * allProjects.indexOf(p), ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -4, scale: 1.01 }}
+                className="group relative bg-bg2 border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-[0_8px_32px_rgba(0,212,200,0.08),0_2px_8px_rgba(0,0,0,0.4)] transition-colors duration-300 ease-out cursor-pointer card-press"
                 onClick={() => setExpandedProject(expandedProject === p.id ? null : p.id)}
               >
                 {/* Glass reflection on hover */}
@@ -230,7 +235,7 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
