@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -15,7 +19,7 @@ Deno.serve(async (req) => {
   const SEED_USERS = [
     {
       email: "apierce@alphasale.co",
-      password: "ASP26!Temp",
+      password: "ASP-Admin-2026!",
       full_name: "Aidan Pierce",
       role: "master" as const,
       platform_access: ["sales_rep", "backend_ops", "installer", "financier"],

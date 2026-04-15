@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap, ArrowLeft } from 'lucide-react';
@@ -58,7 +59,7 @@ const Register = () => {
           </div>
           <h2 className="text-xl font-black text-white mb-2">Request Submitted</h2>
           <p className="text-gray-400 text-sm mb-6">Your registration request has been submitted. An admin will review and approve your access.</p>
-          <a href="/" className="text-primary text-sm font-bold hover:underline">← Back to Login</a>
+          <Link to="/" className="text-primary text-sm font-bold hover:underline">← Back to Login</Link>
         </div>
       </div>
     );
@@ -71,7 +72,7 @@ const Register = () => {
         style={{ background: 'hsl(222, 25%, 7%)', border: '1px solid hsl(222, 30%, 18%)', boxShadow: '0 24px 80px rgba(0,0,0,0.7)' }}>
         <div className="absolute top-0 left-[10%] right-[10%] h-px" style={{ background: 'linear-gradient(90deg, transparent, hsl(177, 100%, 41%), transparent)' }} />
 
-        <a href="/" className="flex items-center gap-1.5 text-gray-500 text-xs font-bold mb-6 hover:text-primary transition-colors">
+        <Link to="/" className="flex items-center gap-1.5 text-gray-500 text-xs font-bold mb-6 hover:text-primary transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
         </a>
 

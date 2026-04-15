@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth, UserRole, PortalMode } from '@/contexts/AuthContext';
 import { Crosshair, Settings, HardHat, Landmark, Zap, Mail, Lock, ArrowLeft } from 'lucide-react';
 
@@ -109,7 +110,7 @@ const Login = () => {
           </div>
 
           <div className="mt-6 text-center">
-            <a href="/register" className="text-primary text-xs font-bold hover:underline">Request Access →</a>
+            <Link to="/register" className="text-primary text-xs font-bold hover:underline">Request Access →</Link>
           </div>
         </div>
       </div>
@@ -170,7 +171,7 @@ const Login = () => {
           )}
 
           <div className="mt-4 text-center">
-            <a href="/forgot-password" className="text-gray-500 text-xs hover:text-primary transition-colors">Forgot Password?</a>
+            <Link to="/forgot-password" className="text-gray-500 text-xs hover:text-primary transition-colors">Forgot Password?</Link>
           </div>
         </div>
       </div>
