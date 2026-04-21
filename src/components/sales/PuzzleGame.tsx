@@ -12,7 +12,7 @@ const PuzzleGame = () => {
   // Demo state
   const [demoPieces, setDemoPieces] = useState([false, false, false, false]);
   const [timeLeft, setTimeLeft] = useState(() => getSecondsUntilReset());
-  const [currentGiftIndex] = useState(Math.floor(Math.random() * PUZZLE_GIFTS.length));
+  const [currentGiftIndex] = useState(() => Math.floor(Math.random() * PUZZLE_GIFTS.length));
 
   useEffect(() => {
     if (isDemo) setDemoPieces([true, true, false, false]);
