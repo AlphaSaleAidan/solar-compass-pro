@@ -31,7 +31,7 @@ const ForgotPassword = () => {
         style={{ background: 'hsl(222, 25%, 7%)', border: '1px solid hsl(222, 30%, 18%)' }}>
         <Link to="/" className="flex items-center gap-1.5 text-gray-500 text-xs font-bold mb-6 hover:text-primary transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
-        </a>
+        </Link>
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2.5">
             <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
