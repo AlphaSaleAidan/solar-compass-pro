@@ -37,7 +37,7 @@ const MilestoneVerification = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!pendingUpload || !e.target.files?.length) return;
     const file = e.target.files[0];
-    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, file.name);
+    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, file.name, file);
     setPendingUpload(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
