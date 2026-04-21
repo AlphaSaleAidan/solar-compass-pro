@@ -71,16 +71,19 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
         }
 
         toast.info('Aurora sync initiated — checking for project data...');
-        
-        const auroraData = {
-          systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
-          battery: 'Duracell 20kW',
-          financier: ['GoodLeap', 'Sunlight Financial', 'Mosaic'][Math.floor(Math.random() * 3)],
-          monthlyPayment: `$${(160 + Math.random() * 80).toFixed(0)}`,
-          adders: ['Battery ($8,500)', 'Critter Guard ($800)'],
-        };
-        onUpdateProject({ ...project, auroraSynced: true, auroraData });
-        toast.success('Aurora data synced successfully');
+
+        try {
+          const { data: fnData, error: fnError } = await supabase.functions.invoke('aurora-sync', {
+            body: { aurora_project_id: project.id, aurora_email: profile.aurora_email }
+          });
+          if (fnError) throw fnError;
+          const resolved = resolveAuroraData(fnData);
+          onUpdateProject({ ...project, auroraSynced: true, auroraData: resolved });
+          toast.success('Aurora data synced successfully');
+        } catch {
+          toast.warning('Aurora API not yet connected — data will populate once integration is live');
+          onUpdateProject({ ...project, auroraSynced: false });
+        }
       } catch (err) {
         setSyncFailed(true);
         toast.error('Sync Failed — account not found in Aurora');
