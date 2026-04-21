@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap } from 'lucide-react';
@@ -55,7 +56,7 @@ const ResetPassword = () => {
         {success ? (
           <div className="text-center">
             <p className="text-primary text-sm font-bold mb-4">Password updated successfully!</p>
-            <a href="/" className="text-gray-400 text-xs hover:text-primary">← Back to Login</a>
+            <Link to="/" className="text-gray-400 text-xs hover:text-primary">← Back to Login</Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SellProject } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGamification } from '@/hooks/useGamification';
 import { supabase } from '@/integrations/supabase/client';
 import { validateWelcomeCall, getPreSubmissionChecklist, type WelcomeCallAnswers, type WelcomeCallFlag } from '@/data/sopEngine';
 import ConvertToSaleDialog from './ConvertToSaleDialog';
@@ -26,6 +27,7 @@ const statusStyles: Record<string, { bg: string; text: string; label: string }> 
 
 const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjectCardProps) => {
   const { user } = useAuth();
+  const gamification = useGamification();
   const [expanded, setExpanded] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
   const [showSiteSurvey, setShowSiteSurvey] = useState(false);
@@ -99,7 +101,7 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
     onUpdateProject({ ...project, auroraSynced: true, auroraData });
   };
 
-  const handleConvertConfirm = () => {
+  const handleConvertConfirm = async () => {
     // Convert to Sale → sends to Action ASAP QC Review
     onUpdateProject({
       ...project,
@@ -108,7 +110,19 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
       approvalStatus: 'pending', // Goes to QC Review (Action ASAP)
       checklist: { ...project.checklist, creditPassed: true },
     });
-    toast.success('Deal sent to Backend Ops for QC Review');
+
+    // Award gamification tickets for the deal conversion
+    try {
+      const result = await gamification.recordDeal();
+      if (result.prizeWon) {
+        toast.success(`🎉 Deal converted! You earned ${result.boostedTickets} tickets AND won a ${result.prizeWon.name}!`);
+      } else {
+        toast.success(`Deal sent to Backend Ops for QC Review (+${result.boostedTickets} tickets)`);
+      }
+    } catch {
+      // Gamification failure shouldn't block deal conversion
+      toast.success('Deal sent to Backend Ops for QC Review');
+    }
   };
 
   const handleWelcomeCallComplete = (answers: WelcomeCallAnswer[]) => {

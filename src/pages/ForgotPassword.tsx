@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap, ArrowLeft } from 'lucide-react';
@@ -28,7 +29,7 @@ const ForgotPassword = () => {
       style={{ background: 'radial-gradient(ellipse at 30% 20%, rgba(0,212,200,0.06) 0%, transparent 60%), hsl(220, 30%, 4%)' }}>
       <div className="w-[480px] max-w-[95vw] rounded-2xl p-12"
         style={{ background: 'hsl(222, 25%, 7%)', border: '1px solid hsl(222, 30%, 18%)' }}>
-        <a href="/" className="flex items-center gap-1.5 text-gray-500 text-xs font-bold mb-6 hover:text-primary transition-colors">
+        <Link to="/" className="flex items-center gap-1.5 text-gray-500 text-xs font-bold mb-6 hover:text-primary transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
         </a>
         <div className="text-center mb-8">
