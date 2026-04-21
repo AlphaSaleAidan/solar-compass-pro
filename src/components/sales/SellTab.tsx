@@ -134,14 +134,14 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
     credit_fail: sellProjects.filter(p => p.creditStatus === 'credit_fail').length,
   };
 
-  // Sold deals data (simulated from credit_passed projects)
+  // Sold deals data — show real values when available, placeholder when pending Aurora sync
   const soldDeals = sellProjects.filter(p => p.creditStatus === 'credit_passed').map(p => ({
     ...p,
-    systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
-    ppw: (4.0 + Math.random() * 0.5).toFixed(2),
-    financier: ['GoodLeap', 'Sunlight Financial', 'Mosaic'][Math.floor(Math.random() * 3)],
-    battery: 'Duracell 20kW',
-    terms: '25 year @ 2.99%',
+    systemSize: p.systemSize || 'Pending Aurora sync',
+    ppw: p.ppw || '—',
+    financier: p.financier || 'Not assigned',
+    battery: p.battery || '—',
+    terms: p.terms || '—',
   }));
 
   return (
