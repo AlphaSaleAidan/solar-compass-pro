@@ -344,10 +344,30 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     }));
   }, [milestoneStates, projects]);
 
-  const uploadFile = useCallback(async (projectId: string, checklistItemId: string, fileName: string) => {
+  const uploadFile = useCallback(async (projectId: string, checklistItemId: string, fileName: string, file?: File) => {
     const dbId = getDbId(projectId);
     const state = milestoneStates[projectId] || createDefaultMilestoneState();
-    const newUploads = { ...state.uploads, [checklistItemId]: [...(state.uploads[checklistItemId] || []), fileName] };
+
+    // If a real File object is provided, upload to Supabase Storage first
+    let uploadRef = fileName;
+    if (file) {
+      try {
+        const timestamp = Date.now();
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const storagePath = `${dbId}/${checklistItemId}/${timestamp}-${safeName}`;
+        const { data, error } = await supabase.storage
+          .from('milestone-docs')
+          .upload(storagePath, file, { upsert: true });
+        if (!error && data) {
+          const { data: urlData } = supabase.storage.from('milestone-docs').getPublicUrl(data.path);
+          uploadRef = urlData.publicUrl;
+        }
+      } catch (err) {
+        console.warn('Storage upload failed, saving filename only:', err);
+      }
+    }
+
+    const newUploads = { ...state.uploads, [checklistItemId]: [...(state.uploads[checklistItemId] || []), uploadRef] };
     const newChecklist = { ...state.checklistDone, [checklistItemId]: true };
 
     const milestoneIndex = MILESTONE_SOPS.findIndex(sop => sop.checklist.some(c => c.id === checklistItemId));
