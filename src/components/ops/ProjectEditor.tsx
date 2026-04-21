@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { PROJECTS } from '@/data/mockData';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { Save, RotateCcw, ChevronDown, ChevronRight, Pencil, UserPlus, Eye, Link2, CheckCircle, FileText, Send, AlertTriangle } from 'lucide-react';
 
 const ProjectEditor = () => {
+  const store = useDataSource();
+  const PROJECTS = store.projects;
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [editedFields, setEditedFields] = useState<Record<string, Record<string, string>>>({});
   const [auroraAccounts, setAuroraAccounts] = useState<Record<string, { email: string; status: string }>>({});
