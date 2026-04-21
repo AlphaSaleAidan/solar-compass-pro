@@ -70,10 +70,10 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
     no_sit: 'No Sit',
   };
 
-  // Full month calendar - get all dates for March 2026
-  const currentMonth = new Date(2026, 2, 1); // March 2026
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
+  // Full month calendar - dynamic current month
+  const [viewDate, setViewDate] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); });
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
   const monthDays = Array.from({ length: daysInMonth }, (_, i) => {
@@ -304,9 +304,22 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
 
       {/* Full Month Calendar View */}
       <div className="bg-bg2 border border-border rounded-xl p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-black text-foreground">March 2026 Calendar</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-black text-foreground">{viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Calendar</h3>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setViewDate(new Date(year, month - 1, 1))} className="p-1.5 rounded-md hover:bg-bg3 text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronUp className="w-4 h-4 rotate-[-90deg]" />
+            </button>
+            <button onClick={() => setViewDate(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })} className="px-2 py-1 text-[10px] font-bold text-primary hover:bg-primary/10 rounded-md transition-colors">
+              Today
+            </button>
+            <button onClick={() => setViewDate(new Date(year, month + 1, 1))} className="p-1.5 rounded-md hover:bg-bg3 text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
+            </button>
+          </div>
         </div>
         
         {/* Week headers */}
@@ -324,7 +337,8 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
           ))}
           
           {monthDays.map(({ day, dateStr, appts: dayAppts }) => {
-            const isToday = dateStr === '2026-03-28';
+            const todayStr = new Date().toISOString().split('T')[0];
+            const isToday = dateStr === todayStr;
             return (
               <div
                 key={day}
