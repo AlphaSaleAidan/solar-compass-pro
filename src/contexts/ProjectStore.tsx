@@ -65,7 +65,7 @@ interface ProjectStoreState {
 interface ProjectStoreActions {
   acceptDeal: (projectId: string, updatedUsage?: number) => void;
   toggleChecklist: (projectId: string, checklistItemId: string, done: boolean) => void;
-  uploadFile: (projectId: string, checklistItemId: string, fileName: string) => void;
+  uploadFile: (projectId: string, checklistItemId: string, fileName: string, file?: File) => void;
   setTextEntry: (projectId: string, checklistItemId: string, text: string) => void;
   setDateEntry: (projectId: string, checklistItemId: string, date: string) => void;
   approveMilestone: (projectId: string, milestoneIndex: number) => void;
@@ -205,7 +205,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [updateMilestoneState]);
 
-  const uploadFile = useCallback((projectId: string, checklistItemId: string, fileName: string) => {
+  const uploadFile = useCallback((projectId: string, checklistItemId: string, fileName: string, _file?: File) => {
     updateMilestoneState(projectId, prev => ({
       ...prev,
       uploads: {
