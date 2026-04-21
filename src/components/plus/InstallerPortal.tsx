@@ -79,7 +79,7 @@ const InstallerPortal = () => {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!pendingUpload || !e.target.files?.length) return;
-    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, e.target.files[0].name);
+    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, e.target.files[0].name, e.target.files[0]);
     setPendingUpload(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
