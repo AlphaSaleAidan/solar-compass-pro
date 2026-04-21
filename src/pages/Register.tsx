@@ -74,7 +74,7 @@ const Register = () => {
 
         <Link to="/" className="flex items-center gap-1.5 text-gray-500 text-xs font-bold mb-6 hover:text-primary transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
-        </a>
+        </Link>
 
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2.5">
