@@ -10,7 +10,7 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import { Trash2, AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useDataSource } from '@/contexts/DataSourceProvider';
 import { toast } from '@/hooks/use-toast';
 
 interface DeleteProjectDialogProps {
@@ -35,6 +35,7 @@ const DeleteProjectDialog = ({
 }: DeleteProjectDialogProps) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [deleting, setDeleting] = useState(false);
+  const store = useDataSource();
 
   const handleClose = (val: boolean) => {
     if (!val) setStep(1);
@@ -48,29 +49,12 @@ const DeleteProjectDialog = ({
   const handleFinalDelete = async () => {
     setDeleting(true);
     try {
+      // Use the unified store which handles both demo (in-memory) and production (Supabase) modes.
+      // The DataSourceProvider routes to the correct implementation automatically.
       if (projectType === 'project') {
-        // Delete related records first
-        const tables = [
-          'milestone_states',
-          'project_milestones',
-          'project_messages',
-          'project_documents',
-          'project_checklist_items',
-          'project_activity_log',
-          'financier_updates',
-          'site_surveys',
-          'fund_releases',
-        ] as const;
-
-        for (const table of tables) {
-          await supabase.from(table).delete().eq('project_id', projectId);
-        }
-
-        const { error } = await supabase.from('projects').delete().eq('id', projectId);
-        if (error) throw error;
+        await Promise.resolve(store.deleteProject(projectId));
       } else {
-        const { error } = await supabase.from('sell_projects').delete().eq('id', projectId);
-        if (error) throw error;
+        await Promise.resolve(store.deleteSellProject(projectId));
       }
 
       toast({
@@ -80,9 +64,10 @@ const DeleteProjectDialog = ({
       onDeleted?.();
       handleClose(false);
     } catch (err: any) {
+      console.error('Delete project error:', err);
       toast({
         title: 'Delete Failed',
-        description: err.message || 'Could not delete the project.',
+        description: err?.message || 'Could not delete the project.',
         variant: 'destructive',
       });
     } finally {
