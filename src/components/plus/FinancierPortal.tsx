@@ -53,7 +53,7 @@ const FinancierPortal = () => {
 
   const totalPortfolioContract = projects.reduce((s, p) => s + p.contractValue, 0);
   const totalSystemCost = projects.reduce((s, p) => s + p.projectCost, 0);
-  const totalFunded = projects.reduce((s, p) => s + Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones)), 0);
+  const totalFunded = projects.reduce((s, p) => s + Math.round(p.projectCost * ((p.currentMilestone || 0) / (p.totalMilestones || 7))), 0);
 
   const selectedProjectData = selectedProject ? projects.find(p => p.id === selectedProject) : null;
 
@@ -69,7 +69,7 @@ const FinancierPortal = () => {
     if (!selectedProjectData) return null;
     const p = selectedProjectData;
     const ms = store.getMilestoneState(p.id);
-    const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+    const funded = Math.round(p.projectCost * ((p.currentMilestone || 0) / (p.totalMilestones || 7)));
     const offset = Math.round((parseFloat(p.systemSize || '0') * 1350 / (p.annualUsage || 1)) * 100);
 
     const installerReview = ms.textEntries['m4-installer-review'];
@@ -187,7 +187,7 @@ const FinancierPortal = () => {
             <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
               {MILESTONE_SOPS.map((sop, i) => {
                 const isPassed = i < (p.currentMilestone || 0);
-                const isCurrent = i === p.currentMilestone;
+                const isCurrent = i === (p.currentMilestone || 0);
                 const fundSt = ms.fundStatus[i] || 'none';
                 const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
                 return (
@@ -399,7 +399,7 @@ const FinancierPortal = () => {
               </div>
               {projects.filter(p => p.status !== 'completed').slice(0, 5).map(p => {
                 const ms = store.getMilestoneState(p.id);
-                const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+                const funded = Math.round(p.projectCost * ((p.currentMilestone || 0) / (p.totalMilestones || 7)));
                 const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
                 return (
                   <div key={p.id} className="px-5 py-4 border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedProject(p.id)}>
@@ -768,7 +768,7 @@ const FinancierPortal = () => {
             {portfolioProjects.map(p => {
               const isExpanded = expandedProject === p.id;
               const ms = store.getMilestoneState(p.id);
-              const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+              const funded = Math.round(p.projectCost * ((p.currentMilestone || 0) / (p.totalMilestones || 7)));
               const offset = Math.round((parseFloat(p.systemSize || '0') * 1350 / (p.annualUsage || 1)) * 100);
               const isFlagged = flaggedProjects.has(p.id);
 
@@ -800,7 +800,7 @@ const FinancierPortal = () => {
                                 ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/20 text-[hsl(var(--green))]' :
                                   fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/20 text-[hsl(var(--yellow))]' :
                                   'bg-primary text-primary-foreground'
-                                : i === p.currentMilestone ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]'
+                                : i === (p.currentMilestone || 0) ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]'
                                 : 'bg-muted text-muted-foreground'
                             }`}>M{i + 1}</div>
                           );
