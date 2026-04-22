@@ -51,7 +51,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
   const [pendingUpload, setPendingUpload] = useState<{ projectId: string; itemId: string } | null>(null);
 
   const getOffsetPercent = (p: Project) => {
-    const systemKw = parseFloat(p.systemSize);
+    const systemKw = parseFloat(p.systemSize || '0');
     const annualProduction = systemKw * 1350;
     return Math.round((annualProduction / p.annualUsage) * 100);
   };
@@ -130,7 +130,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                 {/* Progress bar */}
                 <div className="flex gap-px h-1">
                   {Array.from({ length: p.totalMilestones }).map((_, i) => (
-                    <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : i === p.currentMilestone ? 'bg-primary/40' : 'bg-border'}`} />
+                    <div key={i} className={`flex-1 ${i < (p.currentMilestone || 0) ? 'bg-primary' : i === (p.currentMilestone || 0) ? 'bg-primary/40' : 'bg-border'}`} />
                   ))}
                 </div>
 
@@ -159,11 +159,11 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                           <Tooltip key={i}>
                             <TooltipTrigger asChild>
                               <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold cursor-help ${
-                                i < p.currentMilestone
+                                i < (p.currentMilestone || 0)
                                   ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/15 text-[hsl(var(--green))]' :
                                     fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' :
                                     'bg-primary/15 text-primary'
-                                  : i === p.currentMilestone ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' :
+                                  : i === (p.currentMilestone || 0) ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' :
                                   'bg-[hsl(var(--bg3))] text-muted-foreground'
                               }`}>
                                 M{i + 1}
@@ -228,8 +228,8 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                       <div>
                         <div className="divide-y divide-border">
                           {MILESTONE_SOPS.map((sop, milestoneIdx) => {
-                            const isPassed = milestoneIdx < p.currentMilestone;
-                            const isCurrent = milestoneIdx === p.currentMilestone;
+                            const isPassed = milestoneIdx < (p.currentMilestone || 0);
+                            const isCurrent = milestoneIdx === (p.currentMilestone || 0);
                             const isExpandedM = expandedMilestone?.projectId === p.id && expandedMilestone?.idx === milestoneIdx;
                             const fundSt = milestoneState.fundStatus[milestoneIdx] || 'none';
                             const allReady = store.isMilestoneReady(p.id, milestoneIdx);
