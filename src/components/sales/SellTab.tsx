@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { INSTALLED_HOMES, type SellProject, type CreditStatus } from '@/data/mockData';
 import { useDataSource } from '@/contexts/DataSourceProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { useGooglePlaces } from '@/hooks/useGooglePlaces';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import InstalledHomesMap from '@/components/sales/InstalledHomesMap';
@@ -12,11 +13,29 @@ interface SellTabProps {
 }
 
 const SellTab = ({ initialProjectData }: SellTabProps) => {
-  const { sellProjects, updateSellProject, addSellProject } = useDataSource();
+  const { sellProjects, updateSellProject, addSellProject, projects } = useDataSource();
+  const { user } = useAuth();
   const [activeSubTab, setActiveSubTab] = useState<'create' | 'projects'>('create');
   const [projectFilter, setProjectFilter] = useState<CreditStatus | 'all'>('all');
   const [address, setAddress] = useState('');
   const [showMap, setShowMap] = useState(false);
+
+  // Installed homes: use real project data for production, mock for demo
+  const installedHomes = useMemo(() => {
+    if (user?.isDemo) return INSTALLED_HOMES;
+    const installed = (projects || []).filter((p: any) =>
+      p.stage === 'installed' || p.status === 'installed' || p.currentMilestone >= 12
+    );
+    if (installed.length === 0) return INSTALLED_HOMES; // Fallback if no installs yet
+    return installed.map((p: any) => ({
+      lat: p.lat || 29.76 + (Math.random() - 0.5) * 0.1,
+      lng: p.lng || -95.37 + (Math.random() - 0.5) * 0.1,
+      address: p.address || p.customerName || 'Unknown',
+      customer: p.customerName || 'Customer',
+      systemSize: p.systemSize ? `${p.systemSize} kW` : 'N/A',
+      installDate: p.completedAt || p.createdAt || new Date().toISOString().split('T')[0],
+    }));
+  }, [user, projects]);
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -185,7 +204,7 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
             <DialogHeader>
               <DialogTitle className="text-white font-black flex items-center gap-2"><Map className="w-4 h-4" /> Installed Homes Map</DialogTitle>
             </DialogHeader>
-            {showMap && <InstalledHomesMap homes={INSTALLED_HOMES} />}
+            {showMap && <InstalledHomesMap homes={installedHomes} />}
           </DialogContent>
         </Dialog>
         <button
