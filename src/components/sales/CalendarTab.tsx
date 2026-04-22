@@ -1,59 +1,172 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { APPOINTMENTS } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, MessageSquare, ArrowRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, MessageSquare, ArrowRight, Loader2 } from 'lucide-react';
 
 interface CalendarTabProps {
   onConvertToProject?: (data: { name: string; email: string; phone: string; address: string }) => void;
+}
+
+interface AppointmentItem {
+  id: number | string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  date: string;
+  time: string;
+  highBill: number;
+  lowBill: number;
+  allElectric: boolean;
+  stars: number;
+  setter: string;
+  closer: string | null;
+  status: string;
+  gotBill: boolean;
+  gotContact: boolean;
+  bothHomeowners: boolean;
+  meterPhoto: boolean;
+  billOver250: boolean;
+  outcome: string | null;
+  closerNotes: string;
+  billPhoto: string | null;
+  meterPhotoUrl: string | null;
+  surveyPhotos: string[];
+}
+
+// Map Supabase row to local appointment shape
+function mapRow(row: any): AppointmentItem {
+  return {
+    id: row.id,
+    name: row.customer_name,
+    address: row.address,
+    phone: row.phone || '',
+    email: row.email || '',
+    date: row.appointment_date,
+    time: row.appointment_time,
+    highBill: Number(row.high_bill) || 0,
+    lowBill: Number(row.low_bill) || 0,
+    allElectric: row.all_electric ?? false,
+    stars: row.stars || 0,
+    setter: row.setter || 'You',
+    closer: row.closer,
+    status: row.status || 'open',
+    gotBill: (Number(row.high_bill) || 0) > 0,
+    gotContact: !!(row.phone && row.email),
+    bothHomeowners: false,
+    meterPhoto: false,
+    billOver250: (Number(row.high_bill) || 0) > 250,
+    outcome: row.outcome,
+    closerNotes: row.closer_notes || '',
+    billPhoto: null,
+    meterPhotoUrl: null,
+    surveyPhotos: [],
+  };
 }
 
 const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
   const { user } = useAuth();
   const isDemo = user?.isDemo;
   const [showNewAppt, setShowNewAppt] = useState(false);
-  const [expandedAppt, setExpandedAppt] = useState<number | null>(null);
+  const [expandedAppt, setExpandedAppt] = useState<number | string | null>(null);
   const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
-  const [appointments, setAppointments] = useState(isDemo ? APPOINTMENTS : []);
+  const [appointments, setAppointments] = useState<AppointmentItem[]>(isDemo ? APPOINTMENTS : []);
+  const [loading, setLoading] = useState(!isDemo);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Fetch appointments from Supabase for production users
+  const fetchAppointments = useCallback(async () => {
+    if (isDemo || !user?.id) return;
+    const { data } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('rep_id', user.id)
+      .order('appointment_date', { ascending: false });
+    if (data) setAppointments(data.map(mapRow));
+    setLoading(false);
+  }, [isDemo, user?.id]);
+
+  useEffect(() => {
+    fetchAppointments();
+
+    if (isDemo || !user?.id) return;
+    // Real-time subscription
+    const channel = supabase
+      .channel('calendar-appointments')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
+        fetchAppointments();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchAppointments, isDemo, user?.id]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newAppt = {
-      id: Date.now(),
-      name: form.name,
-      address: form.address,
-      phone: form.phone,
-      email: form.email,
-      date: form.date,
-      time: form.time,
-      highBill: Number(form.highBill) || 0,
-      lowBill: Number(form.lowBill) || 0,
-      allElectric: form.allElectric === 'yes',
-      stars: 0,
-      setter: 'You',
-      closer: null as string | null,
-      status: 'open',
-      gotBill: false,
-      gotContact: !!(form.phone && form.email),
-      bothHomeowners: false,
-      meterPhoto: false,
-      billOver250: Number(form.highBill) > 250,
-      outcome: null as string | null,
-      closerNotes: '',
-      billPhoto: null as string | null,
-      meterPhotoUrl: null as string | null,
-      surveyPhotos: [] as string[],
-    };
-    setAppointments(prev => [newAppt, ...prev]);
+    if (!isDemo && user?.id) {
+      // Insert into Supabase
+      const { data, error } = await supabase.from('appointments').insert({
+        customer_name: form.name,
+        address: form.address,
+        phone: form.phone,
+        email: form.email,
+        appointment_date: form.date,
+        appointment_time: form.time,
+        high_bill: Number(form.highBill) || 0,
+        low_bill: Number(form.lowBill) || 0,
+        all_electric: form.allElectric === 'yes',
+        stars: 0,
+        setter: user.name || 'You',
+        rep_id: user.id,
+        status: 'open',
+      }).select().single();
+
+      if (data) {
+        setAppointments(prev => [mapRow(data), ...prev]);
+      }
+    } else {
+      // Demo mode — local state only
+      const newAppt: AppointmentItem = {
+        id: Date.now(),
+        name: form.name,
+        address: form.address,
+        phone: form.phone,
+        email: form.email,
+        date: form.date,
+        time: form.time,
+        highBill: Number(form.highBill) || 0,
+        lowBill: Number(form.lowBill) || 0,
+        allElectric: form.allElectric === 'yes',
+        stars: 0,
+        setter: 'You',
+        closer: null,
+        status: 'open',
+        gotBill: false,
+        gotContact: !!(form.phone && form.email),
+        bothHomeowners: false,
+        meterPhoto: false,
+        billOver250: Number(form.highBill) > 250,
+        outcome: null,
+        closerNotes: '',
+        billPhoto: null,
+        meterPhotoUrl: null,
+        surveyPhotos: [],
+      };
+      setAppointments(prev => [newAppt, ...prev]);
+    }
     setShowNewAppt(false);
     setForm({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
   };
 
-  const getStarCount = (appt: typeof APPOINTMENTS[0]) => {
+  const getStarCount = (appt: AppointmentItem) => {
+    if (typeof appt.stars === 'number' && appt.stars > 0) return appt.stars;
     return [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250].filter(Boolean).length;
   };
 
-  const setOutcome = (apptId: number, outcome: string) => {
+  const setOutcome = async (apptId: number | string, outcome: string) => {
     setAppointments(prev => prev.map(a => a.id === apptId ? { ...a, outcome } : a));
+    if (!isDemo) {
+      await supabase.from('appointments').update({ outcome }).eq('id', apptId);
+    }
   };
 
   const outcomeColors: Record<string, string> = {
@@ -84,12 +197,25 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-black text-foreground">Appointment Calendar</h2>
+          {!isDemo && (
+            <span className="ml-2 text-[10px] text-muted-foreground font-medium bg-primary/10 px-2 py-0.5 rounded-full">
+              🔴 LIVE
+            </span>
+          )}
         </div>
         <button
           onClick={() => setShowNewAppt(!showNewAppt)}
@@ -143,6 +269,15 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
               Submit Appointment →
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Empty state for production */}
+      {!isDemo && appointments.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <Calendar className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm font-medium">No appointments yet</p>
+          <p className="text-xs mt-1">Click "New Appointment" to set your first one</p>
         </div>
       )}
 
