@@ -23,7 +23,7 @@ const MilestoneVerification = () => {
   // A project appears here when non-ops actors have completed their checklist items for the current milestone
   const activeProjects = projects.filter(p => {
     if (p.currentMilestone >= 7) return false;
-    const sop = MILESTONE_SOPS[p.currentMilestone];
+    const sop = MILESTONE_SOPS[p.currentMilestone || 0];
     if (!sop) return false;
     const state = store.getMilestoneState(p.id);
     // Check if all non-ops checklist items are done (installer/sales_rep have submitted their parts)
@@ -33,7 +33,7 @@ const MilestoneVerification = () => {
   });
 
   const getOffsetPercent = (p: typeof projects[0]) => {
-    const systemKw = parseFloat(p.systemSize);
+    const systemKw = parseFloat(p.systemSize || '0');
     const annualProduction = systemKw * 1350;
     return Math.round((annualProduction / p.annualUsage) * 100);
   };
@@ -115,11 +115,11 @@ const MilestoneVerification = () => {
                         <div
                           key={i}
                           className={`w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
-                            i < p.currentMilestone
+                            i < (p.currentMilestone || 0)
                               ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/15 text-[hsl(var(--green))]' :
                                 fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' :
                                 'bg-primary/15 text-primary'
-                              : i === p.currentMilestone ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' :
+                              : i === (p.currentMilestone || 0) ? 'bg-[hsl(var(--yellow))]/15 text-[hsl(var(--yellow))]' :
                               'bg-[hsl(var(--bg3))] text-muted-foreground'
                           }`}
                         >
@@ -158,8 +158,8 @@ const MilestoneVerification = () => {
                   {/* Milestone SOP Rows */}
                   <div className="divide-y divide-border">
                     {MILESTONE_SOPS.map((sop, milestoneIdx) => {
-                      const isPassed = milestoneIdx < p.currentMilestone;
-                      const isCurrent = milestoneIdx === p.currentMilestone;
+                      const isPassed = milestoneIdx < (p.currentMilestone || 0);
+                      const isCurrent = milestoneIdx === (p.currentMilestone || 0);
                       const isExpandedM = expandedMilestone?.projectId === p.id && expandedMilestone?.idx === milestoneIdx;
                       const fundSt = milestoneState.fundStatus[milestoneIdx] || 'none';
                       const allReady = store.isMilestoneReady(p.id, milestoneIdx);
