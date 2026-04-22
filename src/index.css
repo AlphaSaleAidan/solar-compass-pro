@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Nunito+Sans:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --font-main: 'Nunito', sans-serif;
+    --font-main: 'Inter', sans-serif;
 
     /* ASP Dark Theme (default - Sales Rep / Backend Ops) */
     --background: 220 30% 4%;
@@ -278,4 +278,650 @@
   height: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  PORTAL SLEEKNESS — Global card + interaction polish                   */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+/* Smooth hover lift for all portal cards */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Skeleton loading shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--bg3)) 25%,
+    hsl(var(--bg4)) 50%,
+    hsl(var(--bg3)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.asp-plus .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(210 20% 96%) 25%,
+    hsl(210 15% 93%) 50%,
+    hsl(210 20% 96%) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Portal card hover glow */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 200, 0); }
+  50% { box-shadow: 0 0 20px 2px rgba(0, 212, 200, 0.06); }
+}
+
+/* Smooth entrance for portal sections */
+@keyframes portal-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.portal-section-enter {
+  animation: portal-section-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.portal-section-enter.stagger-1 { animation-delay: 50ms; }
+.portal-section-enter.stagger-2 { animation-delay: 100ms; }
+.portal-section-enter.stagger-3 { animation-delay: 150ms; }
+.portal-section-enter.stagger-4 { animation-delay: 200ms; }
+.portal-section-enter.stagger-5 { animation-delay: 250ms; }
+.portal-section-enter.stagger-6 { animation-delay: 300ms; }
+
+/* Improved focus ring for interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Smooth body scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Global card hover effects */
+.bg-card,
+.bg-bg2,
+.bg-muted,
+[class*="bg-[hsl(var(--bg2))]"],
+[class*="bg-[hsl(var(--card))]"] {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Floating modal backdrop animation */
+@keyframes modal-backdrop-in {
+  from { background-color: rgba(0, 0, 0, 0); }
+  to { background-color: rgba(0, 0, 0, 0.6); }
+}
+
+@keyframes modal-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.modal-backdrop-enter {
+  animation: modal-backdrop-in 0.3s ease forwards;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content-enter {
+  animation: modal-content-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Number counter animation utility */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.count-up {
+  animation: count-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Subtle hover lift for interactive stat cards */
+.stat-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px hsl(var(--border));
+}
+
+.asp-plus .stat-card-hover:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), 0 0 0 1px hsl(var(--border));
+}
+
+/* Toast notification enhancement */
+[data-sonner-toast] {
+  font-family: var(--font-main) !important;
+}
+
+/* Progress bar animation */
+@keyframes progress-fill {
+  from { width: 0; }
+}
+
+.progress-animate {
+  animation: progress-fill 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  CINEMATIC PORTAL — Premium glassmorphism + glow + depth               */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+/* Glass panel base — used on all portal cards */
+.glass-panel {
+  background: rgba(10, 14, 24, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 16px;
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glass-panel:hover {
+  background: rgba(10, 14, 24, 0.75);
+  border-color: rgba(0, 212, 200, 0.15);
+  box-shadow:
+    0 0 40px rgba(0, 212, 200, 0.06),
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
+
+.glass-panel:focus-within {
+  border-color: rgba(0, 212, 200, 0.2);
+  box-shadow: 0 0 0 2px rgba(0, 212, 200, 0.1);
+}
+
+.asp-plus .glass-panel {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.asp-plus .glass-panel:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 212, 200, 0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+}
+
+.asp-plus .glass-panel:focus-within {
+  border-color: rgba(0, 212, 200, 0.3);
+  box-shadow: 0 0 0 2px rgba(0, 212, 200, 0.12);
+}
+
+/* Stat card glow variant */
+.stat-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(0, 212, 200, 0.15), transparent 40%, transparent 60%, rgba(56, 189, 248, 0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.stat-glow:hover::before {
+  opacity: 1;
+}
+
+/* Animated gradient border for featured cards */
+@keyframes gradient-rotate {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+
+.gradient-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-border::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--angle, 0deg), transparent 40%, rgba(0, 212, 200, 0.3), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: gradient-rotate 4s linear infinite;
+  pointer-events: none;
+}
+
+/* Glowing CTA button effect */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, rgba(0, 212, 200, 0.4), rgba(56, 189, 248, 0.2));
+  border-radius: inherit;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.btn-glow:hover::before {
+  opacity: 1;
+}
+
+/* Portal section header styles */
+.portal-heading {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  background: linear-gradient(135deg, #fff 30%, rgba(0, 212, 200, 0.7));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.asp-plus .portal-heading {
+  background: linear-gradient(135deg, #111 30%, rgba(0, 180, 169, 0.8));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Smooth section reveal on scroll */
+.reveal-section {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tab pill animation upgrade */
+@keyframes tab-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 200, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(0, 212, 200, 0.15); }
+}
+
+/* Micro-interaction: ripple on click */
+@keyframes ripple-out {
+  0% { transform: scale(0); opacity: 0.3; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Card press — scale down on mousedown, lift on hover */
+.card-press {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+}
+.card-press:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 0 0 1px hsl(var(--border));
+}
+.card-press:active {
+  transform: scale(0.985) translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.asp-plus .card-press:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+}
+.asp-plus .card-press:active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+/* Tab content crossfade — smoother than abrupt swap */
+@keyframes tab-content-in {
+  from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.tab-content-enter {
+  animation: tab-content-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Shimmer loading placeholder */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--bg3)) 50%, hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  PORTAL LAYOUT — Cinematic spacing and grid                            */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Number display - oversized, bold, Inter */
+.metric-display {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Subtle line separator with glow */
+.glow-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 200, 0.15), transparent);
+  border: none;
+  margin: 24px 0;
+}
+
+.asp-plus .glow-divider {
+  background: linear-gradient(90deg, transparent, rgba(0, 180, 169, 0.12), transparent);
+}
+
+/* Celebration animation keyframes */
+@keyframes celebration-fall {
+  0% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+  100% { opacity: 0; transform: translateY(120px) rotate(720deg) scale(0.3); }
+}
+
+@keyframes celebration-glow {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(3); }
+}
+
+/* ─── Premium glass card system ─────────────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.glass-card-interactive {
+  cursor: pointer;
+}
+
+.glass-card-interactive:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 212, 200, 0.1), 0 0 60px rgba(0, 212, 200, 0.03);
+}
+
+.glass-card-interactive:active {
+  transform: scale(0.995) translateY(0);
+  transition-duration: 0.1s;
+}
+
+/* Smooth micro-interactions for all buttons */
+.btn-press {
+  transition: all 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-press:hover {
+  transform: translateY(-1px);
+}
+
+.btn-press:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.05s;
+}
+
+/* Animated number counter for KPI values */
+.number-animate {
+  display: inline-block;
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Smooth scrollbar for all scrollable areas */
+.scroll-smooth-custom::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scroll-smooth-custom::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-smooth-custom::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
+.scroll-smooth-custom::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Status badge pulse animation */
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-active::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-right: 6px;
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+/* ─── Premium Stagger Animation Utilities ─── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Stagger children — each child delays 60ms more */
+.stagger-children > * { animation: fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+.stagger-children > *:nth-child(9) { animation-delay: 480ms; }
+.stagger-children > *:nth-child(10) { animation-delay: 540ms; }
+
+/* Skeleton shimmer for loading states */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Glass card with glow border on focus/active */
+.glass-card-glow {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(0,212,200,0.15), transparent 40%, transparent 60%, rgba(78,167,252,0.15));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: -1;
+}
+
+.glass-card-glow:hover::before {
+  opacity: 1;
+}
+
+.glass-card-glow:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25), 0 0 80px rgba(0, 212, 200, 0.04);
+  transform: translateY(-2px);
+}
+
+/* Smooth ripple effect for interactive elements */
+@keyframes ripple-out {
+  0% { box-shadow: 0 0 0 0 rgba(0, 212, 200, 0.2); }
+  100% { box-shadow: 0 0 0 12px rgba(0, 212, 200, 0); }
+}
+
+.ripple-on-click:active {
+  animation: ripple-out 0.4s ease-out;
+}
+
+/* Premium text gradient */
+.text-gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(175, 100%, 70%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth tab indicator */
+.tab-indicator {
+  position: relative;
+}
+
+.tab-indicator::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: hsl(var(--primary));
+  border-radius: 1px;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tab-indicator:hover::after,
+.tab-indicator[data-active="true"]::after {
+  width: 60%;
+}
+
+/* Card hover lift — subtler than glass-card */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* ─── Mobile / Tablet Responsive Utilities ─── */
+
+/* Hide scrollbar utility */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch-friendly minimum tap targets */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 36px;
+  }
+
+  /* Prevent horizontal overflow */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Reduce padding on glass panels for mobile */
+  .glass-panel {
+    padding: 12px;
+  }
+
+  /* Tighter spacing for stat cards */
+  .stat-glow {
+    padding: 12px;
+  }
+}
+
+/* iPad-specific tweaks (768px-1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .glass-panel {
+    padding: 14px;
+  }
+}
+
+/* Safe area padding for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
