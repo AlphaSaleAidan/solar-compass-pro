@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import { toast } from 'sonner';
 import type { Project } from '@/data/mockData';
+import { getActiveSellProjects } from '@/lib/deriveSellProject';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
 import {
@@ -11,6 +13,8 @@ import {
   Pencil, UserPlus, Link2, AlertTriangle, Trash2
 } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { cascadeMilestoneVerified, cascadeFundsReleased, cascadePTOGranted } from '@/lib/notificationCascade';
 
 interface OpsProjectsTabProps {
   acceptedDeals?: Project[];
@@ -18,7 +22,15 @@ interface OpsProjectsTabProps {
 
 const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
   const store = useDataSource();
-  const allProjects = [...store.projects, ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id))];
+  const { user } = useAuth();
+  // Merge store.projects + accepted deals + NTP-approved sell projects (SOP wave function)
+  const existingSellProjectIds = useMemo(() => new Set(store.projects.map(p => (p as any)._sellProjectId).filter(Boolean)), [store.projects]);
+  const sellDerivedProjects = useMemo(() => getActiveSellProjects(store.sellProjects, existingSellProjectIds), [store.sellProjects, existingSellProjectIds]);
+  const allProjects = useMemo(() => [
+    ...store.projects,
+    ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id)),
+    ...sellDerivedProjects.filter(d => !store.projects.some(p => p.id === d.id) && !acceptedDeals.some(a => a.id === d.id)),
+  ], [store.projects, acceptedDeals, sellDerivedProjects]);
 
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<Record<string, 'milestones' | 'edit'>>({});
@@ -67,7 +79,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
   // File upload helpers
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!pendingUpload || !e.target.files?.length) return;
-    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, e.target.files[0].name, e.target.files[0]);
+    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, e.target.files[0].name);
     setPendingUpload(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -94,7 +106,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="space-y-4 animate-fade-in-up">
+      <div className="space-y-4 portal-section-enter">
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
 
         <div className="flex items-center justify-between">
@@ -110,6 +122,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
             const offset = getOffsetPercent(p);
             const offsetOk = offset >= 80;
             const milestoneState = store.getMilestoneState(p.id);
+            // Commission data will come from store when wired
             const section = getSection(p.id);
 
             return (
@@ -174,7 +187,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                 {isExpanded && (
                   <div className="border-t border-border">
                     {/* Quick Info Bar */}
-                    <div className="px-5 py-3 bg-[hsl(var(--bg3))]/50 border-b border-border grid grid-cols-6 gap-4 text-xs">
+                    <div className="px-5 py-3 bg-[hsl(var(--bg3))]/50 border-b border-border grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-4 text-xs">
                       <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-foreground">{p.systemSize}</span></div>
                       <div><span className="text-muted-foreground">Battery:</span> <span className="font-bold text-foreground">{p.battery}</span></div>
                       <div><span className="text-muted-foreground">Installer:</span> <span className="font-bold text-foreground">{p.installerName}</span></div>
@@ -355,7 +368,25 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                                           </div>
                                           <button
                                             disabled={!allReady}
-                                            onClick={() => store.approveMilestone(p.id, milestoneIdx)}
+                                            onClick={async () => {
+                                              store.approveMilestone(p.id, milestoneIdx);
+                                              // Auto-release fund for this milestone
+                                              store.releaseFund(p.id, milestoneIdx);
+                                              const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
+                                              const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
+                                              const fundAmount = ((p.projectCost || 0) * (MILESTONE_SOPS[milestoneIdx]?.fundPercent || 0) / 100).toFixed(0);
+                                              toast.success(`M${milestoneIdx + 1} approved — $${Number(fundAmount).toLocaleString()} released`);
+                                              // Real notification cascades
+                                              if (user && !user.isDemo) {
+                                                const projName = p.customerName || `Project ${p.id}`;
+                                                cascadeMilestoneVerified(p.id, user.id, projName, mNames[milestoneIdx] || `M${milestoneIdx+1}`, pcts[milestoneIdx] || '');
+                                                cascadeFundsReleased(p.id, user.id, projName, fundAmount, mNames[milestoneIdx] || `M${milestoneIdx+1}`);
+                                                // M6 = PTO Granted — fire the big one
+                                                if (milestoneIdx === 5) {
+                                                  cascadePTOGranted(p.id, user.id, projName);
+                                                }
+                                              }
+                                            }}
                                             className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5"
                                           >
                                             <ClipboardCheck className="w-3.5 h-3.5" /> Approve M{milestoneIdx + 1} & Queue Fund Release
@@ -427,7 +458,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                           <h4 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3 flex items-center gap-1.5">
                             <Pencil className="w-3 h-3" /> Customer & Project Information
                           </h4>
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                             {[
                               { label: 'First Name', field: 'firstName', value: p.customerName.split(' ')[0] },
                               { label: 'Last Name', field: 'lastName', value: p.customerName.split(' ').slice(1).join(' ') },
@@ -470,7 +501,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                               </span>
                             )}
                           </div>
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                             <div className="bg-[hsl(var(--bg2))] border border-border rounded-lg p-3">
                               <div className="text-[10px] text-muted-foreground mb-1">Design Status</div>
                               <div className="text-sm font-bold text-foreground">{p.currentMilestone >= 2 ? 'Design Complete' : 'Awaiting Survey'}</div>
@@ -503,8 +534,8 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
 
         {/* Report Modal */}
         {reportModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center" onClick={() => setReportModal(null)}>
-            <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-6 w-[500px] animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center modal-backdrop-enter" onClick={() => setReportModal(null)}>
+            <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-6 w-[500px] modal-content-enter" onClick={e => e.stopPropagation()}>
               <h3 className="text-base font-black text-foreground mb-1 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[hsl(var(--blue))]" />
                 {reportModal.label}
@@ -529,8 +560,8 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
 
         {/* Aurora Modal */}
         {showAuroraModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center" onClick={() => setShowAuroraModal(null)}>
-            <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-6 w-[400px] animate-scale-in" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center modal-backdrop-enter" onClick={() => setShowAuroraModal(null)}>
+            <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-6 w-[400px] modal-content-enter" onClick={e => e.stopPropagation()}>
               <h3 className="text-base font-black text-foreground mb-1 flex items-center gap-2">
                 <UserPlus className="w-4 h-4 text-[hsl(var(--blue))]" /> Create Aurora Account
               </h3>
