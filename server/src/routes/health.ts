@@ -5,34 +5,38 @@ import { TRIGGER_MAP } from '../events/pipeline';
 
 const router = Router();
 
-/**
- * GET /api/health
- * System health check + status summary
- */
 router.get('/', async (_req: Request, res: Response) => {
   let dbStatus = 'unknown';
   try {
     const { error } = await supabase.from('profiles').select('id').limit(1);
     dbStatus = error ? `error: ${error.message}` : 'connected';
-  } catch {
-    dbStatus = 'unreachable';
+  } catch (e: any) {
+    dbStatus = `unreachable: ${e.message}`;
   }
+
+  // Debug: show key prefixes (safe - not full keys)
+  const url = process.env.SUPABASE_URL || '';
+  const srkPrefix = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').substring(0, 10);
+  const srkLength = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').length;
+  const srkLast3 = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').slice(-3);
 
   res.json({
     status: 'ok',
-    version: '1.0.0',
+    version: '1.0.1',
     timestamp: new Date().toISOString(),
     database: dbStatus,
     buckets: Object.keys(STORAGE_BUCKETS).length,
     eventTypes: Object.keys(TRIGGER_MAP).length,
     uptime: process.uptime(),
+    debug: {
+      supabase_url: url,
+      key_prefix: srkPrefix + '...',
+      key_length: srkLength,
+      key_suffix: '...' + srkLast3,
+    },
   });
 });
 
-/**
- * GET /api/health/buckets
- * List all storage buckets and their config
- */
 router.get('/buckets', (_req: Request, res: Response) => {
   const buckets = Object.entries(STORAGE_BUCKETS).map(([id, config]) => ({
     id,
