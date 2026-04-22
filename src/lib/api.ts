@@ -104,4 +104,50 @@ export async function checkHealth(): Promise<ApiResponse> {
   }
 }
 
+/**
+ * Auth — Request a password reset email
+ */
+export async function requestPasswordReset(email: string): Promise<ApiResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      return { success: false, error: json.error || 'Failed to send reset email' };
+    }
+    return { success: true, data: json };
+  } catch (err) {
+    return { success: false, error: 'Network error — backend may be unreachable' };
+  }
+}
+
+/**
+ * Auth — Notify that a password was changed (sends confirmation email)
+ */
+export async function notifyPasswordChanged(email: string, userName?: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/api/auth/password-changed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, userName }),
+    });
+  } catch {}
+}
+
+/**
+ * Auth — Check auth system configuration
+ */
+export async function getAuthConfig(): Promise<ApiResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/config`);
+    const json = await res.json();
+    return { success: true, data: json };
+  } catch (err) {
+    return { success: false, error: 'Backend unreachable' };
+  }
+}
+
 export { API_BASE };
