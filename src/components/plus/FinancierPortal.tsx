@@ -1,18 +1,16 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useLayoutEffect, useMemo } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2 } from 'lucide-react';
+import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
+import { toast } from 'sonner';
+import { getActiveSellProjects } from '@/lib/deriveSellProject';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronRight, BarChart3, Lock, X, MapPin, Phone, Mail, Flag, FileText, Camera, ClipboardCheck, Calendar, ExternalLink, Download, MessageSquare, Eye, Video, Trash2, XCircle, RefreshCw, Zap, ArrowRight, Building } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { CelebrationAnimation } from '@/components/shared/CelebrationAnimation';
 
-const ESCROW_MILESTONES = [
-  { name: 'SOW Confirmed', percent: 15 },
-  { name: 'Permit + Materials', percent: 20 },
-  { name: 'Install Scheduled', percent: 15 },
-  { name: 'Install Complete', percent: 20 },
-  { name: 'Utility Inspection', percent: 20 },
-  { name: 'PTO Granted', percent: 10 },
-];
+// Escrow milestone percentages are derived from MILESTONE_SOPS (no hardcoded mock data)
 
 const DEFAULT_LAYERS = [
   { name: 'Utility Bill Verification', desc: 'Real savings confirmed before pipeline entry', active: true },
@@ -24,29 +22,14 @@ const DEFAULT_LAYERS = [
   { name: 'Battery-First Design', desc: '100% storage attachment improves satisfaction', active: true },
 ];
 
-const FUNDS_RELEASE_HISTORY = [
-  { project: 'ASP-2025', customer: 'Luis Martinez', milestone: 'M4 — Install Complete', percent: 20, amount: 6000, fundedDate: '2026-02-10', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Install completion certificate', 'System commissioning report'], photos: ['Completed array photo', 'Inverter installation photo'], report: 'Installation completed 02/08 — 22 panels mounted on south-facing roof. All microinverters communicating. System commissioning report shows 8.5 kW DC capacity.' },
-  { project: 'ASP-2027', customer: 'James Robinson', milestone: 'M3 — Install Scheduled', percent: 15, amount: 5100, fundedDate: '2026-02-18', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['Install crew assignment', 'Homeowner install confirmation'], photos: ['Pre-install roof condition photos'], report: 'Install crew assigned for 02/22. Homeowner confirmed window. Roof truss spacing 24" OC — standard mount hardware approved.' },
-  { project: 'ASP-2029', customer: 'Monica Chen', milestone: 'M2 — Permit + Materials', percent: 20, amount: 7400, fundedDate: '2026-02-25', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['City permit approval', 'Material order confirmation'], photos: ['Permit document scan'], report: 'Permit #HOU-2026-53190 approved. 28x REC Alpha 400W panels + 2x Tesla Powerwall 3 ordered.' },
-  { project: 'ASP-2031', customer: 'Robert Tran', milestone: 'M5 — Utility Inspection', percent: 20, amount: 5800, fundedDate: '2026-03-01', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Utility inspection report', 'Net metering application'], photos: ['Meter swap photo', 'Inspection tag photo'], report: 'CenterPoint Energy inspection passed. Meter upgraded to bi-directional. Net metering accepted.' },
-  { project: 'ASP-2033', customer: 'Stephanie Okafor', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 6375, fundedDate: '2026-03-05', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['Signed SOW contract', 'Utility bill verification'], photos: ['Property exterior photo'], report: 'SOW executed for 12.5 kW system. 80% offset target met. Credit Tier 1 confirmed.' },
-  { project: 'ASP-2035', customer: 'David Nakamura', milestone: 'M6 — PTO Granted', percent: 10, amount: 3200, fundedDate: '2026-03-12', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['PTO certificate', 'Warranty registration'], photos: ['System monitoring screenshot'], report: 'PTO granted by CenterPoint on 03/10. All 20 microinverters online. Warranty registered.' },
-  { project: 'ASP-2028', customer: 'Karen Washington', milestone: 'M4 — Install Complete', percent: 20, amount: 6600, fundedDate: '2026-03-08', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Install completion certificate', 'Photo verification packet'], photos: ['Completed roof array', 'Battery wall mount'], report: 'Install completed 03/06 by SunPro Team Alpha. 24 panels on south-facing hip roof. Tesla Powerwall 3 mounted.' },
-  { project: 'ASP-2032', customer: 'Anthony Reyes', milestone: 'M3 — Install Scheduled', percent: 15, amount: 4950, fundedDate: '2026-03-15', approvedBy: 'Jordan Kim (Fund Manager)', documents: ['Install crew assignment', 'Material staging receipt'], photos: ['Staged materials photo'], report: 'Crew locked for 03/20. All materials staged. Homeowner confirmed — taking PTO day for install.' },
-  { project: 'ASP-2036', customer: 'Lisa Gutierrez', milestone: 'M1 — SOW Confirmed', percent: 15, amount: 4800, fundedDate: '2026-03-18', approvedBy: 'Marcus Reeves (Capital Ops)', documents: ['Signed SOW contract', 'Credit approval letter'], photos: ['Front property photo'], report: 'SOW signed for 9.4 kW system. Usage at 1,280 kWh/mo — offset target met. Fast-tracked to permitting.' },
-  { project: 'ASP-2037', customer: 'Priya Sharma', milestone: 'M2 — Permit + Materials', percent: 20, amount: 5200, fundedDate: '2026-03-20', approvedBy: 'Caitlin Frost (Escrow Specialist)', documents: ['City permit approval', 'Equipment order confirmation'], photos: ['Permit scan'], report: 'Permit approved. 24x panels + Duracell 20kW ordered. Materials ETA 03/28.' },
-];
+// FUNDS_RELEASE_HISTORY removed — escrow tab now derives release history from real project data
 
-const RISK_FLAGS = [
-  { id: 'RF-001', projectId: 'ASP-2030', customerName: 'Angela Davis', issue: 'Roof structural damage — water damage and sagging near chimney. Capital paused at M3 pending repair.', priority: 'high', daysOpen: 8, flaggedBy: 'Marcus Reeves (Capital Ops)' },
-  { id: 'RF-002', projectId: 'ASP-2034', customerName: 'Deborah White', issue: 'Financing on hold — employment change triggered credit re-evaluation. Escrow locked at M2.', priority: 'high', daysOpen: 12, flaggedBy: 'Jordan Kim (Fund Manager)' },
-  { id: 'RF-003', projectId: 'ASP-2026', customerName: 'Patricia Williams', issue: 'HOA approval delay — panel placement variance requires board approval. Capital paused at M3.', priority: 'medium', daysOpen: 5, flaggedBy: 'Caitlin Frost (Escrow Specialist)' },
-];
+// RISK_FLAGS removed — risk tab now uses store.tickets
 
 const FinancierPortal = () => {
   const store = useDataSource();
   const { projects } = store;
-  const [activeSection, setActiveSection] = useState<'overview' | 'portfolio' | 'escrow' | 'risk' | 'pending'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'incoming' | 'portfolio' | 'escrow' | 'risk' | 'pending' | 'rejected'>('overview');
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [expandedMilestone, setExpandedMilestone] = useState<{ projectId: string; idx: number } | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -57,6 +40,7 @@ const FinancierPortal = () => {
   // Popup state
   const [popupTab, setPopupTab] = useState<'details' | 'milestones' | 'uploads' | 'chat' | 'updates'>('details');
   const [popupExpandedM, setPopupExpandedM] = useState<number | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [newUpdateText, setNewUpdateText] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [showTicketModal, setShowTicketModal] = useState(false);
@@ -64,6 +48,8 @@ const FinancierPortal = () => {
   const [ticketPriority, setTicketPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('high');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   const totalPortfolioContract = projects.reduce((s, p) => s + p.contractValue, 0);
   const totalSystemCost = projects.reduce((s, p) => s + p.projectCost, 0);
@@ -90,8 +76,8 @@ const FinancierPortal = () => {
     const sowReport = ms.textEntries['m4-sow-report'];
 
     return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center pb-6 sm:items-center sm:pb-0" onClick={() => setSelectedProject(null)}>
-        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-2xl max-h-[55vh] overflow-y-auto m-4 shadow-lg" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 z-50 flex items-end justify-center pb-6 sm:items-center sm:pb-0 modal-backdrop-enter" onClick={() => setSelectedProject(null)}>
+        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-2xl max-h-[55vh] overflow-y-auto m-4 shadow-lg modal-content-enter" onClick={e => e.stopPropagation()}>
           <div className="px-6 py-4 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
             <div>
               <h2 className="text-lg font-black text-card-foreground">{p.customerName}</h2>
@@ -109,7 +95,7 @@ const FinancierPortal = () => {
           </div>
           <div className="p-6 space-y-5">
             {/* Financial Summary */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {[
                 { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}`, color: 'text-primary' },
                 { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
@@ -123,10 +109,16 @@ const FinancierPortal = () => {
               ))}
             </div>
 
+            {/* M1-M7 Visual Timeline */}
+            <div className="bg-muted/50 border border-border rounded-xl p-4">
+              <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Milestone Progress</h3>
+              <MilestoneTimeline currentMilestone={p.currentMilestone} fundStatus={ms.fundStatus} />
+            </div>
+
             {/* System & Project Details */}
             <div className="bg-muted/50 border border-border rounded-xl p-4">
               <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3">System & Project Details</h3>
-              <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-6 gap-y-2 text-xs">
                 <div className="flex justify-between"><span className="text-muted-foreground">System Size</span><span className="font-bold text-card-foreground">{p.systemSize}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Battery</span><span className="font-bold text-card-foreground">{p.battery}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Sold PPW</span><span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
@@ -192,7 +184,7 @@ const FinancierPortal = () => {
 
             {/* Milestones */}
             <TooltipProvider delayDuration={200}>
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
               {MILESTONE_SOPS.map((sop, i) => {
                 const isPassed = i < p.currentMilestone;
                 const isCurrent = i === p.currentMilestone;
@@ -218,7 +210,7 @@ const FinancierPortal = () => {
                       <div className="text-[10px] text-muted-foreground mb-1.5">{sop.description}</div>
                       <div className="text-[10px] font-bold text-primary">Fund Release: {sop.fundPercent}% · ${(amount / 1000).toFixed(1)}K</div>
                       <div className={`text-[10px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>
-                        {isPassed ? (fundSt === 'released' ? '✓ Funds Released' : '✓ Approved') : isCurrent ? '⏳ In Progress' : '○ Pending'}
+                        {isPassed ? (fundSt === 'released' ? '✓ Funds Released' : '✓ Approved') : isCurrent ? 'In Progress' : '○ Pending'}
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -263,8 +255,14 @@ const FinancierPortal = () => {
               </div>
             )}
 
-            {/* Flag button */}
-            <div className="flex justify-end">
+            {/* Flag & Reject buttons */}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowRejectModal(true)}
+                className="px-3 py-1.5 bg-[hsl(var(--yellow))]/10 border border-[hsl(var(--yellow))]/25 rounded-lg text-xs text-[hsl(var(--yellow))] font-bold hover:bg-[hsl(var(--yellow))]/20 transition-all active:scale-95 flex items-center gap-1.5"
+              >
+                <XCircle className="w-3.5 h-3.5" /> Reject Deal
+              </button>
               {!flaggedProjects.has(p.id) ? (
                 <button
                   onClick={() => {
@@ -283,6 +281,49 @@ const FinancierPortal = () => {
               )}
             </div>
           </div>
+
+          {/* Reject Deal Modal */}
+          {showRejectModal && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center" onClick={() => setShowRejectModal(false)}>
+              <div className="bg-card border-2 border-muted rounded-xl p-6 w-[440px] shadow-lg" onClick={e => e.stopPropagation()}>
+                <h3 className="text-base font-black text-card-foreground mb-2 flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-[hsl(var(--yellow))]" />
+                  Reject Deal — {p.customerName}
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">This deal will be moved to the rejected queue for reassignment to another financier or installer.</p>
+                <div>
+                  <label className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase block mb-1">Rejection Reason</label>
+                  <textarea
+                    value={rejectReason}
+                    onChange={e => setRejectReason(e.target.value)}
+                    placeholder="e.g., Credit risk too high, insufficient collateral, area not serviceable..."
+                    rows={3}
+                    className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-card-foreground outline-none focus:border-primary resize-none"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end mt-4">
+                  <button onClick={() => { setShowRejectModal(false); setRejectReason(''); }} className="px-4 py-2 bg-muted border border-border rounded-lg text-xs font-bold text-muted-foreground hover:text-card-foreground transition-all">
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (rejectReason.trim()) {
+                        store.rejectProject(p.id, rejectReason.trim(), 'ASP Capital', 'financier');
+                        toast.success(`${p.customerName} rejected — routed to reassignment queue`);
+                        setShowRejectModal(false);
+                        setRejectReason('');
+                        setSelectedProject(null);
+                      }
+                    }}
+                    disabled={!rejectReason.trim()}
+                    className="px-4 py-2 bg-[hsl(var(--yellow))]/15 border border-[hsl(var(--yellow))]/30 rounded-lg text-xs font-bold text-[hsl(var(--yellow))] hover:bg-[hsl(var(--yellow))]/25 transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-30"
+                  >
+                    <XCircle className="w-3.5 h-3.5" /> Confirm Rejection
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -293,20 +334,22 @@ const FinancierPortal = () => {
       case 'overview':
         return (
           <div className="space-y-5">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
               {[
                 { label: 'Portfolio Value', value: `$${Math.round(totalPortfolioContract / 1000)}k`, valueSuffix: '', icon: DollarSign, color: 'text-primary', sub: `${projects.length} projects` },
                 { label: 'Capital Deployed', value: `$${Math.round(totalFunded / 1000)}k`, valueSuffix: `of $${Math.round(totalSystemCost / 1000)}k`, icon: TrendingUp, color: 'text-[hsl(var(--green))]', sub: `${Math.round((totalFunded / Math.max(totalSystemCost, 1)) * 100)}% deployed` },
                 { label: 'Gross Profit', value: `$${Math.round((totalPortfolioContract - totalSystemCost) / 1000)}k`, valueSuffix: '', icon: BarChart3, color: 'text-[hsl(var(--yellow))]', sub: `${Math.round(((totalPortfolioContract - totalSystemCost) / Math.max(totalPortfolioContract, 1)) * 100)}% margin` },
                 { label: 'Pending Releases', value: pendingReleases.length.toString(), valueSuffix: '', icon: Clock, color: pendingReleases.length > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]', sub: pendingReleases.length > 0 ? 'Action required' : 'All clear' },
               ].map((s, i) => (
-                <div key={i} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
+                <div key={i} className="glass-panel stat-glow p-5 stat-card-hover transition-all duration-300 hover-lift">
                   <div className="flex items-center gap-2 mb-2">
-                    <s.icon className={`w-4 h-4 ${s.color}`} />
+                    <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                      <s.icon className={`w-4 h-4 ${s.color}`} />
+                    </div>
                     <span className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">{s.label}</span>
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className={`text-2xl font-black ${s.color}`}>{s.value}</span>
+                    <span className={`text-3xl font-black ${s.color} tracking-tight`}>{s.value}</span>
                     {s.valueSuffix && <span className="text-xs text-muted-foreground font-medium">{s.valueSuffix}</span>}
                   </div>
                   <div className="text-[10px] text-muted-foreground mt-1">{s.sub}</div>
@@ -314,26 +357,42 @@ const FinancierPortal = () => {
               ))}
             </div>
 
-            {/* Pending Fund Release Alert */}
-            {pendingReleases.length > 0 && (
+            {/* Auto-Fund Status Banner */}
+            <div className="bg-[hsl(var(--green))]/5 border border-[hsl(var(--green))]/20 rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-[hsl(var(--green))]" />
+                  <div>
+                    <div className="text-sm font-bold text-card-foreground">Auto-Fund Active</div>
+                    <div className="text-xs text-muted-foreground">Milestone funds release automatically after Backend Ops verification. Your role: approve incoming deals.</div>
+                  </div>
+                </div>
+                <button onClick={() => setActiveSection('pending')} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:bg-primary/90 transition-all">
+                  View Release Log →
+                </button>
+              </div>
+            </div>
+
+            {/* Rejected projects alert */}
+            {store.getRejectedProjects().length > 0 && (
               <div className="bg-[hsl(var(--yellow))]/5 border border-[hsl(var(--yellow))]/20 rounded-2xl p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 text-[hsl(var(--yellow))]" />
                     <div>
-                      <div className="text-sm font-bold text-card-foreground">{pendingReleases.length} fund release(s) awaiting approval</div>
-                      <div className="text-xs text-muted-foreground">Backend Ops has verified these milestones. Review and release funds.</div>
+                      <div className="text-sm font-bold text-card-foreground">{store.getRejectedProjects().length} rejected project(s) need reassignment</div>
+                      <div className="text-xs text-muted-foreground">Route these to a different installer or financier.</div>
                     </div>
                   </div>
-                  <button onClick={() => setActiveSection('pending')} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:bg-primary/90 transition-all">
-                    Review Now →
+                  <button onClick={() => setActiveSection('rejected')} className="px-4 py-2 bg-[hsl(var(--yellow))] text-black rounded-lg text-xs font-bold hover:opacity-90 transition-all">
+                    Manage →
                   </button>
                 </div>
               </div>
             )}
 
             {/* Portfolio Projects */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="glass-panel overflow-hidden">
               <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
                 <h3 className="text-sm font-extrabold text-card-foreground flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> Portfolio Projects</h3>
                 <button onClick={() => setActiveSection('portfolio')} className="text-xs text-primary font-bold hover:underline">View All →</button>
@@ -385,11 +444,11 @@ const FinancierPortal = () => {
             </div>
 
             {/* Escrow Summary */}
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
                 <Lock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Escrow Fund Status
               </h3>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                 <div className="bg-muted rounded-xl p-4">
                   <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-1">In Escrow</div>
                   <div className="text-xl font-black text-[hsl(var(--yellow))]">${Math.round((totalSystemCost - totalFunded) / 1000)}k</div>
@@ -406,33 +465,43 @@ const FinancierPortal = () => {
           </div>
         );
 
-      case 'pending':
+      case 'pending': {
+        // Auto-fund log: show all released milestones across projects
+        const releasedMilestones = projects.flatMap(p => {
+          const ms = store.getMilestoneState(p.id);
+          return MILESTONE_SOPS.map((sop, i) => ({ project: p, milestoneIdx: i, sop, fundStatus: ms.fundStatus[i] || 'none' }))
+            .filter(item => item.fundStatus === 'released');
+        });
+
         return (
           <div className="space-y-4">
-            <div className="bg-card border border-border rounded-2xl p-5">
+            {/* Auto-fund explanation */}
+            <div className="bg-[hsl(var(--green))]/5 border border-[hsl(var(--green))]/20 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
+                <span className="text-xs font-bold text-card-foreground">Auto-Fund System Active</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Milestone funds are automatically released after Backend Ops verifies and approves each milestone. No manual fund approval needed.</p>
+            </div>
+
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-1 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Pending Fund Releases
+                <DollarSign className="w-4 h-4 text-[hsl(var(--green))]" /> Fund Release Log
               </h3>
-              <p className="text-xs text-muted-foreground mb-4">These milestones have been verified by Backend Ops. Review and approve fund release.</p>
+              <p className="text-xs text-muted-foreground mb-4">Milestones auto-funded after Ops verification.</p>
 
-              {pendingReleases.length === 0 && (
+              {releasedMilestones.length === 0 ? (
                 <div className="text-center py-8">
-                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto" />
-                  <p className="text-xs text-muted-foreground mt-2">No pending releases — all caught up!</p>
+                  <Clock className="w-8 h-8 text-muted-foreground mx-auto" />
+                  <p className="text-xs text-muted-foreground mt-2">No milestones released yet</p>
                 </div>
-              )}
-
-              {pendingReleases.map((item, i) => {
+              ) : releasedMilestones.map((item, i) => {
                 const amount = Math.round(item.project.projectCost * (item.sop.fundPercent / 100));
-                const ms = store.getMilestoneState(item.project.id);
-                const installerReview = ms.textEntries['m4-installer-review'];
-                const sowReport = ms.textEntries['m4-sow-report'];
-
                 return (
                   <div key={i} className="bg-muted rounded-xl border border-border p-4 mb-3">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[hsl(var(--yellow))]/15 flex items-center justify-center text-xs font-extrabold text-[hsl(var(--yellow))]">
+                        <div className="w-8 h-8 rounded-lg bg-[hsl(var(--green))]/15 flex items-center justify-center text-xs font-extrabold text-[hsl(var(--green))]">
                           M{item.milestoneIdx + 1}
                         </div>
                         <div>
@@ -441,54 +510,262 @@ const FinancierPortal = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-black text-[hsl(var(--yellow))]">${amount.toLocaleString()}</div>
-                        <div className="text-[10px] text-muted-foreground">{item.sop.fundPercent}% of system cost</div>
+                        <div className="text-lg font-black text-[hsl(var(--green))]">${amount.toLocaleString()}</div>
+                        <div className="text-[10px] text-muted-foreground">{item.sop.fundPercent}% · Auto-released ✓</div>
                       </div>
-                    </div>
-
-                    {/* Show reports if M4 */}
-                    {item.milestoneIdx === 3 && installerReview && (
-                      <div className="mb-2 bg-card rounded-lg p-3 border border-border">
-                        <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Installer Review</div>
-                        <div className="text-xs text-card-foreground">{installerReview}</div>
-                      </div>
-                    )}
-                    {item.milestoneIdx === 3 && sowReport && (
-                      <div className="mb-2 bg-card rounded-lg p-3 border border-border">
-                        <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">SOW vs Cost Report</div>
-                        <div className="text-xs text-card-foreground">{sowReport}</div>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 justify-end">
-                      {item.fundStatus === 'pending' && (
-                        <button
-                          onClick={() => store.approveFundRelease(item.project.id, item.milestoneIdx)}
-                          className="px-4 py-2 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-95 flex items-center gap-1.5"
-                        >
-                          <CheckCircle className="w-3.5 h-3.5" /> Approve Release
-                        </button>
-                      )}
-                      {item.fundStatus === 'approved' && (
-                        <button
-                          onClick={() => store.releaseFund(item.project.id, item.milestoneIdx)}
-                          className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 flex items-center gap-1.5"
-                        >
-                          <DollarSign className="w-3.5 h-3.5" /> Release Funds — ${amount.toLocaleString()}
-                        </button>
-                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
+
+            {/* Historical fund releases — built from real released milestones above */}
+            {releasedMilestones.length > 0 && (
+              <div className="glass-panel overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-border text-sm font-extrabold text-card-foreground flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-primary" /> Release History
+                </div>
+                {releasedMilestones.map((item, i) => {
+                  const amount = Math.round(item.project.projectCost * (item.sop.fundPercent / 100));
+                  return (
+                    <div key={i} className="px-5 py-3 border-b border-border flex items-center justify-between hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded bg-[hsl(var(--green))]/10 flex items-center justify-center text-[9px] font-extrabold text-[hsl(var(--green))]">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-card-foreground">{item.project.customerName} — M{item.milestoneIdx + 1}: {item.sop.name}</div>
+                          <div className="text-[10px] text-muted-foreground">{item.project.id} · Auto-funded</div>
+                        </div>
+                      </div>
+                      <span className="text-sm font-black text-[hsl(var(--green))]">${amount.toLocaleString()}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
+      }
 
-      case 'portfolio':
+      case 'incoming': {
+        // Incoming deals: QC-approved sell projects that haven't been NTP-approved or rejected
+        // Use documentsSigned (persisted) for NTP approval, approvalStatus (persisted) for rejection
+        const incomingDeals = store.sellProjects.filter(
+          sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned && sp.approvalStatus !== 'rejected'
+        );
+        const ntpApprovedDeals = store.sellProjects.filter(
+          sp => sp.convertedToSale && sp.qcInitialApproved && sp.documentsSigned
+        );
+        const ntpRejectedDeals = store.sellProjects.filter(
+          sp => sp.approvalStatus === 'rejected'
+        );
+
+        const handleNTPApprove = async (sp: any) => {
+          // Approve NTP — persist documentsSigned + approvalStatus to Supabase
+          try {
+            await store.updateSellProject({
+              ...sp,
+              documentsSigned: true,
+              approvalStatus: 'clean',
+            });
+            setShowCelebration(true);
+            toast.success(`NTP Approved for ${sp.firstName} ${sp.lastName} — moved to Portfolio`);
+          } catch (err) {
+            console.error('NTP approve failed:', err);
+            toast.error('Failed to approve NTP — check console');
+          }
+        };
+
+        const handleNTPReject = async (sp: any) => {
+          const reason = window.prompt(`Reason for rejecting ${sp.firstName} ${sp.lastName}?`);
+          if (!reason) return;
+          try {
+            // approvalStatus: 'rejected' is what inferState() reads to derive lifecycleState
+            await store.updateSellProject({
+              ...sp,
+              approvalStatus: 'rejected',
+              approvalNotes: `NTP Rejected: ${reason}`,
+            });
+            toast.error(`Deal rejected: ${sp.firstName} ${sp.lastName} — moved to Rejected`);
+          } catch (err) {
+            console.error('NTP reject failed:', err);
+            toast.error('Failed to reject deal — check console');
+          }
+        };
+
+        return (
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="glass-panel p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-bold text-card-foreground">Incoming Deals for NTP Approval</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                  {incomingDeals.length} pending
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Review QC-approved deals and issue Notice to Proceed. NTP approval triggers automatic escrow account creation for fund management.
+              </p>
+            </div>
+
+            {/* Incoming deals list — AnimatePresence so approved/rejected cards wave-out */}
+            {incomingDeals.length === 0 ? (
+              <div className="glass-panel p-8 text-center">
+                <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-bold text-card-foreground mb-1">No Pending NTP Approvals</p>
+                <p className="text-xs text-muted-foreground">All incoming deals have been processed. New deals will appear here after QC approval.</p>
+              </div>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {incomingDeals.map(sp => (
+                  <motion.div
+                    key={sp.id}
+                    layout
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 300, scale: 0.8, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className="glass-panel p-4 mb-3"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-bold text-card-foreground">{sp.firstName} {sp.lastName}</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] font-bold">
+                            Awaiting NTP
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">{sp.address || 'No address'}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleNTPReject(sp)}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border border-[hsl(var(--red))]/20 rounded-lg text-xs font-bold hover:bg-[hsl(var(--red))]/20 transition-all active:scale-95"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          Reject
+                        </button>
+                        <button
+                          onClick={() => handleNTPApprove(sp)}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          Approve NTP
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 text-center">
+                      <div className="p-2 rounded-lg bg-bg2">
+                        <div className="text-[10px] text-muted-foreground">Credit</div>
+                        <div className={`text-xs font-bold ${sp.creditStatus === 'credit_passed' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>
+                          {sp.creditStatus === 'credit_passed' ? 'Passed' : sp.creditStatus === 'credit_fail' ? 'Failed' : 'Pending'}
+                        </div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-bg2">
+                        <div className="text-[10px] text-muted-foreground">QC Status</div>
+                        <div className="text-xs font-bold text-[hsl(var(--green))]">Approved</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-bg2">
+                        <div className="text-[10px] text-muted-foreground">Stage</div>
+                        <div className="text-xs font-bold text-primary">Pre-NTP</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 p-2 rounded-lg bg-primary/[0.04] border border-primary/10">
+                      <div className="flex items-center gap-1.5 text-[10px] text-primary/70">
+                        <Building className="w-3 h-3" />
+                        <span>NTP approval will create escrow account and enable M1-M7 fund tracking</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+
+            {/* Recently NTP Approved */}
+            {ntpApprovedDeals.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-muted-foreground mb-3">Recently NTP Approved</h3>
+                <div className="space-y-2">
+                  {ntpApprovedDeals.slice(0, 5).map(sp => (
+                    <div key={sp.id} className="flex items-center justify-between p-3 rounded-lg bg-bg2/50 border border-border/50">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
+                        <span className="text-xs font-bold text-card-foreground">{sp.firstName} {sp.lastName}</span>
+                      </div>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] font-bold">
+                        Escrow Active
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Rejected Deals */}
+            {ntpRejectedDeals.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-muted-foreground mb-3">Rejected Deals</h3>
+                <div className="space-y-2">
+                  {ntpRejectedDeals.slice(0, 5).map(sp => (
+                    <div key={sp.id} className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--red))]/[0.03] border border-[hsl(var(--red))]/10">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="w-4 h-4 text-[hsl(var(--red))]/60" />
+                        <div>
+                          <span className="text-xs font-bold text-card-foreground">{sp.firstName} {sp.lastName}</span>
+                          {sp.approvalNotes && <p className="text-[10px] text-muted-foreground">{sp.approvalNotes}</p>}
+                        </div>
+                      </div>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] font-bold">
+                        Rejected
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      case 'portfolio': {
+        // Merge store.projects with NTP-approved sell projects via shared SOP wave function
+        const existingSellProjectIds = new Set(projects.map(p => (p as any)._sellProjectId).filter(Boolean));
+        const ntpApprovedSellProjects = getActiveSellProjects(store.sellProjects, existingSellProjectIds);
+        const portfolioProjects = [
+          ...projects,
+          ...ntpApprovedSellProjects,
+        ];
         return (
           <div className="space-y-3">
-            {projects.map(p => {
+            {/* Portfolio Summary Header */}
+            <div className="glass-panel p-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {[
+                  { label: 'Total Projects', value: portfolioProjects.length.toString(), color: 'text-primary' },
+                  { label: 'Portfolio Value', value: `$${Math.round(portfolioProjects.reduce((s, p) => s + p.contractValue, 0) / 1000)}k`, color: 'text-primary' },
+                  { label: 'Capital Deployed', value: `$${Math.round(portfolioProjects.reduce((s, p) => s + p.projectCost * (p.currentMilestone / Math.max(p.totalMilestones, 1)), 0) / 1000)}k`, color: 'text-[hsl(var(--green))]' },
+                  { label: 'Active', value: portfolioProjects.filter(p => p.status === 'active').length.toString(), color: 'text-[hsl(var(--green))]' },
+                  { label: 'At Risk', value: portfolioProjects.filter(p => p.status === 'delayed' || p.status === 'on_hold').length.toString(), color: 'text-[hsl(var(--yellow))]' },
+                ].map((s, i) => (
+                  <div key={i} className="text-center">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">{s.label}</div>
+                    <div className={`text-lg font-black ${s.color}`}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {portfolioProjects.length === 0 && (
+              <div className="glass-panel p-8 text-center">
+                <BarChart3 className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-bold text-card-foreground mb-1">No Projects in Portfolio</p>
+                <p className="text-xs text-muted-foreground">Projects will appear here once they are created through the Sales portal and funded.</p>
+              </div>
+            )}
+            {portfolioProjects.map(p => {
               const isExpanded = expandedProject === p.id;
               const ms = store.getMilestoneState(p.id);
               const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
@@ -496,7 +773,7 @@ const FinancierPortal = () => {
               const isFlagged = flaggedProjects.has(p.id);
 
               return (
-                <div key={p.id} className={`bg-card border rounded-2xl overflow-hidden hover:shadow-md transition-shadow ${isFlagged ? 'border-[hsl(var(--red))]/40' : 'border-border'}`}>
+                <div key={p.id} className={`glass-panel overflow-hidden hover:shadow-md transition-shadow ${isFlagged ? 'border-[hsl(var(--red))]/40' : 'border-border'}`}>
                   <div className="flex gap-px h-1.5">
                     {Array.from({ length: p.totalMilestones }).map((_, i) => (
                       <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : 'bg-border'}`} />
@@ -542,7 +819,7 @@ const FinancierPortal = () => {
                   {isExpanded && (
                     <div className="border-t border-border">
                       {/* Quick Info */}
-                      <div className="px-5 py-3 bg-muted/50 border-b border-border grid grid-cols-7 gap-3 text-xs">
+                      <div className="px-5 py-3 bg-muted/50 border-b border-border grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3 text-xs">
                         <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-card-foreground">{p.systemSize}</span></div>
                         <div><span className="text-muted-foreground">Battery:</span> <span className="font-bold text-card-foreground">{p.battery}</span></div>
                         <div><span className="text-muted-foreground">PPW:</span> <span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
@@ -554,7 +831,7 @@ const FinancierPortal = () => {
 
                       {/* Financial Summary */}
                       <div className="px-5 py-3 border-b border-border">
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                           {[
                             { label: 'Contract Value', value: `$${p.contractValue.toLocaleString()}`, color: 'text-primary' },
                             { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
@@ -729,17 +1006,50 @@ const FinancierPortal = () => {
             })}
           </div>
         );
+      }
 
-      case 'escrow':
+      case 'escrow': {
+        // Build escrow data from real MILESTONE_SOPS + project data
+        const escrowMilestones = MILESTONE_SOPS.map((sop, i) => ({ name: sop.name, percent: sop.fundPercent }));
+
+        // Build release history from real store data
+        const releasedMilestones: { projectId: string; customer: string; milestoneIdx: number; milestoneName: string; percent: number; amount: number }[] = [];
+        projects.forEach(p => {
+          const ms = store.getMilestoneState(p.id);
+          MILESTONE_SOPS.forEach((sop, i) => {
+            if (ms.fundStatus[i] === 'released') {
+              releasedMilestones.push({
+                projectId: p.id,
+                customer: p.customerName,
+                milestoneIdx: i,
+                milestoneName: sop.name,
+                percent: sop.fundPercent,
+                amount: Math.round(p.projectCost * (sop.fundPercent / 100)),
+              });
+            }
+          });
+        });
+
+        // Total in escrow (approved but not yet released)
+        let totalInEscrow = 0;
+        projects.forEach(p => {
+          const ms = store.getMilestoneState(p.id);
+          MILESTONE_SOPS.forEach((sop, i) => {
+            if (i < p.currentMilestone && ms.fundStatus[i] !== 'released') {
+              totalInEscrow += Math.round(p.projectCost * (sop.fundPercent / 100));
+            }
+          });
+        });
+
         return (
           <div className="space-y-5">
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
                 <Lock className="w-4 h-4 text-[hsl(var(--yellow))]" /> Milestone-Gated Capital Structure
               </h3>
               <p className="text-xs text-muted-foreground mb-4">Funds held in ASP-managed escrow. 7 milestone gates — each requires documented ASP verification.</p>
-              <div className="grid grid-cols-7 gap-3">
-                {ESCROW_MILESTONES.map((m, i) => (
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3">
+                {escrowMilestones.map((m, i) => (
                   <div key={i} className="bg-muted rounded-xl p-4 text-center border border-border">
                     <div className="text-base font-black text-primary mb-1">M{i + 1}</div>
                     <div className="text-lg font-black text-card-foreground">{m.percent}%</div>
@@ -747,65 +1057,53 @@ const FinancierPortal = () => {
                   </div>
                 ))}
               </div>
+              {totalInEscrow > 0 && (
+                <div className="mt-4 bg-[hsl(var(--yellow))]/5 border border-[hsl(var(--yellow))]/20 rounded-xl px-4 py-3 flex items-center justify-between">
+                  <span className="text-xs font-bold text-[hsl(var(--yellow))]">Currently in Escrow</span>
+                  <span className="text-lg font-black text-[hsl(var(--yellow))]">${totalInEscrow.toLocaleString()}</span>
+                </div>
+              )}
             </div>
 
             {/* Funds Released History */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="glass-panel overflow-hidden">
               <div className="px-5 py-3.5 border-b border-border text-sm font-extrabold text-card-foreground flex items-center gap-2">
-                <ClipboardCheck className="w-4 h-4 text-[hsl(var(--green))]" /> Funds Released History
+                <ClipboardCheck className="w-4 h-4 text-[hsl(var(--green))]" /> Funds Released History ({releasedMilestones.length})
               </div>
-              {FUNDS_RELEASE_HISTORY.map((entry, i) => {
+              {releasedMilestones.length === 0 ? (
+                <div className="px-5 py-8 text-center">
+                  <Lock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">No funds have been released yet. Milestone approvals will appear here once ops and financier sign off.</p>
+                </div>
+              ) : releasedMilestones.map((entry, i) => {
                 const isOpen = expandedHistory === i;
                 return (
-                  <div key={i} className="border-b border-border">
+                  <div key={`${entry.projectId}-M${entry.milestoneIdx}`} className="border-b border-border">
                     <div className="px-5 py-3.5 cursor-pointer hover:bg-muted/50 transition-colors flex items-center justify-between" onClick={() => setExpandedHistory(isOpen ? null : i)}>
                       <div className="flex items-center gap-3">
                         {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
                         <div>
                           <div className="text-sm font-bold text-card-foreground">{entry.customer}</div>
-                          <div className="text-[10px] text-muted-foreground">{entry.project} · {entry.milestone}</div>
+                          <div className="text-[10px] text-muted-foreground">{entry.projectId} · M{entry.milestoneIdx + 1} — {entry.milestoneName}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-extrabold bg-primary text-primary-foreground">
-                          {entry.milestone.match(/M\d/)?.[0] || 'M1'}
+                          M{entry.milestoneIdx + 1}
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()}</div>
-                          <div className="text-[10px] text-muted-foreground">{entry.percent}% · {entry.fundedDate}</div>
+                          <div className="text-[10px] text-muted-foreground">{entry.percent}%</div>
                         </div>
                         <CheckCircle className="w-4 h-4 text-[hsl(var(--green))]" />
                       </div>
                     </div>
                     {isOpen && (
-                      <div className="px-5 pb-4 space-y-3">
+                      <div className="px-5 pb-4">
                         <div className="bg-muted rounded-xl p-3 space-y-2">
-                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Funded Date</span><span className="text-xs font-bold text-[hsl(var(--green))]">{entry.fundedDate}</span></div>
-                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Approved By</span><span className="text-xs font-bold text-card-foreground">{entry.approvedBy}</span></div>
+                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Milestone</span><span className="text-xs font-bold text-card-foreground">M{entry.milestoneIdx + 1} — {entry.milestoneName}</span></div>
                           <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Amount</span><span className="text-xs font-black text-[hsl(var(--green))]">${entry.amount.toLocaleString()} ({entry.percent}%)</span></div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Documents</div>
-                          <div className="space-y-1">
-                            {entry.documents.map((doc, di) => (
-                              <div key={di} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2"><FileText className="w-3 h-3 text-primary shrink-0" /><span className="text-xs text-card-foreground">{doc}</span></div>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5"><Camera className="w-3 h-3" /> Photos</div>
-                          <div className="space-y-1">
-                            {entry.photos.map((photo, phi) => (
-                              <div key={phi} className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2"><Camera className="w-3 h-3 text-primary shrink-0" /><span className="text-xs text-card-foreground">{photo}</span></div>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2 flex items-center gap-1.5"><ClipboardCheck className="w-3 h-3" /> Report</div>
-                          <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
-                            <div className="text-xs text-card-foreground leading-relaxed">{entry.report}</div>
-                            <div className="mt-2 text-[10px] text-muted-foreground">— {entry.approvedBy}, {entry.fundedDate}</div>
-                          </div>
+                          <div className="flex items-center justify-between"><span className="text-[10px] text-muted-foreground">Status</span><span className="text-xs font-bold text-[hsl(var(--green))]">Released</span></div>
                         </div>
                       </div>
                     )}
@@ -815,11 +1113,12 @@ const FinancierPortal = () => {
             </div>
           </div>
         );
+      }
 
       case 'risk':
         return (
           <div className="space-y-5">
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-4 flex items-center gap-2">
                 <Shield className="w-4 h-4 text-primary" /> 7-Layer Default Reduction Stack
               </h3>
@@ -840,38 +1139,47 @@ const FinancierPortal = () => {
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="glass-panel p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-3 flex items-center gap-2">
                 <Flag className="w-4 h-4 text-[hsl(var(--red))]" /> Flagged Accounts
               </h3>
               <div className="space-y-3">
-                {RISK_FLAGS.map(t => (
-                  <div key={t.id} className={`rounded-xl border p-4 ${
-                    t.priority === 'high' ? 'bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20' : 'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
-                  }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Flag className="w-3.5 h-3.5 text-[hsl(var(--red))]" />
-                        <span className="text-xs font-extrabold text-card-foreground">{t.id}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
-                          t.priority === 'high' ? 'bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25' :
-                          'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25'
-                        }`}>{t.priority}</span>
+                {(() => {
+                  const openTickets = (store as any).tickets?.filter((t: any) => t.status === 'open') || [];
+                  if (openTickets.length === 0) return (
+                    <div className="text-center py-6">
+                      <Shield className="w-8 h-8 text-[hsl(var(--green))]/50 mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">No flagged accounts — portfolio is clean</p>
+                    </div>
+                  );
+                  return openTickets.map((t: any) => {
+                    const proj = projects.find(p => p.id === t.projectId);
+                    return (
+                      <div key={t.id} className="rounded-xl border p-4 bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Flag className="w-3.5 h-3.5 text-[hsl(var(--red))]" />
+                            <span className="text-xs font-extrabold text-card-foreground">{t.id?.slice(0, 8)}</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25">Open</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-[hsl(var(--yellow))] flex items-center gap-1"><Clock className="w-3 h-3" /> {t.createdAt || 'Recent'}</span>
+                        </div>
+                        <div className="text-xs font-bold text-card-foreground mb-2">
+                          <Flag className="w-3 h-3 text-[hsl(var(--red))] inline mr-1" />
+                          Account for <span className="text-primary">{proj?.customerName || 'Unknown'}</span> — {t.subject}
+                        </div>
+                        {t.messages?.[0]?.text && (
+                          <div className="text-sm text-card-foreground bg-muted/50 rounded-lg p-3">{t.messages[0].text}</div>
+                        )}
                       </div>
-                      <span className="text-[10px] font-bold text-[hsl(var(--yellow))] flex items-center gap-1"><Clock className="w-3 h-3" /> Open {t.daysOpen} days</span>
-                    </div>
-                    <div className="text-xs font-bold text-card-foreground mb-2">
-                      <Flag className="w-3 h-3 text-[hsl(var(--red))] inline mr-1" />
-                      Account for <span className="text-primary">{t.customerName}</span> has been flagged by ASP Pro+ Team for the following reasons:
-                    </div>
-                    <div className="text-sm text-card-foreground bg-muted/50 rounded-lg p-3">{t.issue}</div>
-                  </div>
-                ))}
+                    );
+                  });
+                })()}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="glass-panel p-5">
                 <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Portfolio Health</h4>
                 <div className="space-y-3">
                   {[
@@ -886,7 +1194,7 @@ const FinancierPortal = () => {
                   ))}
                 </div>
               </div>
-              <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="glass-panel p-5">
                 <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">At-Risk Projects</h4>
                 <div className="space-y-3">
                   {projects.filter(p => p.status === 'delayed' || p.status === 'on_hold').map(p => (
@@ -902,39 +1210,170 @@ const FinancierPortal = () => {
           </div>
         );
 
+      case 'rejected': {
+        const rejected = store.getRejectedProjects();
+        // Also include NTP-rejected sell projects
+        const ntpRejectedSellProjects = store.sellProjects
+          .filter(sp => sp.approvalStatus === 'rejected')
+          .map(sp => ({
+            project: {
+              id: sp.id,
+              customerName: `${sp.firstName} ${sp.lastName}`,
+              systemSize: sp.auroraData?.systemSize || '8.4 kW',
+              projectCost: (sp.highBill || 200) * 12 * 15,
+            },
+            reason: sp.approvalNotes || 'NTP Rejected',
+            rejectedBy: 'Financier',
+            rejectedByRole: 'Financier',
+            rejectedAt: sp.updatedAt || new Date().toISOString(),
+            originalInstaller: 'Unassigned',
+            originalFinancier: 'ASP Capital',
+          }));
+        const allRejected = [
+          ...rejected,
+          ...ntpRejectedSellProjects.filter(r => !rejected.some(er => er.project.id === r.project.id)),
+        ];
+        return (
+          <div className="space-y-4">
+            <div className="glass-panel p-5">
+              <h3 className="text-sm font-extrabold text-card-foreground mb-1 flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-[hsl(var(--red))]" /> Rejected Projects
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">Deals rejected by an installer or financier. Reassign to route to a new party.</p>
+
+              {allRejected.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto" />
+                  <p className="text-xs text-muted-foreground mt-2">No rejected projects — portfolio is clean</p>
+                </div>
+              ) : allRejected.map((r) => (
+                <div key={r.project.id} className="bg-muted rounded-xl border border-border p-4 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-sm font-bold text-card-foreground">{r.project.customerName}</div>
+                      <div className="text-[10px] text-muted-foreground">{r.project.id} · {r.project.systemSize} · ${r.project.projectCost.toLocaleString()}</div>
+                    </div>
+                    <span className="px-2 py-0.5 bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] rounded text-[9px] font-bold uppercase">
+                      Rejected by {r.rejectedByRole}
+                    </span>
+                  </div>
+                  <div className="bg-card/50 border border-border rounded-lg p-3 mb-3">
+                    <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Rejection Reason</div>
+                    <div className="text-xs text-card-foreground">{r.reason}</div>
+                    <div className="text-[10px] text-muted-foreground mt-1">By {r.rejectedBy} · {new Date(r.rejectedAt).toLocaleDateString()}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mb-3 text-[10px]">
+                    <div className="bg-card/30 border border-border rounded-lg p-2">
+                      <span className="text-muted-foreground">Original Installer:</span> <span className="font-bold text-card-foreground">{r.originalInstaller}</span>
+                    </div>
+                    <div className="bg-card/30 border border-border rounded-lg p-2">
+                      <span className="text-muted-foreground">Original Financier:</span> <span className="font-bold text-card-foreground">{r.originalFinancier}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => {
+                        store.reassignProject(r.project.id, 'installer', 'SunPeak Installations');
+                        toast.success(`${r.project.customerName} reassigned to SunPeak Installations`);
+                      }}
+                      className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[10px] font-bold hover:bg-primary/20 transition-all flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reassign Installer
+                    </button>
+                    <button
+                      onClick={() => {
+                        store.reassignProject(r.project.id, 'financier', 'ASP Capital');
+                        toast.success(`${r.project.customerName} reassigned to ASP Capital`);
+                      }}
+                      className="px-3 py-1.5 bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] border border-[hsl(var(--green))]/20 rounded-lg text-[10px] font-bold hover:bg-[hsl(var(--green))]/20 transition-all flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reassign Financier
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
       default:
         return null;
     }
   };
 
+  const sectionNavRef = useRef<HTMLDivElement>(null);
+  const [sectionIndicator, setSectionIndicator] = useState({ left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    if (!sectionNavRef.current) return;
+    const activeBtn = sectionNavRef.current.querySelector<HTMLElement>(`[data-section="${activeSection}"]`);
+    if (activeBtn) {
+      const containerRect = sectionNavRef.current.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      setSectionIndicator({ left: btnRect.left - containerRect.left, width: btnRect.width });
+    }
+  }, [activeSection]);
+
   return (
-    <div className="space-y-5 animate-fade-in-up">
-      <div className="flex gap-1.5">
+    <motion.div
+      className="space-y-5"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <CelebrationAnimation trigger={showCelebration} onComplete={() => setShowCelebration(false)} />
+      <div ref={sectionNavRef} className="relative flex gap-1.5">
+        {/* Animated background pill */}
+        <motion.div
+          className="absolute top-0 h-full rounded-xl bg-primary"
+          style={{ zIndex: 0 }}
+          animate={{ left: sectionIndicator.left, width: sectionIndicator.width }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+        />
         {([
           { key: 'overview', label: 'Overview', icon: BarChart3 },
+          { key: 'incoming', label: 'Incoming Deals', icon: Zap },
           { key: 'pending', label: 'Fund Releases', icon: DollarSign },
           { key: 'portfolio', label: 'Portfolio', icon: TrendingUp },
           { key: 'escrow', label: 'Escrow', icon: Lock },
           { key: 'risk', label: 'Risk Stack', icon: Shield },
+          { key: 'rejected', label: 'Rejected', icon: XCircle },
         ] as const).map(s => (
           <button
             key={s.key}
+            data-section={s.key}
             onClick={() => setActiveSection(s.key)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+            className={`relative z-10 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 ${
               activeSection === s.key
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-muted text-muted-foreground hover:text-card-foreground hover:bg-muted/80'
+                ? 'text-primary-foreground'
+                : 'bg-transparent text-muted-foreground hover:text-card-foreground'
             }`}
           >
             <s.icon className="w-3.5 h-3.5" /> {s.label}
             {s.key === 'pending' && pendingReleases.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-[hsl(var(--yellow))] text-black rounded-full text-[8px] font-extrabold">{pendingReleases.length}</span>
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold ${activeSection === s.key ? 'bg-white/20 text-white' : 'bg-[hsl(var(--yellow))] text-black'}`}>{pendingReleases.length}</span>
+            )}
+            {s.key === 'incoming' && store.sellProjects.filter(sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned).length > 0 && (
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold ${activeSection === s.key ? 'bg-white/20 text-white' : 'bg-primary text-primary-foreground'}`}>
+                {store.sellProjects.filter(sp => sp.convertedToSale && sp.qcInitialApproved && !sp.documentsSigned).length}
+              </span>
             )}
           </button>
         ))}
       </div>
 
-      {renderSection()}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeSection}
+          initial={{ opacity: 0, y: 12, filter: 'blur(3px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -6, filter: 'blur(2px)' }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {renderSection()}
+        </motion.div>
+      </AnimatePresence>
       {selectedProjectData && renderProjectDetail()}
       {deleteProject && (
         <DeleteProjectDialog
@@ -946,7 +1385,7 @@ const FinancierPortal = () => {
           onDeleted={() => { setDeleteProject(null); setSelectedProject(null); }}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 
