@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:0.2"/>
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:0.05"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="16" fill="url(#bg)" stroke="#F59E0B" stroke-opacity="0.3" stroke-width="2"/>
+  <text x="60" y="55" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="32" font-weight="800" fill="#F59E0B">2x</text>
+  <text x="60" y="80" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="9" font-weight="600" fill="#F59E0B" opacity="0.7">2x Tickets</text>
+</svg>
