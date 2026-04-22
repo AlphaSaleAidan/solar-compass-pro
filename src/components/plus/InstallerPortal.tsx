@@ -1,9 +1,16 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useLayoutEffect, useMemo } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
-import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2 } from 'lucide-react';
+import { getActiveSellProjects } from '@/lib/deriveSellProject';
+import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Zap, TrendingUp, Clock, CheckCircle, DollarSign, Wrench, Star, ChevronDown, ChevronRight, AlertTriangle, Timer, Trophy, Truck, Send, Shield, FileText, Flag, User, MapPin, Phone, Mail, Battery, Sun, Info, X, Upload, ClipboardCheck, Camera, MessageSquare, History, Plus, Calendar, Eye, ExternalLink, Trash2, XCircle, RefreshCw, Lock } from 'lucide-react';
 import DeleteProjectDialog from '@/components/shared/DeleteProjectDialog';
+import { CelebrationAnimation } from '@/components/shared/CelebrationAnimation';
+import { cascadeMilestoneCompleted } from '@/lib/notificationCascade';
+import { useGamification } from '@/hooks/useGamification';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const INSTALLER_MILESTONES = [
@@ -15,27 +22,15 @@ const INSTALLER_MILESTONES = [
   { name: 'PTO Granted', percent: 10 },
 ];
 
-const TICKETS = [
-  { id: 'TK-001', projectId: 'ASP-2030', customerName: 'Angela Davis', issue: 'Roof repair required before install — northeast section has water damage and structural sagging near chimney.', status: 'open', priority: 'high', daysOpen: 3, flaggedBy: 'Marcus R.' },
-  { id: 'TK-002', projectId: 'ASP-2026', customerName: 'Patricia Williams', issue: 'HOA approval pending — shingle color variance detected during install prep.', status: 'in_progress', priority: 'medium', daysOpen: 5, flaggedBy: 'Jordan K.' },
-  { id: 'TK-003', projectId: 'ASP-2024', customerName: 'James Hernandez', issue: 'Interconnection document missing utility signature.', status: 'resolved', priority: 'low', daysOpen: 1, flaggedBy: 'Caitlin F.' },
-];
-
-const PAYMENT_DETAILS = [
-  { approvedDate: '2026-03-15', receivedDate: '2026-03-18', approvedBy: 'Marcus Reeves (Ops Manager)' },
-  { approvedDate: '2026-03-10', receivedDate: '2026-03-13', approvedBy: 'Jordan Kim (Ops Lead)' },
-  { approvedDate: '2026-03-05', receivedDate: '2026-03-08', approvedBy: 'Caitlin Frost (Ops Specialist)' },
-  { approvedDate: '2026-02-28', receivedDate: '2026-03-02', approvedBy: 'Marcus Reeves (Ops Manager)' },
-  { approvedDate: '2026-02-20', receivedDate: '2026-02-23', approvedBy: 'Jordan Kim (Ops Lead)' },
-  { approvedDate: '2026-02-15', receivedDate: '2026-02-18', approvedBy: 'Caitlin Frost (Ops Specialist)' },
-];
+// Tickets and payment details are now sourced from the Supabase store (no mock data)
 
 const InstallerPortal = () => {
   const store = useDataSource();
   const { user } = useAuth();
+  const gamification = useGamification();
   const isDemo = user?.isDemo;
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'projects' | 'payments' | 'tickets' | 'milestones' | 'rejected'>('overview');
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [expandedPayment, setExpandedPayment] = useState<number | null>(null);
   const [expandedMilestoneAction, setExpandedMilestoneAction] = useState<{ projectId: string; idx: number } | null>(null);
@@ -46,21 +41,47 @@ const InstallerPortal = () => {
   const [popupTab, setPopupTab] = useState<'details' | 'milestones' | 'uploads' | 'chat' | 'updates'>('details');
   const [popupExpandedM, setPopupExpandedM] = useState<number | null>(null);
   const [chatInput, setChatInput] = useState('');
+  const [showCelebration, setShowCelebration] = useState(false);
   const [newUpdateText, setNewUpdateText] = useState('');
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketPriority, setTicketPriority] = useState<'low' | 'medium' | 'high' | 'critical'>('high');
   const docInputRef = useRef<HTMLInputElement>(null);
   const photoUploadRef = useRef<HTMLInputElement>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
-  // For demo: show all projects (demo data is already scoped)
-  // For production: RLS handles filtering — show all projects from the store
-  const installerName = isDemo ? 'SunTech Installations' : (user?.companyName || 'Installer');
-  const installerProjects = store.projects;
+  // Merge store.projects with NTP-approved sell projects (SOP wave function)
+  // This ensures active deals are visible on the installer portal for M1-M7 workflow
+  const installerName = user?.companyName || user?.name || 'Installer';
+  const existingSellProjectIds = useMemo(() => new Set(store.projects.map(p => (p as any)._sellProjectId).filter(Boolean)), [store.projects]);
+  const sellDerivedProjects = useMemo(() => getActiveSellProjects(store.sellProjects, existingSellProjectIds), [store.sellProjects, existingSellProjectIds]);
+  const installerProjects = useMemo(() => [...store.projects, ...sellDerivedProjects], [store.projects, sellDerivedProjects]);
   const completedCount = installerProjects.filter(p => p.currentMilestone >= 5).length;
   const activeCount = installerProjects.filter(p => p.status !== 'completed').length;
-  const avgDaysToPTO = 24;
-  const onTimeRate = 87;
+  // Compute avg days to PTO from real project data
+  const completedProjectDays = installerProjects
+    .filter(p => p.currentMilestone >= 6 && p.addedDate)
+    .map(p => {
+      const start = new Date(p.addedDate).getTime();
+      const now = Date.now();
+      return Math.round((now - start) / (1000 * 60 * 60 * 24));
+    });
+  const avgDaysToPTO = completedProjectDays.length > 0
+    ? Math.round(completedProjectDays.reduce((a, b) => a + b, 0) / completedProjectDays.length)
+    : 0;
+
+  // On-time rate: projects where current milestone is on or ahead of schedule
+  // For beta, derive from milestone progress vs elapsed time
+  const onTimeCount = installerProjects.filter(p => {
+    if (!p.addedDate) return false;
+    const daysElapsed = (Date.now() - new Date(p.addedDate).getTime()) / (1000 * 60 * 60 * 24);
+    const expectedMilestone = Math.min(7, Math.floor(daysElapsed / 14)); // ~2 weeks per milestone
+    return p.currentMilestone >= expectedMilestone;
+  }).length;
+  const onTimeRate = installerProjects.length > 0
+    ? Math.round((onTimeCount / installerProjects.length) * 100)
+    : 0;
   const totalInstallValue = installerProjects.reduce((s, p) => s + p.projectCost, 0);
   const speedBonusEarned = installerProjects.filter(p => p.currentMilestone >= 6).length * (totalInstallValue / Math.max(installerProjects.length, 1) * 0.05);
 
@@ -77,9 +98,29 @@ const InstallerPortal = () => {
     return count + sop.checklist.filter(c => c.actor === 'installer' && !ms.checklistDone[c.id]).length;
   }, 0);
 
+  const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const MAX_FILE_SIZE_MB = 25;
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!pendingUpload || !e.target.files?.length) return;
-    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, e.target.files[0].name, e.target.files[0]);
+    const file = e.target.files[0];
+
+    // File type validation
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      toast.error(`Invalid file type. Accepted: JPG, PNG, WebP, PDF, DOC/DOCX`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // File size validation
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      toast.error(`File too large. Maximum size: ${MAX_FILE_SIZE_MB}MB`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, file.name);
+    toast.success(`Uploaded: ${file.name}`);
     setPendingUpload(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -91,12 +132,12 @@ const InstallerPortal = () => {
 
   const handleDocUpload = (projectId: string) => {
     const fileName = `installer-doc-${Date.now()}.pdf`;
-    store.addFinancierUpload(projectId, fileName, 'document', 'SunTech Installations');
+    store.addFinancierUpload(projectId, fileName, 'document', installerName);
   };
 
   const handlePhotoUpload = (projectId: string) => {
     const fileName = `install-photo-${Date.now()}.jpg`;
-    store.addFinancierUpload(projectId, fileName, 'photo', 'SunTech Installations');
+    store.addFinancierUpload(projectId, fileName, 'photo', installerName);
   };
 
   // Enhanced project detail popup
@@ -113,8 +154,8 @@ const InstallerPortal = () => {
     const projectMsgs = store.projectMessages[p.id] || [];
 
     return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center pb-4 sm:items-center sm:pb-0" onClick={() => { setSelectedProject(null); setPopupTab('details'); setPopupExpandedM(null); }}>
-        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-3xl max-h-[75vh] overflow-hidden m-4 shadow-lg flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 z-50 flex items-end justify-center pb-4 sm:items-center sm:pb-0 modal-backdrop-enter" onClick={() => { setSelectedProject(null); setPopupTab('details'); setPopupExpandedM(null); }}>
+        <div className="bg-card border-2 border-muted rounded-2xl w-full max-w-3xl max-h-[75vh] overflow-hidden m-4 shadow-lg flex flex-col modal-content-enter" onClick={e => e.stopPropagation()}>
           {/* Header */}
           <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
             <div>
@@ -127,6 +168,12 @@ const InstallerPortal = () => {
                 className="px-3 py-1.5 bg-destructive/10 border border-destructive/25 rounded-lg text-[10px] font-bold text-destructive hover:bg-destructive/20 transition-all flex items-center gap-1"
               >
                 <Trash2 className="w-3 h-3" /> Delete
+              </button>
+              <button
+                onClick={() => setShowRejectModal(true)}
+                className="px-3 py-1.5 bg-[hsl(var(--yellow))]/10 border border-[hsl(var(--yellow))]/25 rounded-lg text-[10px] font-bold text-[hsl(var(--yellow))] hover:bg-[hsl(var(--yellow))]/20 transition-all flex items-center gap-1"
+              >
+                <Flag className="w-3 h-3" /> Reject
               </button>
               <button
                 onClick={() => setShowTicketModal(true)}
@@ -169,7 +216,7 @@ const InstallerPortal = () => {
             {popupTab === 'details' && (
               <div className="space-y-4">
                 {/* Financial Summary */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                   {[
                     { label: 'System Cost', value: `$${p.projectCost.toLocaleString()}`, color: 'text-card-foreground' },
                     { label: 'Capital Released', value: `$${funded.toLocaleString()}`, color: 'text-[hsl(var(--green))]' },
@@ -222,7 +269,7 @@ const InstallerPortal = () => {
 
                 {/* M1-7 Quick View */}
                 <TooltipProvider delayDuration={200}>
-                  <div className="grid grid-cols-7 gap-1.5">
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
                     {MILESTONE_SOPS.map((sop, i) => {
                       const isPassed = i < p.currentMilestone;
                       const isCurrent = i === p.currentMilestone;
@@ -251,7 +298,7 @@ const InstallerPortal = () => {
                             <div className="text-[10px] text-muted-foreground mb-1.5">{sop.description}</div>
                             <div className="text-[10px] font-bold text-primary">Fund Release: {sop.fundPercent}% · ${(amount / 1000).toFixed(1)}K</div>
                             <div className={`text-[10px] font-bold mt-0.5 ${isPassed ? 'text-[hsl(var(--green))]' : isCurrent ? 'text-[hsl(var(--yellow))]' : 'text-muted-foreground'}`}>
-                              {isPassed ? (fundSt === 'released' ? '✓ Funds Released' : '✓ Approved') : isCurrent ? '⏳ In Progress' : '○ Pending'}
+                              {isPassed ? (fundSt === 'released' ? '✓ Funds Released' : '✓ Approved') : isCurrent ? 'In Progress' : '○ Pending'}
                             </div>
                             <div className="text-[9px] text-muted-foreground mt-1 italic">Click to view details →</div>
                           </TooltipContent>
@@ -349,9 +396,20 @@ const InstallerPortal = () => {
                         </div>
                       </div>
 
-                      {isExpM && (
+                      {isExpM && (() => {
+                        const isLocked = i > p.currentMilestone;
+                        return (
                         <div className="border-t border-border px-4 py-3">
-                          <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                          {/* Soft-lock: future milestones show checklist read-only */}
+                          {isLocked && (
+                            <div className="flex items-center gap-2 px-3 py-2.5 mb-3 bg-muted/70 border border-border rounded-lg">
+                              <Shield className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <span className="text-[10px] text-muted-foreground font-bold">
+                                <Lock className="w-3.5 h-3.5 inline-block mr-1 opacity-70" /> Locked — Complete M{p.currentMilestone + 1} ({MILESTONE_SOPS[p.currentMilestone]?.name}) and get Ops approval first
+                              </span>
+                            </div>
+                          )}
+                          <div className={`bg-muted/50 rounded-lg p-3 space-y-2 ${isLocked ? 'opacity-50 pointer-events-none select-none' : ''}`}>
                             <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">
                               Checklist — {sop.description}
                             </div>
@@ -393,7 +451,7 @@ const InstallerPortal = () => {
                                       <div className="mt-1.5 text-[10px] text-[hsl(var(--green))] font-bold flex items-center gap-1"><Calendar className="w-3 h-3" /> {dateEntry}</div>
                                     )}
                                     {!isDone && !uploads.length && !textEntry && !dateEntry && (
-                                      <div className="mt-1 text-[10px] text-muted-foreground italic">Awaiting completion...</div>
+                                      <div className="mt-1 text-[10px] text-muted-foreground italic">{isLocked ? 'Locked' : 'Awaiting completion...'}</div>
                                     )}
                                   </div>
                                 </div>
@@ -407,8 +465,46 @@ const InstallerPortal = () => {
                               </div>
                             )}
                           </div>
+                          {/* Submit Milestone for QC Review */}
+                          {isCurrent && (() => {
+                            const instItems = sop.checklist.filter(c => c.actor === 'installer');
+                            const allDone = instItems.length > 0 && instItems.every(c => ms.checklistDone[c.id]);
+                            const submitted = ms.installerSubmitted?.[i];
+                            return (
+                              <div className="mt-3 pt-3 border-t border-white/5">
+                                {submitted ? (
+                                  <div className="flex items-center gap-2 text-xs font-bold text-[hsl(var(--green))]">
+                                    <CheckCircle className="w-4 h-4" /> Submitted for QC — awaiting Backend Ops
+                                  </div>
+                                ) : (
+                                  <button
+                                    disabled={!allDone}
+                                    onClick={() => {
+                                      store.submitMilestoneForQC(p.id, i);
+                                      if (user && !user.isDemo) {
+                                        const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
+                                        const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
+                                        cascadeMilestoneCompleted(p.id, user.id, p.customerName, mNames[i] || `M${i+1}`, pcts[i] || '');
+                                      }
+                                      // Gamification: award tickets for milestone submission
+                                      gamification.earnTickets(3).catch(() => {});
+                                      setShowCelebration(true);
+                                      toast.success(`M${i + 1} submitted for QC review`);
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none"
+                                  >
+                                    <ClipboardCheck className="w-4 h-4" /> Submit M{i + 1} for QC Review
+                                  </button>
+                                )}
+                                {!allDone && !submitted && (
+                                  <div className="text-[10px] text-muted-foreground mt-1.5">Complete all installer checklist items first</div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -417,25 +513,54 @@ const InstallerPortal = () => {
 
             {popupTab === 'uploads' && (
               <div className="space-y-4">
+                {/* Drag & Drop Upload Zone */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-primary', 'bg-primary/10', 'scale-[1.01]'); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'scale-[1.01]'); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'scale-[1.01]');
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      if (!['image/jpeg','image/png','image/webp','application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type)) {
+                        toast.error('Invalid file type. Accepted: JPG, PNG, WebP, PDF, DOC/DOCX');
+                        return;
+                      }
+                      if (file.size > 25 * 1024 * 1024) { toast.error('File too large. Maximum: 25MB'); return; }
+                      const type = file.type.startsWith('image/') ? 'photo' : 'document';
+                      store.addFinancierUpload(p.id, file.name, type as any, installerName);
+                      toast.success(`Uploaded: ${file.name}`);
+                      // Brief success flash
+                      e.currentTarget.classList.add('ring-2', 'ring-[hsl(var(--green))]', 'bg-[hsl(var(--green))]/10');
+                      setTimeout(() => e.currentTarget?.classList.remove('ring-2', 'ring-[hsl(var(--green))]', 'bg-[hsl(var(--green))]/10'), 1200);
+                    }
+                  }}
+                  className="border-2 border-dashed border-border rounded-xl p-5 text-center transition-all duration-300 cursor-pointer hover:border-primary/40 hover:bg-primary/5"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-7 h-7 text-muted-foreground mx-auto mb-2 transition-transform group-hover:scale-110" />
+                  <p className="text-xs font-bold text-muted-foreground">Drag & drop files here or click to browse</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">JPG, PNG, WebP, PDF, DOC · Max 25MB</p>
+                </div>
+
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleDocUpload(p.id)}
-                    className="px-3 py-2 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center gap-1.5"
+                    className="px-3 py-2 bg-primary/10 border border-primary/25 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all flex items-center gap-1.5 active:scale-[0.97]"
                   >
                     <FileText className="w-3.5 h-3.5" /> Upload Document
                   </button>
                   <button
                     onClick={() => handlePhotoUpload(p.id)}
-                    className="px-3 py-2 bg-[hsl(var(--blue))]/10 border border-[hsl(var(--blue))]/25 rounded-lg text-xs font-bold text-[hsl(var(--blue))] hover:bg-[hsl(var(--blue))]/20 transition-all flex items-center gap-1.5"
+                    className="px-3 py-2 bg-[hsl(var(--blue))]/10 border border-[hsl(var(--blue))]/25 rounded-lg text-xs font-bold text-[hsl(var(--blue))] hover:bg-[hsl(var(--blue))]/20 transition-all flex items-center gap-1.5 active:scale-[0.97]"
                   >
                     <Camera className="w-3.5 h-3.5" /> Upload Photo
                   </button>
                 </div>
 
                 {projectUploads.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-xs text-muted-foreground">No uploads yet. Upload documents or photos above.</p>
+                  <div className="text-center py-4">
+                    <p className="text-xs text-muted-foreground">No uploads yet</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -492,7 +617,7 @@ const InstallerPortal = () => {
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && chatInput.trim()) {
-                        store.addProjectMessage(p.id, { sender: 'SunTech Installations', role: 'installer', text: chatInput.trim(), time: 'Now' });
+                        store.addProjectMessage(p.id, { sender: installerName, role: 'installer', text: chatInput.trim(), time: 'Now' });
                         setChatInput('');
                       }
                     }}
@@ -502,7 +627,7 @@ const InstallerPortal = () => {
                   <button
                     onClick={() => {
                       if (chatInput.trim()) {
-                        store.addProjectMessage(p.id, { sender: 'SunTech Installations', role: 'installer', text: chatInput.trim(), time: 'Now' });
+                        store.addProjectMessage(p.id, { sender: installerName, role: 'installer', text: chatInput.trim(), time: 'Now' });
                         setChatInput('');
                       }
                     }}
@@ -529,7 +654,7 @@ const InstallerPortal = () => {
                   <button
                     onClick={() => {
                       if (newUpdateText.trim()) {
-                        store.addFinancierUpdate(p.id, newUpdateText.trim(), 'SunTech Installations');
+                        store.addFinancierUpdate(p.id, newUpdateText.trim(), installerName);
                         setNewUpdateText('');
                       }
                     }}
@@ -606,9 +731,9 @@ const InstallerPortal = () => {
                         priority: ticketPriority,
                         status: 'open',
                         createdAt: new Date().toISOString().split('T')[0],
-                        createdBy: 'SunTech Installations',
+                        createdBy: installerName,
                         createdByRole: 'installer',
-                        messages: [{ sender: 'SunTech Installations', role: 'installer', text: ticketSubject.trim(), time: 'Now' }],
+                        messages: [{ sender: installerName, role: 'installer', text: ticketSubject.trim(), time: 'Now' }],
                       });
                       setTicketSubject('');
                       setShowTicketModal(false);
@@ -617,6 +742,49 @@ const InstallerPortal = () => {
                   className="px-4 py-2 bg-[hsl(var(--red))]/15 border border-[hsl(var(--red))]/30 rounded-lg text-xs font-bold text-[hsl(var(--red))] hover:bg-[hsl(var(--red))]/25 transition-all active:scale-95 flex items-center gap-1.5"
                 >
                   <Send className="w-3.5 h-3.5" /> Submit Ticket
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reject Project Modal */}
+        {showRejectModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center" onClick={() => setShowRejectModal(false)}>
+            <div className="bg-card border-2 border-muted rounded-xl p-6 w-[440px] shadow-lg" onClick={e => e.stopPropagation()}>
+              <h3 className="text-base font-black text-card-foreground mb-2 flex items-center gap-2">
+                <Flag className="w-4 h-4 text-[hsl(var(--yellow))]" />
+                Reject Project
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">This project will be moved to the Rejected queue and can be routed to a different installer.</p>
+              <div>
+                <label className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase block mb-1">Reason for Rejection</label>
+                <textarea
+                  value={rejectReason}
+                  onChange={e => setRejectReason(e.target.value)}
+                  placeholder="e.g., Cannot service this area, scheduling conflict, roof issues..."
+                  rows={3}
+                  className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-card-foreground outline-none focus:border-primary resize-none"
+                />
+              </div>
+              <div className="flex gap-2 justify-end mt-4">
+                <button onClick={() => { setShowRejectModal(false); setRejectReason(''); }} className="px-4 py-2 bg-muted border border-border rounded-lg text-xs font-bold text-muted-foreground hover:text-card-foreground transition-all">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (rejectReason.trim()) {
+                      store.rejectProject(p.id, rejectReason.trim(), installerName, 'installer');
+                      toast.success(`${p.customerName} rejected — routed to reassignment queue`);
+                      setShowRejectModal(false);
+                      setRejectReason('');
+                      setSelectedProject(null);
+                    }
+                  }}
+                  disabled={!rejectReason.trim()}
+                  className="px-4 py-2 bg-[hsl(var(--yellow))]/15 border border-[hsl(var(--yellow))]/30 rounded-lg text-xs font-bold text-[hsl(var(--yellow))] hover:bg-[hsl(var(--yellow))]/25 transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-30"
+                >
+                  <Flag className="w-3.5 h-3.5" /> Confirm Rejection
                 </button>
               </div>
             </div>
@@ -645,7 +813,7 @@ const InstallerPortal = () => {
 
           {projectsNeedingAction.length === 0 && (
             <div className="text-center py-8">
-              <span className="text-3xl">✅</span>
+              <CheckCircle className="w-8 h-8 text-[hsl(var(--green))]" />
               <p className="text-xs text-muted-foreground mt-2">No pending action items — all caught up!</p>
             </div>
           )}
@@ -733,6 +901,41 @@ const InstallerPortal = () => {
                         </div>
                       );
                     })}
+                    {/* Submit for QC */}
+                    {(() => {
+                      const allDone = installerItems.length > 0 && installerItems.every(c => ms.checklistDone[c.id]);
+                      const submitted = ms.installerSubmitted?.[p.currentMilestone];
+                      return (
+                        <div className="mt-3 pt-3 border-t border-white/5">
+                          {submitted ? (
+                            <div className="flex items-center gap-2 text-xs font-bold text-[hsl(var(--green))]">
+                              <CheckCircle className="w-4 h-4" /> Submitted for QC — awaiting Backend Ops
+                            </div>
+                          ) : (
+                            <button
+                              disabled={!allDone}
+                              onClick={() => {
+                                store.submitMilestoneForQC(p.id, p.currentMilestone);
+                                if (user && !user.isDemo) {
+                                  const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
+                                  const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
+                                  cascadeMilestoneCompleted(p.id, user.id, p.customerName, mNames[p.currentMilestone] || `M${p.currentMilestone+1}`, pcts[p.currentMilestone] || '');
+                                }
+                                gamification.earnTickets(3).catch(() => {});
+                                setShowCelebration(true);
+                                toast.success(`M${p.currentMilestone + 1} submitted for QC review`);
+                              }}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-bold hover:bg-primary/25 transition-all active:scale-[0.98] disabled:opacity-30 disabled:pointer-events-none"
+                            >
+                              <ClipboardCheck className="w-4 h-4" /> Submit M{p.currentMilestone + 1} for QC Review
+                            </button>
+                          )}
+                          {!allDone && !submitted && (
+                            <div className="text-[10px] text-muted-foreground mt-1.5">Complete all installer items first</div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -786,19 +989,21 @@ const InstallerPortal = () => {
       case 'overview':
         return (
           <div className="space-y-5">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
               {[
                 { label: 'Active Projects', value: activeCount.toString(), icon: Wrench, color: 'text-primary' },
                 { label: 'Avg Days to PTO', value: `${avgDaysToPTO}d`, icon: Timer, color: 'text-[hsl(var(--blue))]' },
                 { label: 'On-Time Rate', value: `${onTimeRate}%`, icon: TrendingUp, color: 'text-primary' },
                 { label: 'Pending Actions', value: pendingActions.toString(), icon: AlertTriangle, color: pendingActions > 0 ? 'text-[hsl(var(--yellow))]' : 'text-[hsl(var(--green))]' },
               ].map((s, i) => (
-                <div key={i} className="bg-card border border-border rounded-2xl p-5 hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-2 mb-2">
-                    <s.icon className={`w-4 h-4 ${s.color}`} />
+                <div key={i} className="glass-panel stat-glow p-5 stat-card-hover transition-all duration-300 hover-lift">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+                      <s.icon className={`w-4.5 h-4.5 ${s.color}`} />
+                    </div>
                     <span className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase">{s.label}</span>
                   </div>
-                  <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
+                  <div className={`metric-display ${s.color}`}>{s.value}</div>
                 </div>
               ))}
             </div>
@@ -822,7 +1027,7 @@ const InstallerPortal = () => {
 
             {/* Speed Bonus & Tier */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="glass-panel p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Zap className="w-4 h-4 text-[hsl(var(--yellow))]" />
                   <h3 className="text-sm font-extrabold text-card-foreground">35-Day Speed Bonus</h3>
@@ -846,7 +1051,7 @@ const InstallerPortal = () => {
                 </div>
               </div>
 
-              <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="glass-panel p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy className="w-4 h-4 text-[hsl(var(--yellow))]" />
                   <h3 className="text-sm font-extrabold text-card-foreground">Loyalty Tier</h3>
@@ -877,8 +1082,8 @@ const InstallerPortal = () => {
             </div>
 
             {/* Active Projects */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
+            <div className="glass-panel overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-white/[0.04] flex items-center justify-between">
                 <h3 className="text-sm font-extrabold text-card-foreground flex items-center gap-2"><Wrench className="w-4 h-4 text-primary" /> Active Projects</h3>
                 <button onClick={() => setActiveSection('projects')} className="text-xs text-primary font-bold hover:underline">View All →</button>
               </div>
@@ -934,13 +1139,35 @@ const InstallerPortal = () => {
       case 'projects':
         return (
           <div className="space-y-3">
+            {/* Project filter dropdown */}
+            {installerProjects.length > 1 && (
+              <div className="flex items-center gap-2 mb-2">
+                <select
+                  value={expandedProject || ''}
+                  onChange={e => setExpandedProject(e.target.value || null)}
+                  className="bg-card border border-border rounded-lg px-3 py-2 text-xs font-bold text-card-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 w-full max-w-xs"
+                >
+                  <option value="">All Projects ({installerProjects.length})</option>
+                  {installerProjects.map(p => (
+                    <option key={p.id} value={p.id}>{p.customerName} — {p.id}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {installerProjects.length === 0 && (
+              <div className="text-center py-12 bg-card border border-border rounded-2xl">
+                <Wrench className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <div className="text-sm font-bold text-card-foreground mb-1">No assigned projects yet</div>
+                <div className="text-xs text-muted-foreground max-w-xs mx-auto">Projects will appear here once they've been converted from the sales pipeline and assigned to your installer account.</div>
+              </div>
+            )}
             {installerProjects.map(p => {
               const isExpanded = expandedProject === p.id;
               const ms = store.getMilestoneState(p.id);
               const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
               const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
               return (
-                <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden">
+                <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden card-press">
                   <div className="flex gap-px h-1.5">
                     {Array.from({ length: p.totalMilestones }).map((_, i) => (
                       <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : 'bg-border'}`} />
@@ -980,8 +1207,39 @@ const InstallerPortal = () => {
                   </div>
                   {isExpanded && (
                     <div className="border-t border-border px-5 py-4 space-y-4">
+                      {/* Accept Project — required before M1 submission */}
+                      {!p.installerAccepted && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-center justify-between p-4 rounded-xl bg-primary/[0.06] border border-primary/20"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                              <FileText className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-card-foreground">Accept Project Assignment</div>
+                              <div className="text-[10px] text-muted-foreground">Review SOW and accept before starting M1 — Contract Signed</div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              store.updateProject({ ...p, installerAccepted: true } as any);
+                              toast.success(`Project accepted — ${p.customerName}. You can now begin M1 submission.`);
+                            }}
+                            className="flex items-center gap-1.5 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:bg-primary/90 transition-all active:scale-95 shadow-lg shadow-primary/20"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Accept Project
+                          </button>
+                        </motion.div>
+                      )}
+                      {/* M1-M7 Visual Timeline */}
+                      <MilestoneTimeline currentMilestone={p.currentMilestone} fundStatus={ms.fundStatus} />
                       {/* Quick Info */}
-                      <div className="grid grid-cols-7 gap-3 text-xs bg-muted/50 rounded-xl p-3">
+                      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3 text-xs bg-muted/50 rounded-xl p-3">
                         <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-card-foreground">{p.systemSize}</span></div>
                         <div><span className="text-muted-foreground">Battery:</span> <span className="font-bold text-card-foreground">{p.battery}</span></div>
                         <div><span className="text-muted-foreground">PPW:</span> <span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
@@ -1001,7 +1259,7 @@ const InstallerPortal = () => {
                       {/* Milestone Payments */}
                       <div>
                         <h4 className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-3">Milestone Payments</h4>
-                        <div className="grid grid-cols-7 gap-2">
+                        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                           {MILESTONE_SOPS.map((sop, i) => {
                             const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
                             const isPassed = i < p.currentMilestone;
@@ -1047,7 +1305,7 @@ const InstallerPortal = () => {
       case 'payments':
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="bg-card border border-border rounded-2xl p-5">
                 <div className="text-[10px] text-muted-foreground font-bold tracking-[1.5px] uppercase mb-1.5">Total Earned</div>
                 <div className="text-2xl font-black text-[hsl(var(--green))]">${Math.round(totalInstallValue * 0.7).toLocaleString()}</div>
@@ -1103,79 +1361,189 @@ const InstallerPortal = () => {
           </div>
         );
 
-      case 'tickets':
+      case 'tickets': {
+        const allTickets = store.tickets || [];
         return (
           <div className="space-y-4">
             <div className="bg-card border border-border rounded-2xl p-5">
               <h3 className="text-sm font-extrabold text-card-foreground mb-3 flex items-center gap-2">
                 <Flag className="w-4 h-4 text-[hsl(var(--red))]" /> Flagged Accounts
               </h3>
-              <div className="space-y-3">
-                {TICKETS.map(t => (
-                  <div key={t.id} className={`rounded-xl border p-4 ${
-                    t.status === 'resolved' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' :
-                    t.priority === 'high' ? 'bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20' :
-                    'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
-                  }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Flag className="w-3.5 h-3.5 text-[hsl(var(--red))]" />
-                        <span className="text-xs font-extrabold text-card-foreground">{t.id}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
-                          t.priority === 'high' ? 'bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25' :
-                          'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25'
-                        }`}>{t.priority}</span>
+              {allTickets.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">No active tickets — all clear</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {allTickets.map(t => {
+                    const proj = store.projects.find(p => p.id === t.projectId);
+                    const custName = proj?.customerName || t.projectId;
+                    return (
+                      <div key={t.id} className={`rounded-xl border p-4 ${
+                        t.status === 'resolved' ? 'bg-[hsl(var(--green))]/5 border-[hsl(var(--green))]/20' :
+                        t.priority === 'high' || t.priority === 'critical' ? 'bg-[hsl(var(--red))]/5 border-[hsl(var(--red))]/20' :
+                        'bg-[hsl(var(--yellow))]/5 border-[hsl(var(--yellow))]/20'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Flag className="w-3.5 h-3.5 text-[hsl(var(--red))]" />
+                            <span className="text-xs font-extrabold text-card-foreground">{t.id}</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
+                              t.priority === 'high' || t.priority === 'critical' ? 'bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25' :
+                              'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25'
+                            }`}>{t.priority}</span>
+                          </div>
+                          <span className={`text-[10px] font-bold ${t.status === 'resolved' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>
+                            {t.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <div className="text-xs font-bold text-card-foreground mb-2">
+                          <Flag className="w-3 h-3 text-[hsl(var(--red))] inline mr-1" />
+                          Account for <span className="text-primary">{custName}</span> flagged
+                        </div>
+                        <div className="text-sm text-card-foreground bg-muted/50 rounded-lg p-3">{t.description}</div>
                       </div>
-                      <span className={`text-[10px] font-bold ${t.status === 'resolved' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>
-                        {t.status.replace('_', ' ')}
-                      </span>
-                    </div>
-                    <div className="text-xs font-bold text-card-foreground mb-2">
-                      <Flag className="w-3 h-3 text-[hsl(var(--red))] inline mr-1" />
-                      Account for <span className="text-primary">{t.customerName}</span> has been flagged by ASP Pro+ Team for the following reasons:
-                    </div>
-                    <div className="text-sm text-card-foreground bg-muted/50 rounded-lg p-3">{t.issue}</div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         );
+      }
+
+      case 'rejected': {
+        const rejected = store.getRejectedProjects();
+        return (
+          <div className="space-y-4">
+            <div className="glass-panel p-5">
+              <h3 className="text-sm font-extrabold text-card-foreground mb-1 flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-[hsl(var(--red))]" /> Rejected Projects
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">Projects rejected by an installer or financier. Reassign to route to a new party.</p>
+
+              {rejected.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="w-8 h-8 text-[hsl(var(--green))] mx-auto" />
+                  <p className="text-xs text-muted-foreground mt-2">No rejected projects</p>
+                </div>
+              ) : rejected.map((r, idx) => (
+                <div key={r.project.id} className="bg-muted rounded-xl border border-border p-4 mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="text-sm font-bold text-card-foreground">{r.project.customerName}</div>
+                      <div className="text-[10px] text-muted-foreground">{r.project.id} · {r.project.systemSize} · ${r.project.projectCost.toLocaleString()}</div>
+                    </div>
+                    <span className="px-2 py-0.5 bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] rounded text-[9px] font-bold uppercase">{r.rejectedByRole}</span>
+                  </div>
+                  <div className="bg-card/50 border border-border rounded-lg p-3 mb-3">
+                    <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1">Rejection Reason</div>
+                    <div className="text-xs text-card-foreground">{r.reason}</div>
+                    <div className="text-[10px] text-muted-foreground mt-1">By {r.rejectedBy} · {new Date(r.rejectedAt).toLocaleDateString()}</div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => {
+                        store.reassignProject(r.project.id, 'installer', 'SunPeak Installations');
+                        toast.success(`${r.project.customerName} reassigned to SunPeak Installations`);
+                      }}
+                      className="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[10px] font-bold hover:bg-primary/20 transition-all flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reassign Installer
+                    </button>
+                    <button
+                      onClick={() => {
+                        store.reassignProject(r.project.id, 'financier', 'ASP Capital');
+                        toast.success(`${r.project.customerName} reassigned to ASP Capital`);
+                      }}
+                      className="px-3 py-1.5 bg-[hsl(var(--green))]/10 text-[hsl(var(--green))] border border-[hsl(var(--green))]/20 rounded-lg text-[10px] font-bold hover:bg-[hsl(var(--green))]/20 transition-all flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reassign Financier
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
 
       default:
         return null;
     }
   };
 
+  const sectionNavRef = useRef<HTMLDivElement>(null);
+  const [sectionIndicator, setSectionIndicator] = useState({ left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    if (!sectionNavRef.current) return;
+    const activeBtn = sectionNavRef.current.querySelector<HTMLElement>(`[data-section="${activeSection}"]`);
+    if (activeBtn) {
+      const containerRect = sectionNavRef.current.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      setSectionIndicator({ left: btnRect.left - containerRect.left, width: btnRect.width });
+    }
+  }, [activeSection]);
+
   return (
-    <div className="space-y-5 animate-fade-in-up">
+    <motion.div
+      className="space-y-5"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <CelebrationAnimation trigger={showCelebration} onComplete={() => setShowCelebration(false)} />
       <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} />
-      <div className="flex gap-1.5">
+      <div ref={sectionNavRef} className="relative flex gap-1.5">
+        {/* Animated background pill */}
+        <motion.div
+          className="absolute top-0 h-full rounded-xl bg-primary"
+          style={{ zIndex: 0 }}
+          animate={{ left: sectionIndicator.left, width: sectionIndicator.width }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+        />
         {([
           { key: 'overview', label: 'Overview', icon: TrendingUp },
           { key: 'milestones', label: 'Milestones', icon: ClipboardCheck },
           { key: 'projects', label: 'Projects', icon: Wrench },
           { key: 'payments', label: 'Payments', icon: DollarSign },
           { key: 'tickets', label: 'Tickets', icon: Flag },
+          { key: 'rejected', label: 'Rejected', icon: XCircle },
         ] as const).map(s => (
           <button
             key={s.key}
+            data-section={s.key}
             onClick={() => setActiveSection(s.key)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+            className={`relative z-10 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 ${
               activeSection === s.key
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-muted text-muted-foreground hover:text-card-foreground hover:bg-muted/80'
+                ? 'text-primary-foreground'
+                : 'bg-transparent text-muted-foreground hover:text-card-foreground'
             }`}
           >
             <s.icon className="w-3.5 h-3.5" /> {s.label}
             {s.key === 'milestones' && pendingActions > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-[hsl(var(--yellow))] text-black rounded-full text-[8px] font-extrabold">{pendingActions}</span>
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold ${activeSection === s.key ? 'bg-white/20 text-white' : 'bg-[hsl(var(--yellow))] text-black'}`}>{pendingActions}</span>
+            )}
+            {s.key === 'rejected' && store.getRejectedProjects().filter(r => r.rejectedByRole === 'installer').length > 0 && (
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold ${activeSection === s.key ? 'bg-white/20 text-white' : 'bg-[hsl(var(--red))] text-white'}`}>{store.getRejectedProjects().filter(r => r.rejectedByRole === 'installer').length}</span>
             )}
           </button>
         ))}
       </div>
 
-      {renderSection()}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeSection}
+          initial={{ opacity: 0, y: 12, filter: 'blur(3px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -6, filter: 'blur(2px)' }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {renderSection()}
+        </motion.div>
+      </AnimatePresence>
       {selectedProjectData && renderProjectDetail()}
       {deleteProject && (
         <DeleteProjectDialog
@@ -1187,7 +1555,7 @@ const InstallerPortal = () => {
           onDeleted={() => { setDeleteProject(null); setSelectedProject(null); }}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 
