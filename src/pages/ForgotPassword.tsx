@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Zap, ArrowLeft } from 'lucide-react';
+import { Zap, ArrowLeft, CheckCircle, Mail } from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://solar-compass-pro-production.up.railway.app';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -12,14 +13,25 @@ const ForgotPassword = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) {
-      setError(error.message);
-    } else {
-      setSent(true);
+
+    try {
+      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong. Please try again.');
+      } else {
+        setSent(true);
+      }
+    } catch {
+      setError('Could not reach the server. Please try again later.');
     }
+
     setIsLoading(false);
   };
 
@@ -41,22 +53,49 @@ const ForgotPassword = () => {
         </div>
 
         {sent ? (
-          <div className="text-center">
-            <p className="text-gray-400 text-sm">Check your email for a password reset link.</p>
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-2"
+              style={{ background: 'rgba(0,212,200,0.1)', border: '2px solid rgba(0,212,200,0.2)' }}>
+              <Mail className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Check your email</h3>
+            <p className="text-gray-400 text-sm leading-relaxed">
+              We've sent a password reset link to<br />
+              <span className="text-gray-300 font-semibold">{email}</span>
+            </p>
+            <div className="pt-2 space-y-2">
+              <p className="text-gray-500 text-xs">
+                Didn't get it? Check your spam folder or{' '}
+                <button onClick={() => { setSent(false); setError(''); }} className="text-primary hover:underline font-bold">
+                  try again
+                </button>
+              </p>
+              <a href="/" className="block text-gray-500 text-xs hover:text-primary transition-colors">
+                ← Back to Login
+              </a>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
+            <p className="text-gray-400 text-sm mb-6">
+              Enter the email address associated with your account and we'll send you a link to reset your password.
+            </p>
             <div className="mb-4">
               <label className="block text-[11px] font-bold tracking-[1.5px] uppercase mb-1.5 text-gray-400">Email</label>
               <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required
-                className="w-full px-4 py-3 rounded-md text-sm outline-none"
+                className="w-full px-4 py-3 rounded-md text-sm outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                 style={{ background: 'hsl(220, 22%, 11%)', border: '1.5px solid hsl(222, 30%, 18%)', color: 'hsl(214, 32%, 91%)' }}
                 placeholder="your@email.com" />
             </div>
             <button type="submit" disabled={isLoading}
-              className="w-full py-3.5 bg-primary text-primary-foreground text-sm font-black tracking-wider uppercase rounded-md disabled:opacity-50"
+              className="w-full py-3.5 bg-primary text-primary-foreground text-sm font-black tracking-wider uppercase rounded-md disabled:opacity-50 transition-all hover:brightness-110"
               style={{ boxShadow: '0 8px 24px rgba(0,212,200,0.2)' }}>
-              {isLoading ? 'Sending...' : 'Send Reset Link →'}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  Sending...
+                </span>
+              ) : 'Send Reset Link →'}
             </button>
           </form>
         )}
