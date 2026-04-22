@@ -22,7 +22,7 @@ const MilestoneVerification = () => {
   // Only show projects that need active milestone approval from ops
   // A project appears here when non-ops actors have completed their checklist items for the current milestone
   const activeProjects = projects.filter(p => {
-    if (p.currentMilestone >= 7) return false;
+    if ((p.currentMilestone || 0) >= 7) return false;
     const sop = MILESTONE_SOPS[p.currentMilestone || 0];
     if (!sop) return false;
     const state = store.getMilestoneState(p.id);
@@ -35,7 +35,7 @@ const MilestoneVerification = () => {
   const getOffsetPercent = (p: typeof projects[0]) => {
     const systemKw = parseFloat(p.systemSize || '0');
     const annualProduction = systemKw * 1350;
-    return Math.round((annualProduction / p.annualUsage) * 100);
+    return Math.round((annualProduction / (p.annualUsage || 1)) * 100);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
