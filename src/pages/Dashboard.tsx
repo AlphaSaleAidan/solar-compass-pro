@@ -23,6 +23,7 @@ const FinalApprovalQueue = lazy(() => import('@/components/ops/FinalApprovalQueu
 const ExecutiveDashboard = lazy(() => import('@/components/ops/ExecutiveDashboard'));
 const PlusPortal = lazy(() => import('@/components/plus/PlusPortal'));
 const ActivityFeed = lazy(() => import('@/components/shared/ActivityFeed'));
+const AdminPanel = lazy(() => import('@/components/admin/AdminPanel'));
 // PortalAmbient3D removed — CinematicBackground is now global in App.tsx
 import { useDataSource } from '@/contexts/DataSourceProvider';
 
@@ -46,6 +47,10 @@ const Dashboard = () => {
     // Activity tab is shared across all portals
     if (activeTab === 'Activity') {
       return <ActivityFeed />;
+    }
+    // Admin tab — master + backend_ops only
+    if (activeTab === 'Admin') {
+      return <AdminPanel />;
     }
 
     if (isPlus) {
