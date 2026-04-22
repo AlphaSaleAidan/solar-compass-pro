@@ -75,14 +75,43 @@ const SellProjectCard = ({ project, onStartCamera, onUpdateProject }: SellProjec
         }
 
         toast.info('Aurora sync initiated — checking for project data...');
-        
-        const auroraData = {
-          systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
-          battery: 'Duracell 20kW',
-          financier: ['GoodLeap', 'Sunlight Financial', 'Mosaic'][Math.floor(Math.random() * 3)],
-          monthlyPayment: `$${(160 + Math.random() * 80).toFixed(0)}`,
-          adders: ['Battery ($8,500)', 'Critter Guard ($800)'],
-        };
+
+        // Call aurora-sync edge function on Railway backend
+        const API_BASE = import.meta.env.VITE_API_URL || 'https://solar-compass-pro-production.up.railway.app';
+        const { data: { session } } = await supabase.auth.getSession();
+        const syncRes = await fetch(`${API_BASE}/api/webhooks/aurora-sync`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({
+            sell_project_id: project.id,
+            aurora_email: profile.aurora_email,
+            customer_name: `${project.firstName} ${project.lastName}`,
+            address: project.address,
+          }),
+        });
+
+        let auroraData: Record<string, unknown>;
+        if (syncRes.ok) {
+          const result = await syncRes.json();
+          auroraData = result.data || result;
+        } else {
+          // Fallback: read from the sell_projects aurora_data column if already synced
+          const { data: spRow } = await supabase
+            .from('sell_projects')
+            .select('aurora_data')
+            .eq('id', project.id)
+            .maybeSingle();
+          auroraData = (spRow?.aurora_data as Record<string, unknown>) || {
+            systemSize: 'Pending',
+            battery: 'Pending',
+            financier: 'Pending',
+            monthlyPayment: 'Pending',
+            adders: [],
+          };
+        }
         onUpdateProject({ ...project, auroraSynced: true, auroraData });
         toast.success('Aurora data synced successfully');
       } catch (err) {
