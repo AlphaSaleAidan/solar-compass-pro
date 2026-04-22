@@ -1,14 +1,10 @@
 import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Camera, Upload, CheckCircle, Image, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import { uploadFile, uploadCanvasCapture } from '@/lib/fileUpload';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { Camera, Upload, CheckCircle, Image, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SiteSurveyDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projectId?: string;
   onComplete: (photos: Record<string, string[]>) => void;
 }
 
@@ -20,49 +16,21 @@ const SURVEY_SECTIONS = [
   { id: 'subPanel', label: 'SubPanel (Optional)', description: 'Photo of sub-panel if present', required: false },
 ];
 
-const SiteSurveyDialog = ({ open, onOpenChange, projectId, onComplete }: SiteSurveyDialogProps) => {
-  const { user } = useAuth();
-  const isProduction = user && !user.isDemo;
+const SiteSurveyDialog = ({ open, onOpenChange, onComplete }: SiteSurveyDialogProps) => {
   const [photos, setPhotos] = useState<Record<string, string[]>>({});
   const [expandedSection, setExpandedSection] = useState<string | null>('rafters');
   const [cameraSection, setCameraSection] = useState<string | null>(null);
-  const [uploading, setUploading] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const handleFileUpload = async (sectionId: string, files: FileList | null) => {
-    if (!files || files.length === 0) return;
-
-    if (isProduction) {
-      setUploading(sectionId);
-      const folder = projectId ? `${projectId}/${sectionId}` : sectionId;
-      const uploaded: string[] = [];
-      for (const file of Array.from(files)) {
-        try {
-          const result = await uploadFile('site-surveys', file, folder);
-          uploaded.push(result.url);
-        } catch (err) {
-          console.warn('Upload failed:', err);
-          toast.error(`Failed to upload ${file.name}`);
-        }
-      }
-      if (uploaded.length > 0) {
-        setPhotos(prev => ({
-          ...prev,
-          [sectionId]: [...(prev[sectionId] || []), ...uploaded],
-        }));
-        toast.success(`${uploaded.length} photo(s) uploaded`);
-      }
-      setUploading(null);
-    } else {
-      // Demo mode: just save filenames
-      const fileNames = Array.from(files).map(f => f.name);
-      setPhotos(prev => ({
-        ...prev,
-        [sectionId]: [...(prev[sectionId] || []), ...fileNames],
-      }));
-    }
+  const handleFileUpload = (sectionId: string, files: FileList | null) => {
+    if (!files) return;
+    const fileNames = Array.from(files).map(f => f.name);
+    setPhotos(prev => ({
+      ...prev,
+      [sectionId]: [...(prev[sectionId] || []), ...fileNames],
+    }));
   };
 
   const startCamera = async (sectionId: string) => {
@@ -76,41 +44,21 @@ const SiteSurveyDialog = ({ open, onOpenChange, projectId, onComplete }: SiteSur
         if (videoRef.current) videoRef.current.srcObject = stream;
       }, 100);
     } catch {
-      toast.error('Camera not available');
+      console.log('Camera not available');
     }
   };
 
-  const capturePhoto = async () => {
+  const capturePhoto = () => {
     if (!videoRef.current || !cameraSection) return;
     const canvas = document.createElement('canvas');
     canvas.width = videoRef.current.videoWidth || 640;
     canvas.height = videoRef.current.videoHeight || 480;
     canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0);
-
     const fileName = `${cameraSection}-capture-${Date.now()}.jpg`;
-
-    if (isProduction) {
-      setUploading(cameraSection);
-      try {
-        const folder = projectId ? `${projectId}/${cameraSection}` : cameraSection;
-        const result = await uploadCanvasCapture('site-surveys', canvas, fileName, folder);
-        setPhotos(prev => ({
-          ...prev,
-          [cameraSection]: [...(prev[cameraSection] || []), result.url],
-        }));
-        toast.success('Photo captured & uploaded');
-      } catch (err) {
-        console.warn('Capture upload failed:', err);
-        toast.error('Failed to upload capture');
-      }
-      setUploading(null);
-    } else {
-      setPhotos(prev => ({
-        ...prev,
-        [cameraSection]: [...(prev[cameraSection] || []), fileName],
-      }));
-    }
-
+    setPhotos(prev => ({
+      ...prev,
+      [cameraSection]: [...(prev[cameraSection] || []), fileName],
+    }));
     stopCamera();
   };
 
@@ -127,16 +75,6 @@ const SiteSurveyDialog = ({ open, onOpenChange, projectId, onComplete }: SiteSur
   const handleSubmit = () => {
     onComplete(photos);
     onOpenChange(false);
-  };
-
-  const getDisplayName = (photo: string) => {
-    // Show filename for demo, truncated URL for production
-    if (photo.startsWith('http')) {
-      const parts = photo.split('/');
-      const name = parts[parts.length - 1];
-      return name.length > 25 ? name.substring(0, 22) + '...' : name;
-    }
-    return photo.length > 25 ? photo.substring(0, 22) + '...' : photo;
   };
 
   return (
@@ -157,7 +95,7 @@ const SiteSurveyDialog = ({ open, onOpenChange, projectId, onComplete }: SiteSur
                 Cancel
               </button>
               <button onClick={capturePhoto} className="px-4 py-1.5 bg-primary rounded-lg text-primary-foreground text-xs font-bold">
-                📸 Capture
+                Capture
               </button>
             </div>
           </div>
@@ -168,7 +106,6 @@ const SiteSurveyDialog = ({ open, onOpenChange, projectId, onComplete }: SiteSur
             const sectionPhotos = photos[section.id] || [];
             const isExpanded = expandedSection === section.id;
             const hasPhotos = sectionPhotos.length > 0;
-            const isUploading = uploading === section.id;
 
             return (
               <div key={section.id} className="bg-white/[0.03] border border-white/[0.08] rounded-xl overflow-hidden">
@@ -184,7 +121,6 @@ const SiteSurveyDialog = ({ open, onOpenChange, projectId, onComplete }: SiteSur
                     )}
                     <span className="text-sm font-bold text-white">{section.label}</span>
                     {hasPhotos && <span className="text-[10px] text-white/30 font-bold">{sectionPhotos.length} photo(s)</span>}
-                    {isUploading && <Loader2 className="w-3 h-3 text-primary animate-spin" />}
                   </div>
                   {isExpanded ? <ChevronUp className="w-4 h-4 text-white/30" /> : <ChevronDown className="w-4 h-4 text-white/30" />}
                 </button>
@@ -193,20 +129,12 @@ const SiteSurveyDialog = ({ open, onOpenChange, projectId, onComplete }: SiteSur
                   <div className="px-3 pb-3 space-y-3">
                     <p className="text-[11px] text-white/40">{section.description}</p>
 
-                    {/* Uploaded photos — show thumbnails for URLs */}
+                    {/* Uploaded photos */}
                     {sectionPhotos.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {sectionPhotos.map((photo, i) => (
                           <div key={i} className="flex items-center gap-1.5 px-2 py-1 bg-[hsl(150,60%,50%)]/10 border border-[hsl(150,60%,50%)]/20 rounded-lg text-[10px] text-[hsl(150,60%,50%)] font-bold">
-                            {photo.startsWith('http') ? (
-                              <a href={photo} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline">
-                                <Image className="w-3 h-3" /> {getDisplayName(photo)}
-                              </a>
-                            ) : (
-                              <>
-                                <Image className="w-3 h-3" /> {getDisplayName(photo)}
-                              </>
-                            )}
+                            <Image className="w-3 h-3" /> {photo.length > 20 ? photo.substring(0, 17) + '...' : photo}
                           </div>
                         ))}
                       </div>
@@ -216,16 +144,13 @@ const SiteSurveyDialog = ({ open, onOpenChange, projectId, onComplete }: SiteSur
                     <div className="flex gap-2">
                       <button
                         onClick={() => fileInputRefs.current[section.id]?.click()}
-                        disabled={isUploading}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white/60 text-xs font-bold hover:bg-white/[0.08] transition-all active:scale-[0.98] disabled:opacity-40"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white/60 text-xs font-bold hover:bg-white/[0.08] transition-all active:scale-[0.98]"
                       >
-                        {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                        {isUploading ? 'Uploading...' : 'Drop File'}
+                        <Upload className="w-3.5 h-3.5" /> Drop File
                       </button>
                       <button
                         onClick={() => startCamera(section.id)}
-                        disabled={isUploading}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-xs font-bold hover:bg-primary/20 transition-all active:scale-[0.98] disabled:opacity-40"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-primary/10 border border-primary/20 rounded-lg text-primary text-xs font-bold hover:bg-primary/20 transition-all active:scale-[0.98]"
                       >
                         <Camera className="w-3.5 h-3.5" /> Camera
                       </button>
@@ -247,10 +172,10 @@ const SiteSurveyDialog = ({ open, onOpenChange, projectId, onComplete }: SiteSur
 
         <button
           onClick={handleSubmit}
-          disabled={!requiredComplete || !!uploading}
+          disabled={!requiredComplete}
           className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-black disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-[0.98] mt-2"
         >
-          {uploading ? '⏳ Uploading...' : requiredComplete ? '✓ Submit Site Survey' : 'Complete required sections to submit'}
+          {requiredComplete ? '✓ Submit Site Survey' : 'Complete required sections to submit'}
         </button>
       </DialogContent>
     </Dialog>
