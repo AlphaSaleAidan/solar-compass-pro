@@ -70,7 +70,7 @@ const FinancierPortal = () => {
     const p = selectedProjectData;
     const ms = store.getMilestoneState(p.id);
     const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
-    const offset = Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100);
+    const offset = Math.round((parseFloat(p.systemSize || '0') * 1350 / (p.annualUsage || 1)) * 100);
 
     const installerReview = ms.textEntries['m4-installer-review'];
     const sowReport = ms.textEntries['m4-sow-report'];
@@ -122,7 +122,7 @@ const FinancierPortal = () => {
                 <div className="flex justify-between"><span className="text-muted-foreground">System Size</span><span className="font-bold text-card-foreground">{p.systemSize}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Battery</span><span className="font-bold text-card-foreground">{p.battery}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Sold PPW</span><span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Annual Usage</span><span className="font-bold text-card-foreground">{p.annualUsage.toLocaleString()} kWh</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Annual Usage</span><span className="font-bold text-card-foreground">{(p.annualUsage || 0).toLocaleString()} kWh</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Offset</span><span className={`font-bold ${offset >= 80 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--red))]'}`}>{offset}%</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Roof</span><span className={`font-bold ${p.roofCondition === 'good' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>{p.roofCondition.replace('_', ' ')}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Installer</span><span className="font-bold text-card-foreground">{p.installerName}</span></div>
@@ -186,7 +186,7 @@ const FinancierPortal = () => {
             <TooltipProvider delayDuration={200}>
             <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
               {MILESTONE_SOPS.map((sop, i) => {
-                const isPassed = i < p.currentMilestone;
+                const isPassed = i < (p.currentMilestone || 0);
                 const isCurrent = i === p.currentMilestone;
                 const fundSt = ms.fundStatus[i] || 'none';
                 const amount = Math.round(p.projectCost * (sop.fundPercent / 100));
@@ -428,7 +428,7 @@ const FinancierPortal = () => {
                           const fundSt = ms.fundStatus[i] || 'none';
                           return (
                             <div key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
-                              i < p.currentMilestone
+                              i < (p.currentMilestone || 0)
                                 ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/20 text-[hsl(var(--green))]' :
                                   fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/20 text-[hsl(var(--yellow))]' :
                                   'bg-primary text-primary-foreground'
@@ -769,14 +769,14 @@ const FinancierPortal = () => {
               const isExpanded = expandedProject === p.id;
               const ms = store.getMilestoneState(p.id);
               const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
-              const offset = Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100);
+              const offset = Math.round((parseFloat(p.systemSize || '0') * 1350 / (p.annualUsage || 1)) * 100);
               const isFlagged = flaggedProjects.has(p.id);
 
               return (
                 <div key={p.id} className={`glass-panel overflow-hidden hover:shadow-md transition-shadow ${isFlagged ? 'border-[hsl(var(--red))]/40' : 'border-border'}`}>
                   <div className="flex gap-px h-1.5">
                     {Array.from({ length: p.totalMilestones }).map((_, i) => (
-                      <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : 'bg-border'}`} />
+                      <div key={i} className={`flex-1 ${i < (p.currentMilestone || 0) ? 'bg-primary' : 'bg-border'}`} />
                     ))}
                   </div>
                   <div onClick={() => setExpandedProject(isExpanded ? null : p.id)} className="px-5 py-4 flex items-center justify-between cursor-pointer">
@@ -796,7 +796,7 @@ const FinancierPortal = () => {
                           const fundSt = ms.fundStatus[i] || 'none';
                           return (
                             <div key={i} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-extrabold ${
-                              i < p.currentMilestone
+                              i < (p.currentMilestone || 0)
                                 ? fundSt === 'released' ? 'bg-[hsl(var(--green))]/20 text-[hsl(var(--green))]' :
                                   fundSt === 'pending' ? 'bg-[hsl(var(--yellow))]/20 text-[hsl(var(--yellow))]' :
                                   'bg-primary text-primary-foreground'
@@ -826,7 +826,7 @@ const FinancierPortal = () => {
                         <div><span className="text-muted-foreground">Offset:</span> <span className={`font-bold ${offset >= 80 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--red))]'}`}>{offset}%</span></div>
                         <div><span className="text-muted-foreground">Installer:</span> <span className="font-bold text-card-foreground">{p.installerName}</span></div>
                         <div><span className="text-muted-foreground">Rep:</span> <span className="font-bold text-card-foreground">{p.repName}</span></div>
-                        <div><span className="text-muted-foreground">Usage:</span> <span className="font-bold text-card-foreground">{p.annualUsage.toLocaleString()} kWh</span></div>
+                        <div><span className="text-muted-foreground">Usage:</span> <span className="font-bold text-card-foreground">{(p.annualUsage || 0).toLocaleString()} kWh</span></div>
                       </div>
 
                       {/* Financial Summary */}
@@ -1035,7 +1035,7 @@ const FinancierPortal = () => {
         projects.forEach(p => {
           const ms = store.getMilestoneState(p.id);
           MILESTONE_SOPS.forEach((sop, i) => {
-            if (i < p.currentMilestone && ms.fundStatus[i] !== 'released') {
+            if (i < (p.currentMilestone || 0) && ms.fundStatus[i] !== 'released') {
               totalInEscrow += Math.round(p.projectCost * (sop.fundPercent / 100));
             }
           });
