@@ -1,19 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Zap, ArrowLeft, CheckCircle, ShieldCheck } from 'lucide-react';
 import type { UserRole } from '@/contexts/AuthContext';
 
 const Register = () => {
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite');
+  const inviteRole = searchParams.get('role') as UserRole | null;
+  const inviteEmail = searchParams.get('email');
+
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(inviteEmail || '');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [entityName, setEntityName] = useState('');
-  const [requestedRole, setRequestedRole] = useState<UserRole>('sales_rep');
+  const [requestedRole, setRequestedRole] = useState<UserRole>(inviteRole || 'sales_rep');
   const [notes, setNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [inviteValid, setInviteValid] = useState<boolean | null>(inviteToken ? null : false);
+
+  // Validate invite token on mount
+  useEffect(() => {
+    if (!inviteToken) return;
+    (async () => {
+      const { data } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('token', inviteToken)
+        .is('accepted_at', null)
+        .maybeSingle();
+      if (data) {
+        setInviteValid(true);
+        setEmail(data.email);
+        setRequestedRole((data.role === 'master_admin' ? 'master' : data.role) as UserRole);
+      } else {
+        setInviteValid(false);
+      }
+    })();
+  }, [inviteToken]);
 
   const roleOptions: { value: UserRole; label: string; needsEntity: boolean }[] = [
     { value: 'sales_rep', label: 'Sales Rep', needsEntity: false },
@@ -28,22 +56,66 @@ const Register = () => {
     setError('');
     setIsLoading(true);
 
-    const { error: insertError } = await supabase
-      .from('registration_requests')
-      .insert({
-        full_name: fullName,
+    if (inviteToken && inviteValid) {
+      // Invited user: create Supabase auth account directly
+      if (!password || password.length < 6) {
+        setError('Password must be at least 6 characters');
+        setIsLoading(false);
+        return;
+      }
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
-        phone,
-        entity_name: entityName || null,
-        requested_role: requestedRole,
-        notes: notes || null,
-        invited_by: '00000000-0000-0000-0000-000000000000',
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone,
+            entity_name: entityName || null,
+            role: requestedRole,
+          },
+        },
       });
-
-    if (insertError) {
-      setError(insertError.message);
-    } else {
+      if (signUpError) {
+        setError(signUpError.message);
+        setIsLoading(false);
+        return;
+      }
+      // Mark invitation as accepted
+      await supabase.from('invitations').update({
+        accepted_at: new Date().toISOString(),
+      }).eq('token', inviteToken);
+      // Assign role
+      if (signUpData.user) {
+        const dbRole = requestedRole === 'master' ? 'master_admin' : requestedRole;
+        await supabase.from('user_roles').insert({
+          user_id: signUpData.user.id,
+          role: dbRole,
+        });
+        await supabase.from('profiles').upsert({
+          id: signUpData.user.id,
+          full_name: fullName,
+          phone,
+        });
+      }
       setSubmitted(true);
+    } else {
+      // Non-invited user: submit registration request for admin approval
+      const { error: insertError } = await supabase
+        .from('registration_requests')
+        .insert({
+          full_name: fullName,
+          email,
+          phone,
+          entity_name: entityName || null,
+          requested_role: requestedRole,
+          notes: notes || null,
+          invited_by: '00000000-0000-0000-0000-000000000000',
+        });
+      if (insertError) {
+        setError(insertError.message);
+      } else {
+        setSubmitted(true);
+      }
     }
     setIsLoading(false);
   };
@@ -79,7 +151,7 @@ const Register = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            Request Submitted
+            {inviteToken && inviteValid ? 'Account Created!' : 'Request Submitted'}
           </motion.h2>
           <motion.p
             className="text-gray-400 text-sm mb-6"
@@ -87,7 +159,9 @@ const Register = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Your registration request has been submitted. An admin will review and approve your access.
+            {inviteToken && inviteValid
+              ? 'Your account has been created. Check your email to confirm, then log in.'
+              : 'Your registration request has been submitted. An admin will review and approve your access.'}
           </motion.p>
           <motion.a
             href="/"
@@ -146,7 +220,9 @@ const Register = () => {
             <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
               <Zap className="w-5 h-5" />
             </div>
-            <span className="text-[22px] font-black tracking-wider text-white">REQUEST ACCESS</span>
+            <span className="text-[22px] font-black tracking-wider text-white">
+              {inviteToken && inviteValid ? 'CREATE ACCOUNT' : 'REQUEST ACCESS'}
+            </span>
           </motion.div>
           <motion.div
             className="text-[11px] tracking-[3px] uppercase mt-1.5 text-gray-500"
@@ -156,6 +232,17 @@ const Register = () => {
           >
             ALPHA SALE PRO
           </motion.div>
+          {inviteToken && inviteValid && (
+            <motion.div
+              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+              style={{ background: 'rgba(0,212,200,0.1)', border: '1px solid rgba(0,212,200,0.2)', color: 'hsl(177, 100%, 41%)' }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" /> Invited — create your account
+            </motion.div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -183,6 +270,16 @@ const Register = () => {
                 placeholder="(555) 555-0000" />
             </div>
           </motion.div>
+
+          {inviteToken && inviteValid && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+              <label className="block text-[11px] font-bold tracking-[1.5px] uppercase mb-1.5 text-gray-400">Password</label>
+              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required
+                className="w-full px-4 py-3 rounded-md text-sm outline-none transition-all duration-200 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                style={inputStyle}
+                placeholder="Choose a password (6+ characters)" />
+            </motion.div>
+          )}
 
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <label className="block text-[11px] font-bold tracking-[1.5px] uppercase mb-1.5 text-gray-400">Role</label>
@@ -244,7 +341,7 @@ const Register = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            {isLoading ? 'Submitting...' : 'Submit Request →'}
+            {isLoading ? 'Submitting...' : (inviteToken && inviteValid ? 'Create Account →' : 'Submit Request →')}
           </motion.button>
         </form>
 
