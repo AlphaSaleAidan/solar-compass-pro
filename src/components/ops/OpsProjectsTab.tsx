@@ -53,7 +53,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
   const getOffsetPercent = (p: Project) => {
     const systemKw = parseFloat(p.systemSize || '0');
     const annualProduction = systemKw * 1350;
-    return Math.round((annualProduction / p.annualUsage) * 100);
+    return Math.round((annualProduction / (p.annualUsage || 1)) * 100);
   };
 
   // Editor helpers
