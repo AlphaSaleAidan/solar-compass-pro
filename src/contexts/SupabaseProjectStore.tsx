@@ -13,6 +13,13 @@ import type { Project, SellProject } from '@/data/mockData';
 import { inferState, type ProjectState } from '@/lib/projectStateMachine';
 import { logAuditEvent } from '@/lib/auditLog';
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  onDealConvertedToSale,
+  onMilestoneChecklistUpdated,
+  onMilestoneOpsApproved,
+  onFundReleaseApproved,
+  onQcApproved,
+} from '@/lib/pipelineEvents';
 
 // This store provides the SAME interface as ProjectStore but reads/writes Supabase
 // It is used for all non-demo (production) users.
@@ -191,6 +198,8 @@ function mapDbSellProjectToUI(row: any): SellProject {
 
 export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  // Pipeline event actor — fire-and-forget, never blocks UI
+  const actor = { userId: user?.id || '', role: user?.role || 'sales_rep', name: user?.name || 'Unknown' };
   const [projects, setProjects] = useState<Project[]>([]);
   const [dataReady, setDataReady] = useState(false);
   const [qcQueue, setQcQueue] = useState<Project[]>([]);
@@ -379,6 +388,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     const dbId = getDbId(projectId);
     await supabase.from('projects').update({ status: 'in_pipeline' as any, current_milestone: 0 }).eq('id', dbId);
     if (user?.id) logAuditEvent({ action: 'converted_to_sale', actorId: user.id, projectId: dbId });
+    onDealConvertedToSale(actor, projectId, dbId).catch(() => {});
   }, [projects, user]);
 
   // ──────────────────────────────────────────────────────────────
@@ -408,6 +418,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     const newChecklist = { ...state.checklistDone, [checklistItemId]: done };
     
     await patchMilestoneState(dbId, { checklist_done: newChecklist });
+    onMilestoneChecklistUpdated(actor, dbId, { milestone_index: 0, checklist_item_id: checklistItemId, checked: done }).catch(() => {});
 
     // Optimistic update
     setMilestoneStates(prev => ({
@@ -470,6 +481,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       return { ...prev, [projectId]: { ...s, installerSubmitted: newSubmitted } };
     });
     if (user?.id) logAuditEvent({ action: 'milestone_submitted', actorId: user.id, projectId: dbId, details: { milestoneIndex } });
+    onQcApproved(actor, dbId).catch(() => {});
   }, [user, milestoneStates, patchMilestoneState]);
 
   const approveMilestone = useCallback(async (projectId: string, milestoneIndex: number) => {
@@ -509,6 +521,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), opsApproved: newOpsApproved, fundStatus: newFundStatus },
     }));
     if (user?.id) logAuditEvent({ action: 'milestone_ops_approved', actorId: user.id, projectId: dbId, details: { milestoneIndex, newMilestone } });
+    onMilestoneOpsApproved(actor, dbId, milestoneIndex).catch(() => {});
   }, [projects, user, milestoneStates, patchMilestoneState]);
 
   const approveFundRelease = useCallback(async (projectId: string, milestoneIndex: number) => {
@@ -522,6 +535,7 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
       [projectId]: { ...(prev[projectId] || createDefaultMilestoneState()), fundStatus: newFundStatus },
     }));
     if (user?.id) logAuditEvent({ action: 'fund_approved', actorId: user.id, projectId: dbId, details: { milestoneIndex } });
+    onFundReleaseApproved(actor, dbId, { fund_release_id: `${dbId}-m${milestoneIndex}` }).catch(() => {});
   }, [projects, user, milestoneStates, patchMilestoneState]);
 
   const releaseFund = useCallback(async (projectId: string, milestoneIndex: number) => {
@@ -841,29 +855,51 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
     originalFinancier: string;
   }>>([]);
 
-  const rejectProject = useCallback((projectId: string, reason: string, rejectedBy: string, rejectedByRole: 'installer' | 'financier' | 'ops') => {
+  const rejectProject = useCallback(async (projectId: string, reason: string, rejectedBy: string, rejectedByRole: 'installer' | 'financier' | 'ops') => {
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
+    const now = new Date().toISOString();
     setRejectedProjects(prev => [...prev, {
       project,
       reason,
       rejectedBy,
       rejectedByRole,
-      rejectedAt: new Date().toISOString(),
+      rejectedAt: now,
       originalInstaller: project.installerName,
       originalFinancier: 'ASP Capital',
     }]);
-    // TODO: persist to Supabase `rejected_projects` table when created
-    // await supabase.from('rejected_projects').insert({ project_id: projectId, reason, rejected_by: rejectedBy, ... });
+    // Persist status change to Supabase
+    await supabase.from('projects').update({ status: 'rejected' }).eq('id', projectId);
+    // Log the rejection in activity log
+    await supabase.from('project_activity_log').insert({
+      project_id: projectId,
+      action_type: 'project_rejected',
+      actor_name: rejectedBy,
+      actor_role: rejectedByRole,
+      portal: rejectedByRole === 'ops' ? 'operations' : rejectedByRole,
+      description: `Project rejected: ${reason}`,
+      metadata: { reason, original_installer: project.installerName },
+    });
   }, [projects]);
 
-  const reassignProject = useCallback((projectId: string, field: 'installer' | 'financier', newValue: string) => {
+  const reassignProject = useCallback(async (projectId: string, field: 'installer' | 'financier', newValue: string) => {
     setRejectedProjects(prev => prev.filter(r => r.project.id !== projectId));
+    const updateFields: Record<string, string> = { status: 'active' };
     if (field === 'installer') {
-      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, installerName: newValue } : p));
+      updateFields.installer_name = newValue;
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, installerName: newValue, status: 'active' } : p));
     }
-    // TODO: persist reassignment to Supabase
-    // await supabase.from('projects').update({ installer_name: newValue }).eq('id', projectId);
+    // Persist reassignment to Supabase
+    await supabase.from('projects').update(updateFields).eq('id', projectId);
+    await supabase.from('project_activity_log').insert({
+      project_id: projectId,
+      action_type: 'project_reassigned',
+      actor_name: 'System',
+      actor_role: 'ops',
+      portal: 'operations',
+      description: `Project reassigned: ${field} changed to ${newValue}`,
+      metadata: { field, new_value: newValue },
+    });
   }, []);
 
   const getRejectedProjects = useCallback(() => rejectedProjects, [rejectedProjects]);
