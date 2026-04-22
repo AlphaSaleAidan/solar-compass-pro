@@ -264,7 +264,7 @@ export const REP_STATS = {
 export const COMMISSIONS = PROJECTS.map((p) => {
   const redline = 2.35;
   const adderCost = p.adders.reduce((s, a) => s + a.cost, 0);
-  const watts = parseFloat(p.systemSize) * 1000;
+  const watts = parseFloat(p.systemSize || '0') * 1000;
   const systemCostPerWatt = watts * redline;
   const soldTotal = watts * p.soldPPW;
   const commission = soldTotal - systemCostPerWatt - adderCost;
