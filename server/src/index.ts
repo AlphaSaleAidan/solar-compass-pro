@@ -13,6 +13,9 @@
  *   POST /api/webhooks/aurora  — Aurora Solar webhook
  *   POST /api/webhooks/docusign— DocuSign webhook
  *   POST /api/webhooks/stripe  — Stripe payment webhook
+ *   POST /api/auth/forgot-password — Custom branded password reset
+ *   POST /api/auth/password-changed — Password change confirmation
+ *   GET  /api/auth/config           — Auth system status
  */
 
 import 'dotenv/config';
@@ -24,6 +27,7 @@ import morgan from 'morgan';
 import healthRoutes from './routes/health';
 import eventRoutes from './routes/events';
 import webhookRoutes from './routes/webhooks';
+import authRoutes from './routes/auth';
 import { startCronJobs } from './jobs/crons';
 
 const app = express();
@@ -47,6 +51,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/api/health', healthRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/auth', authRoutes);
 
 // ─── Root ─────────────────────────────────────────────────
 app.get('/', (_req, res) => {
