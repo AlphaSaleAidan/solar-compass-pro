@@ -78,6 +78,7 @@ export interface Project {
   setterId?: string;
   setterSplitPercent?: number;
   welcomeCallRecordingUrl?: string;
+  installerAccepted?: boolean;
 }
 
 export const MILESTONE_NAMES = [
@@ -148,6 +149,8 @@ export interface SellProject {
   // Two-phase QC workflow
   qcInitialApproved?: boolean;
   documentsSigned?: boolean;
+  // Lifecycle state machine (inferred if not set)
+  lifecycleState?: 'lead' | 'qualified' | 'qc_review' | 'active' | 'completed' | 'archived' | 'rejected';
 }
 
 // Demo-only sample data — only loaded for demo users via ProjectStore
@@ -197,30 +200,31 @@ export const PROJECTS: Project[] = [demoProject1, demoProject2];
 
 export const MILESTONES = MILESTONE_NAMES;
 
+const PRIZE_BASE = `${import.meta.env.BASE_URL}prizes`;
 export const SPIN_PRIZES = [
-  { name: 'ASP T-Shirt', icon: '👕', value: 40, tier: 'normal' },
-  { name: 'ASP Hat', icon: '🧢', value: 25, tier: 'normal' },
-  { name: 'ASP Coffee Mug', icon: '☕', value: 35, tier: 'normal' },
-  { name: 'Lanyard + Glasses', icon: '🕶️', value: 55, tier: 'normal' },
-  { name: 'AirPods', icon: '🎧', value: 120, tier: 'golden' },
-  { name: 'iPencil', icon: '✏️', value: 120, tier: 'golden' },
-  { name: 'Cash Bonus $85', icon: '💵', value: 85, tier: 'normal' },
-  { name: 'Meta Raybans', icon: '😎', value: 300, tier: 'alpha' },
-  { name: 'Oculus Quest', icon: '🥽', value: 450, tier: 'alpha' },
-  { name: 'iPad', icon: '📱', value: 500, tier: 'super_alpha' },
-  { name: '5★ Dinner', icon: '🍽️', value: 500, tier: 'super_alpha' },
-  { name: 'Cruise Ship', icon: '🚢', value: 400, tier: 'super_alpha' },
-  { name: '$800 Jewelry', icon: '💎', value: 800, tier: 'super_alpha' },
-  { name: '$5K Vacation Piece', icon: '🏝️', value: 500, tier: 'super_alpha' },
-  { name: '200% Tickets 7d', icon: '🎟️', value: 170, tier: 'golden' },
-  { name: '10 Internal Leads', icon: '📊', value: 850, tier: 'super_alpha' },
-  { name: 'ASP Hoodie', icon: '🧥', value: 65, tier: 'normal' },
-  { name: 'Wireless Charger', icon: '🔋', value: 45, tier: 'normal' },
-  { name: 'Nike Gift Card', icon: '👟', value: 100, tier: 'golden' },
-  { name: 'Beats Solo', icon: '🎵', value: 200, tier: 'alpha' },
-  { name: 'Cash Bonus $50', icon: '💵', value: 50, tier: 'normal' },
-  { name: 'ASP Water Bottle', icon: '🥤', value: 30, tier: 'normal' },
-  { name: 'Amazon $25', icon: '🎁', value: 25, tier: 'normal' },
+  { name: 'ASP Stealth Tee', icon: 'ST', value: 40, tier: 'normal', image: `${PRIZE_BASE}/asp_stealth_tee.png` },
+  { name: 'ASP Snapback', icon: 'SB', value: 25, tier: 'normal', image: `${PRIZE_BASE}/asp_snapback.png` },
+  { name: 'Yeti Tumbler', icon: 'YT', value: 35, tier: 'normal', image: `${PRIZE_BASE}/yeti_tumbler.png` },
+  { name: 'ASP Shades', icon: 'SH', value: 55, tier: 'normal', image: `${PRIZE_BASE}/asp_shades.png` },
+  { name: 'AirPods Pro', icon: 'AP', value: 150, tier: 'golden', image: `${PRIZE_BASE}/airpods_pro.png` },
+  { name: 'Apple Pencil', icon: 'PE', value: 120, tier: 'golden', image: `${PRIZE_BASE}/apple_pencil.png` },
+  { name: '$85 Cash Drop', icon: '$', value: 85, tier: 'normal', image: `${PRIZE_BASE}/cash_85.png` },
+  { name: 'Ray-Ban Meta', icon: 'RB', value: 300, tier: 'alpha', image: `${PRIZE_BASE}/rayban_meta.png` },
+  { name: 'Meta Quest 3', icon: 'MQ', value: 450, tier: 'alpha', image: `${PRIZE_BASE}/meta_quest_3.png` },
+  { name: 'iPad Air', icon: 'iP', value: 500, tier: 'super_alpha', image: `${PRIZE_BASE}/ipad_air.png` },
+  { name: '5★ Fine Dining', icon: 'FD', value: 500, tier: 'super_alpha', image: `${PRIZE_BASE}/fine_dining.png` },
+  { name: 'Cruise Getaway', icon: 'CG', value: 400, tier: 'super_alpha', image: `${PRIZE_BASE}/cruise_getaway.png` },
+  { name: 'Diamond Jewelry', icon: 'DJ', value: 800, tier: 'super_alpha', image: `${PRIZE_BASE}/diamond_jewelry.png` },
+  { name: 'Luxury Vacation', icon: 'LV', value: 500, tier: 'super_alpha', image: `${PRIZE_BASE}/luxury_vacation.png` },
+  { name: '2x Tickets (7d)', icon: '2x', value: 170, tier: 'golden', image: `${PRIZE_BASE}/double_tickets.png` },
+  { name: '10 Hot Leads', icon: 'HL', value: 850, tier: 'super_alpha', image: `${PRIZE_BASE}/hot_leads.png` },
+  { name: 'ASP Elite Hoodie', icon: 'EH', value: 65, tier: 'normal', image: `${PRIZE_BASE}/asp_elite_hoodie.png` },
+  { name: 'MagSafe Charger', icon: 'MC', value: 45, tier: 'normal', image: `${PRIZE_BASE}/magsafe_charger.png` },
+  { name: 'Nike Gift Card', icon: 'NK', value: 100, tier: 'golden', image: `${PRIZE_BASE}/nike_gift_card.png` },
+  { name: 'Beats Studio', icon: 'BS', value: 200, tier: 'alpha', image: `${PRIZE_BASE}/beats_studio.png` },
+  { name: '$50 Cash Drop', icon: '$', value: 50, tier: 'normal', image: `${PRIZE_BASE}/cash_50.png` },
+  { name: 'Hydro Flask', icon: 'HF', value: 30, tier: 'normal', image: `${PRIZE_BASE}/hydro_flask.png` },
+  { name: 'Amazon $25', icon: 'AZ', value: 25, tier: 'normal', image: `${PRIZE_BASE}/amazon_25.png` },
 ];
 
 export const SPIN_TIERS = [
