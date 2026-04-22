@@ -504,7 +504,7 @@ const OpsProjectsTab = ({ acceptedDeals = [] }: OpsProjectsTabProps) => {
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                             <div className="bg-[hsl(var(--bg2))] border border-border rounded-lg p-3">
                               <div className="text-[10px] text-muted-foreground mb-1">Design Status</div>
-                              <div className="text-sm font-bold text-foreground">{p.currentMilestone >= 2 ? 'Design Complete' : 'Awaiting Survey'}</div>
+                              <div className="text-sm font-bold text-foreground">{(p.currentMilestone || 0) >= 2 ? 'Design Complete' : 'Awaiting Survey'}</div>
                             </div>
                             <div className="bg-[hsl(var(--bg2))] border border-border rounded-lg p-3">
                               <div className="text-[10px] text-muted-foreground mb-1">System Design</div>
