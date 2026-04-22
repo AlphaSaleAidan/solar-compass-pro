@@ -145,7 +145,7 @@ const InstallerPortal = () => {
     if (!selectedProjectData) return null;
     const p = selectedProjectData;
     const ms = store.getMilestoneState(p.id);
-    const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+    const funded = Math.round(p.projectCost * ((p.currentMilestone || 0) / (p.totalMilestones || 7)));
     const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
     const offset = Math.round((parseFloat(p.systemSize || '0') * 1350 / (p.annualUsage || 1)) * 100);
     const projectTickets = store.getTicketsForProject(p.id);
@@ -1089,7 +1089,7 @@ const InstallerPortal = () => {
               </div>
               {installerProjects.filter(p => p.status === 'active' || p.status === 'delayed').slice(0, 5).map(p => {
                 const ms = store.getMilestoneState(p.id);
-                const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+                const funded = Math.round(p.projectCost * ((p.currentMilestone || 0) / (p.totalMilestones || 7)));
                 const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
                 return (
                   <div key={p.id} className="px-5 py-4 border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedProject(p.id)}>
@@ -1164,7 +1164,7 @@ const InstallerPortal = () => {
             {installerProjects.map(p => {
               const isExpanded = expandedProject === p.id;
               const ms = store.getMilestoneState(p.id);
-              const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
+              const funded = Math.round(p.projectCost * ((p.currentMilestone || 0) / (p.totalMilestones || 7)));
               const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
               return (
                 <div key={p.id} className="bg-card border border-border rounded-2xl overflow-hidden card-press">
