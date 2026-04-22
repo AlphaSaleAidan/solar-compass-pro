@@ -147,7 +147,7 @@ const InstallerPortal = () => {
     const ms = store.getMilestoneState(p.id);
     const funded = Math.round(p.projectCost * (p.currentMilestone / p.totalMilestones));
     const fundedPct = Math.round((funded / Math.max(p.projectCost, 1)) * 100);
-    const offset = Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100);
+    const offset = Math.round((parseFloat(p.systemSize || '0') * 1350 / (p.annualUsage || 1)) * 100);
     const projectTickets = store.getTicketsForProject(p.id);
     const projectUploads = store.financierUploads[p.id] || [];
     const projectUpdates = store.financierUpdates[p.id] || [];
@@ -237,7 +237,7 @@ const InstallerPortal = () => {
                     <div className="flex justify-between"><span className="text-muted-foreground">System Size</span><span className="font-bold text-card-foreground">{p.systemSize}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Battery</span><span className="font-bold text-card-foreground">{p.battery}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Sold PPW</span><span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Annual Usage</span><span className="font-bold text-card-foreground">{p.annualUsage.toLocaleString()} kWh</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Annual Usage</span><span className="font-bold text-card-foreground">{(p.annualUsage || 0).toLocaleString()} kWh</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Roof</span><span className={`font-bold ${p.roofCondition === 'good' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>{p.roofCondition.replace('_', ' ')}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Inverter</span><span className="font-bold text-card-foreground">Enphase IQ8+</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Rep</span><span className="font-bold text-card-foreground">{p.repName}</span></div>
@@ -1243,9 +1243,9 @@ const InstallerPortal = () => {
                         <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-card-foreground">{p.systemSize}</span></div>
                         <div><span className="text-muted-foreground">Battery:</span> <span className="font-bold text-card-foreground">{p.battery}</span></div>
                         <div><span className="text-muted-foreground">PPW:</span> <span className="font-bold text-card-foreground">${p.soldPPW.toFixed(2)}</span></div>
-                        <div><span className="text-muted-foreground">Offset:</span> <span className={`font-bold ${Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100) >= 80 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--red))]'}`}>{Math.round((parseFloat(p.systemSize) * 1350 / p.annualUsage) * 100)}%</span></div>
+                        <div><span className="text-muted-foreground">Offset:</span> <span className={`font-bold ${Math.round((parseFloat(p.systemSize || '0') * 1350 / (p.annualUsage || 1)) * 100) >= 80 ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--red))]'}`}>{Math.round((parseFloat(p.systemSize || '0') * 1350 / (p.annualUsage || 1)) * 100)}%</span></div>
                         <div><span className="text-muted-foreground">Rep:</span> <span className="font-bold text-card-foreground">{p.repName}</span></div>
-                        <div><span className="text-muted-foreground">Usage:</span> <span className="font-bold text-card-foreground">{p.annualUsage.toLocaleString()} kWh</span></div>
+                        <div><span className="text-muted-foreground">Usage:</span> <span className="font-bold text-card-foreground">{(p.annualUsage || 0).toLocaleString()} kWh</span></div>
                         <div><span className="text-muted-foreground">Roof:</span> <span className={`font-bold ${p.roofCondition === 'good' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>{p.roofCondition.replace('_', ' ')}</span></div>
                       </div>
 
