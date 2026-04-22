@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
 import type { Project } from '@/data/mockData';
@@ -12,7 +13,59 @@ interface PipelineProps {
 
 const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
   const store = useDataSource();
-  const allProjects = [...store.projects, ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id))];
+
+  // Derive pipeline entries from converted sell projects that DON'T already
+  // exist in the real projects table (avoid duplicates / stale data).
+  const realProjectSellIds = new Set(
+    store.projects.map(p => (p as any)._sellProjectId || (p as any).sell_project_id).filter(Boolean)
+  );
+  const sellDerivedProjects: Project[] = store.sellProjects
+    .filter(sp => sp.convertedToSale && !realProjectSellIds.has(sp.id))
+    .filter(sp => !store.projects.some(rp => rp.customerName === `${sp.firstName} ${sp.lastName}`))
+    .map(sp => {
+      const sysKw = parseFloat(sp.auroraData?.systemSize || '8.4');
+      const ppw = sp.auroraData?.financier ? (sysKw > 10 ? 3.00 : 3.20) : 0;
+      return {
+        id: sp.id,
+        customerName: `${sp.firstName} ${sp.lastName}`,
+        address: sp.address || 'Pending',
+        email: sp.email || '',
+        phone: sp.phone || '',
+        systemSize: sp.auroraData?.systemSize || '8.4 kW',
+        battery: sp.auroraData?.battery || 'None',
+        financier: sp.auroraData?.financier || 'TBD',
+        monthlyPayment: sp.auroraData?.monthlyPayment || '$0',
+        soldPPW: ppw,
+        contractValue: ppw > 0 ? Math.round(sysKw * 1000 * ppw) : (sp.highBill || 200) * 12 * 20,
+        projectCost: ppw > 0 ? Math.round(sysKw * 1000 * ppw * 0.75) : (sp.highBill || 200) * 12 * 15,
+        repName: sp.repId || 'You',
+        installerName: 'Unassigned',
+        status: sp.documentsSigned ? 'active' as const : sp.approvalStatus === 'rejected' ? 'on_hold' as const : 'delayed' as const,
+        stage: !sp.qcInitialApproved ? 'QC Review' : !sp.documentsSigned ? 'Awaiting NTP' : sp.documentsSigned ? 'Active — M1' : 'Lead',
+        currentMilestone: sp.documentsSigned ? 1 : 0,
+        totalMilestones: 7,
+        documentsSignedCount: sp.documentsSigned ? 3 : 0,
+        totalDocuments: 5,
+        dates: { submitted: sp.createdAt?.slice(0, 10) || 'N/A', siteSurvey: sp.siteSurveyComplete ? 'Done' : '', sowConfirmed: '', permitSubmitted: '', lastHOContact: 'N/A' },
+        milestoneDetails: [],
+        adders: [],
+        siteSurveyPhotos: [],
+        roofCondition: 'good' as const,
+        roofIssues: [],
+        permitStatus: 'pending' as const,
+        annualUsage: 0,
+        interestRate: 0,
+        loanTerms: '',
+        addedDate: sp.createdAt?.slice(0, 10) || '',
+        checklist: sp.checklist || { creditPassed: sp.creditStatus === 'credit_passed', financeDocsSigned: !!sp.documentsSigned, welcomeCallCompleted: !!sp.welcomeCallComplete, siteSurveyDone: !!sp.siteSurveyComplete, aspOnboarding: false },
+      } as Project;
+    });
+  // Real projects first, then accepted deals, then sell-derived fallback (no dupes)
+  const allProjects = [
+    ...store.projects,
+    ...acceptedDeals.filter(d => !store.projects.some(p => p.id === d.id)),
+    ...sellDerivedProjects.filter(d => !store.projects.some(p => p.id === d.id) && !acceptedDeals.some(a => a.id === d.id)),
+  ];
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
 
   const statusColors: Record<string, string> = {
@@ -24,7 +77,7 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="space-y-4 animate-fade-in-up">
+      <div className="space-y-4 portal-section-enter">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
@@ -40,11 +93,17 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
             const ms = store.getMilestoneState(p.id);
 
             return (
-              <div
+              <motion.div
                 key={p.id}
-                className="bg-bg2 border border-border rounded-xl overflow-hidden hover:border-border2 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.05 * allProjects.indexOf(p), ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -4, scale: 1.01 }}
+                className="group relative bg-bg2 border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-[0_8px_32px_rgba(0,212,200,0.08),0_2px_8px_rgba(0,0,0,0.4)] transition-colors duration-300 ease-out cursor-pointer card-press"
                 onClick={() => setExpandedProject(expandedProject === p.id ? null : p.id)}
               >
+                {/* Glass reflection on hover */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="flex gap-px h-1">
                   {Array.from({ length: p.totalMilestones }).map((_, i) => (
                     <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : i === p.currentMilestone ? 'bg-primary/40' : 'bg-border'}`} />
@@ -176,7 +235,7 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
