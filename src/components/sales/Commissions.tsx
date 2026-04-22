@@ -57,7 +57,7 @@ const Commissions = () => {
   });
 
   return (
-    <div className="space-y-5 animate-fade-in-up">
+    <div className="space-y-5 portal-section-enter">
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-bg2 border border-border rounded-xl p-5">
