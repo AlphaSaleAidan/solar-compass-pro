@@ -105,8 +105,8 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                 {/* Glass reflection on hover */}
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="flex gap-px h-1">
-                  {Array.from({ length: p.totalMilestones }).map((_, i) => (
-                    <div key={i} className={`flex-1 ${i < p.currentMilestone ? 'bg-primary' : i === p.currentMilestone ? 'bg-primary/40' : 'bg-border'}`} />
+                  {Array.from({ length: p.totalMilestones || 7 }).map((_, i) => (
+                    <div key={i} className={`flex-1 ${i < (p.currentMilestone || 0) ? 'bg-primary' : i === (p.currentMilestone || 0) ? 'bg-primary/40' : 'bg-border'}`} />
                   ))}
                 </div>
 
@@ -119,17 +119,17 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                     <div className="text-right">
                       <div className="text-lg font-black text-asp-green">${yourComm.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
                       <div className="text-[9px] text-muted-foreground font-bold uppercase">Your Commission</div>
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide uppercase border mt-1 ${statusColors[p.status]}`}>
-                        {p.status.replace('_', ' ')}
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide uppercase border mt-1 ${statusColors[p.status] || 'bg-white/10 text-white border-white/20'}`}>
+                        {(p.status || 'unknown').replace('_', ' ')}
                       </span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-1.5 mb-3 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1"><Zap className="w-3 h-3 text-primary" /> <strong className="text-foreground">{p.systemSize}</strong></div>
-                    <div className="flex items-center gap-1"><Battery className="w-3 h-3 text-asp-green" /> <strong className="text-foreground">{p.battery}</strong></div>
+                    <div className="flex items-center gap-1"><Battery className="w-3 h-3 text-asp-green" /> <strong className="text-foreground">{p.battery || 'N/A'}</strong></div>
                     <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-muted-foreground" /> <strong className="text-foreground">{p.address.split(',')[1]?.trim()}</strong></div>
-                    <div className="flex items-center gap-1"><DollarSign className="w-3 h-3 text-asp-yellow" /> <strong className="text-foreground">${p.soldPPW}/W</strong></div>
+                    <div className="flex items-center gap-1"><DollarSign className="w-3 h-3 text-asp-yellow" /> <strong className="text-foreground">${p.soldPPW || 0}/W</strong></div>
                   </div>
 
                   {/* Milestones with tooltips */}
@@ -140,8 +140,8 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                     </div>
                     <div className="flex gap-1">
                       {MILESTONE_SOPS.map((sop, i) => {
-                        const isPassed = i < p.currentMilestone;
-                        const isCurrent = i === p.currentMilestone;
+                        const isPassed = i < (p.currentMilestone || 0);
+                        const isCurrent = i === (p.currentMilestone || 0);
                         const fundSt = ms.fundStatus[i] || 'none';
                         return (
                           <Tooltip key={i}>
@@ -182,7 +182,7 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div><span className="text-muted-foreground">Sold PPW:</span> <strong className="text-foreground">${p.soldPPW}/W</strong></div>
                           <div><span className="text-muted-foreground">Redline:</span> <strong className="text-foreground">$2.35/W</strong></div>
-                          <div><span className="text-muted-foreground">System:</span> <strong className="text-foreground">{p.systemSize} ({(parseFloat(p.systemSize) * 1000).toLocaleString()}W)</strong></div>
+                          <div><span className="text-muted-foreground">System:</span> <strong className="text-foreground">{p.systemSize || 'N/A'} ({(parseFloat(p.systemSize || '0') * 1000).toLocaleString()}W)</strong></div>
                           <div><span className="text-muted-foreground">Adders:</span> <strong className="text-foreground">${comm.adderCost.toLocaleString()}</strong></div>
                           <div><span className="text-muted-foreground">Gross:</span> <strong className="text-primary">${comm.commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
                           <div><span className="text-muted-foreground">Your Commission:</span> <strong className="text-asp-green">${yourComm.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div>
@@ -195,11 +195,11 @@ const Pipeline = ({ acceptedDeals = [] }: PipelineProps) => {
                           <div className="text-[11px] text-muted-foreground font-bold tracking-wide uppercase">Project Timeline</div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="flex items-center gap-1"><FileText className="w-3 h-3 text-muted-foreground" /> Submitted: <strong className="text-foreground">{p.dates.submitted}</strong></div>
-                          <div className="flex items-center gap-1"><Camera className="w-3 h-3 text-muted-foreground" /> Site Survey: <strong className="text-foreground">{p.dates.siteSurvey || 'Pending'}</strong></div>
-                          <div className="flex items-center gap-1"><FileText className="w-3 h-3 text-muted-foreground" /> SOW Confirmed: <strong className="text-foreground">{p.dates.sowConfirmed || 'Pending'}</strong></div>
-                          <div className="flex items-center gap-1"><Shield className="w-3 h-3 text-muted-foreground" /> Permit: <strong className="text-foreground">{p.dates.permitSubmitted || 'Pending'}</strong></div>
-                          <div className="col-span-2 flex items-center gap-1"><Phone className="w-3 h-3 text-muted-foreground" /> Last HO Contact: <strong className="text-foreground">{p.dates.lastHOContact}</strong></div>
+                          <div className="flex items-center gap-1"><FileText className="w-3 h-3 text-muted-foreground" /> Submitted: <strong className="text-foreground">{p.dates?.submitted || 'N/A'}</strong></div>
+                          <div className="flex items-center gap-1"><Camera className="w-3 h-3 text-muted-foreground" /> Site Survey: <strong className="text-foreground">{p.dates?.siteSurvey || 'Pending'}</strong></div>
+                          <div className="flex items-center gap-1"><FileText className="w-3 h-3 text-muted-foreground" /> SOW Confirmed: <strong className="text-foreground">{p.dates?.sowConfirmed || 'Pending'}</strong></div>
+                          <div className="flex items-center gap-1"><Shield className="w-3 h-3 text-muted-foreground" /> Permit: <strong className="text-foreground">{p.dates?.permitSubmitted || 'Pending'}</strong></div>
+                          <div className="col-span-2 flex items-center gap-1"><Phone className="w-3 h-3 text-muted-foreground" /> Last HO Contact: <strong className="text-foreground">{p.dates?.lastHOContact || 'N/A'}</strong></div>
                         </div>
                       </div>
 
