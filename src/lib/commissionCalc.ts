@@ -37,19 +37,20 @@ export const calculateCommission = (project: Project, splitPercent = 1.0): Commi
   const adders = Array.isArray(project.adders) ? project.adders : [];
   const adderCost = adders.reduce((s, a) => s + (a?.cost || 0), 0);
   const systemCostPerWatt = watts * redline;
-  const soldTotal = watts * project.soldPPW;
+  const soldTotal = watts * (project.soldPPW || 0);
   const commission = soldTotal - systemCostPerWatt - adderCost;
+  const dates = project.dates || { submitted: '', siteSurvey: '', sowConfirmed: '', permitSubmitted: '', lastHOContact: '' };
 
   const upfronts = UPFRONT_MILESTONES.map((um, i) => {
     const milestoneIndex = i + 1;
-    const completed = project.currentMilestone >= milestoneIndex;
+    const completed = (project.currentMilestone || 0) >= milestoneIndex;
     const completedDate = completed ? (
-      i === 0 ? project.dates.siteSurvey :
-      i === 1 ? project.dates.permitSubmitted :
-      i === 2 ? project.dates.permitSubmitted :
-      i === 3 ? project.dates.submitted :
-      i === 4 ? project.dates.submitted :
-      project.dates.submitted
+      i === 0 ? dates.siteSurvey :
+      i === 1 ? dates.permitSubmitted :
+      i === 2 ? dates.permitSubmitted :
+      i === 3 ? dates.submitted :
+      i === 4 ? dates.submitted :
+      dates.submitted
     ) : null;
     return {
       ...um,
@@ -72,7 +73,7 @@ export const calculateCommission = (project: Project, splitPercent = 1.0): Commi
     commission,
     splitPercent,
     yourCommission: commission * splitPercent,
-    status: project.currentMilestone >= 5 ? 'paid' : project.currentMilestone >= 3 ? 'pending' : 'processing',
+    status: (project.currentMilestone || 0) >= 5 ? 'paid' : (project.currentMilestone || 0) >= 3 ? 'pending' : 'processing',
     expectedPayDate: project.currentMilestone >= 5 ? 'Paid' : 'TBD',
     upfronts,
   };
