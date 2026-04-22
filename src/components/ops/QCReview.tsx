@@ -4,9 +4,12 @@ import type { SellProject } from '@/data/mockData';
 import { Zap, CheckCircle, ShieldCheck, XCircle, AlertTriangle, ChevronDown, ChevronUp, Sun, User, Mail, Phone, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { resolveAuroraData } from '@/lib/auroraDataResolver';
+import { useAuth } from '@/contexts/AuthContext';
+import { cascadeQCApproved, cascadeQCRejected } from '@/lib/notificationCascade';
 
 const QCReview = () => {
   const { sellProjects, updateSellProject } = useDataSource();
+  const { user } = useAuth();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [dirtyNotes, setDirtyNotes] = useState<Record<string, string>>({});
 
@@ -15,9 +18,11 @@ const QCReview = () => {
     p => p.convertedToSale && !p.qcInitialApproved && p.approvalStatus === 'pending'
   );
 
-  // Recently reviewed
+  // Recently reviewed — filter out legacy demo records
   const recentlyReviewed = sellProjects.filter(
-    p => p.convertedToSale && p.qcInitialApproved
+    p => p.convertedToSale && p.qcInitialApproved &&
+      !(p.firstName === 'Maria' && p.lastName === 'Gonzalez') &&
+      !(p.firstName === 'Maria' && p.lastName === 'Gonzales')
   ).slice(0, 5);
 
   const handleApproveInitialQC = (project: SellProject) => {
@@ -33,6 +38,15 @@ const QCReview = () => {
       ],
     });
     toast.success(`QC Approved — ASP documents sent to ${project.firstName} ${project.lastName}`);
+    // Trigger wave notification cascade → SR + Installer + Financier
+    if (user && !user.isDemo) {
+      cascadeQCApproved(project.id, user.id, `${project.firstName} ${project.lastName}`);
+    } else {
+      // Demo mode: simulate cascade with local toasts
+      setTimeout(() => toast.info('Sales Rep notified: Documents ready for signing'), 800);
+      setTimeout(() => toast.info('Installer notified: New project incoming'), 1600);
+      setTimeout(() => toast.info('Financier notified: Project added to portfolio'), 2400);
+    }
   };
 
   const handleRejectInitialQC = (project: SellProject) => {
@@ -44,10 +58,16 @@ const QCReview = () => {
       convertedToSale: false, // Reset back so rep can fix and re-convert
     });
     toast.error(`Deal returned to ${project.firstName} ${project.lastName} — marked dirty`);
+    // Trigger wave notification cascade → SR gets notified
+    if (user && !user.isDemo) {
+      cascadeQCRejected(project.id, user.id, `${project.firstName} ${project.lastName}`, notes);
+    } else {
+      setTimeout(() => toast.info('Sales Rep notified: Deal requires corrections'), 800);
+    }
   };
 
   return (
-    <div className="space-y-5 animate-fade-in-up">
+    <div className="space-y-5 portal-section-enter">
       <h2 className="text-lg font-black text-white flex items-center gap-2">
         <Zap className="w-5 h-5 text-primary" /> Action ASAP
       </h2>
@@ -117,10 +137,20 @@ const QCReview = () => {
                   {/* Bill info */}
                   <div className="bg-background/50 rounded-lg p-3">
                     <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase mb-2">Utility Info</div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                       <div><span className="text-muted-foreground">High Bill:</span> <span className="text-foreground font-bold">${p.highBill}</span></div>
                       <div><span className="text-muted-foreground">Low Bill:</span> <span className="text-foreground font-bold">${p.lowBill}</span></div>
                       <div><span className="text-muted-foreground">All Electric:</span> <span className="text-foreground font-bold">{p.allElectric ? 'Yes' : 'No'}</span></div>
+                    </div>
+                  </div>
+
+                  {/* QC Review Summary — quick snapshot before action */}
+                  <div className="bg-primary/5 border border-primary/15 rounded-xl p-3">
+                    <div className="text-[10px] text-primary font-bold tracking-wider uppercase mb-2 flex items-center gap-1"><Zap className="w-3 h-3" /> QC Review Summary</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                      <div><span className="text-muted-foreground">Customer:</span> <span className="text-white font-bold">{p.firstName} {p.lastName}</span></div>
+                      <div><span className="text-muted-foreground">System:</span> <span className="text-white font-bold">{resolved?.systemSize || '—'} kW</span></div>
+                      <div><span className="text-muted-foreground">Financier:</span> <span className="text-primary font-bold">{resolved?.financier || '—'}</span></div>
                     </div>
                   </div>
 
@@ -135,17 +165,17 @@ const QCReview = () => {
                     />
                   </div>
 
-                  {/* Action buttons */}
+                  {/* Action buttons — prominent with glow states */}
                   <div className="flex gap-3">
                     <button
                       onClick={() => handleApproveInitialQC(p)}
-                      className="flex-1 py-2.5 bg-[hsl(150,60%,50%)] text-black rounded-lg text-xs font-black transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                      className="flex-1 py-3 bg-[hsl(150,60%,50%)] text-black rounded-xl text-xs font-black transition-all duration-200 active:scale-[0.96] hover:shadow-[0_0_20px_rgba(34,197,94,0.4),0_0_60px_rgba(34,197,94,0.15)] hover:scale-[1.02] flex items-center justify-center gap-2"
                     >
                       <ShieldCheck className="w-4 h-4" /> Approve & Send Docs
                     </button>
                     <button
                       onClick={() => handleRejectInitialQC(p)}
-                      className="flex-1 py-2.5 bg-[hsl(0,70%,55%)]/15 text-[hsl(0,70%,55%)] border border-[hsl(0,70%,55%)]/30 rounded-lg text-xs font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                      className="flex-1 py-3 bg-[hsl(0,70%,55%)]/15 text-[hsl(0,70%,55%)] border border-[hsl(0,70%,55%)]/30 rounded-xl text-xs font-bold transition-all duration-200 active:scale-[0.96] hover:bg-[hsl(0,70%,55%)]/25 hover:shadow-[0_0_20px_rgba(239,68,68,0.3),0_0_60px_rgba(239,68,68,0.1)] hover:scale-[1.02] hover:border-[hsl(0,70%,55%)]/50 flex items-center justify-center gap-2 animate-pulse-subtle"
                     >
                       <XCircle className="w-4 h-4" /> Mark Dirty
                     </button>
