@@ -18,10 +18,10 @@ const ShopSpin = () => {
   ]);
   const prizeBase = `${import.meta.env.BASE_URL}prizes`;
   const [demoInventory, setDemoInventory] = useState([
-    { id: 'd1', name: 'ASP Stealth Tee', icon: 'ST', image: `${prizeBase}/asp_stealth_tee.png`, value: 40, tier: 'normal', sellValue: 25 },
-    { id: 'd2', name: 'ASP Snapback', icon: 'SB', image: `${prizeBase}/asp_snapback.png`, value: 25, tier: 'normal', sellValue: 15 },
-    { id: 'd3', name: 'AirPods Pro', icon: 'AP', image: `${prizeBase}/airpods_pro.png`, value: 150, tier: 'golden', sellValue: 100 },
-    { id: 'd4', name: 'ASP Elite Hoodie', icon: 'EH', image: `${prizeBase}/asp_elite_hoodie.png`, value: 65, tier: 'normal', sellValue: 40 },
+    { id: 'd1', name: 'ASP Stealth Tee', icon: 'ST', image: `${prizeBase}/asp_stealth_tee.svg`, value: 40, tier: 'normal', sellValue: 25 },
+    { id: 'd2', name: 'ASP Snapback', icon: 'SB', image: `${prizeBase}/asp_snapback.svg`, value: 25, tier: 'normal', sellValue: 15 },
+    { id: 'd3', name: 'AirPods Pro', icon: 'AP', image: `${prizeBase}/airpods_pro.svg`, value: 150, tier: 'golden', sellValue: 100 },
+    { id: 'd4', name: 'ASP Elite Hoodie', icon: 'EH', image: `${prizeBase}/asp_elite_hoodie.svg`, value: 65, tier: 'normal', sellValue: 40 },
   ]);
 
   const tickets = isDemo ? demoTickets : gamification.state.tickets;
