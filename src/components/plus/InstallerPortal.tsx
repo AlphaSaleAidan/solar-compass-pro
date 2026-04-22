@@ -323,11 +323,11 @@ const InstallerPortal = () => {
                 <div className="bg-muted/50 border border-border rounded-xl p-4">
                   <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3">Project Timeline</h3>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Submitted</span><span className="font-bold text-card-foreground">{p.dates.submitted}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Site Survey</span><span className="font-bold text-card-foreground">{p.dates.siteSurvey || 'Pending'}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">SOW Confirmed</span><span className="font-bold text-card-foreground">{p.dates.sowConfirmed || 'Pending'}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Permit</span><span className="font-bold text-card-foreground">{p.dates.permitSubmitted || 'Pending'}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Last HO Contact</span><span className="font-bold text-card-foreground">{p.dates.lastHOContact}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Submitted</span><span className="font-bold text-card-foreground">{p.dates?.submitted || 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Site Survey</span><span className="font-bold text-card-foreground">{p.dates?.siteSurvey || 'Pending'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">SOW Confirmed</span><span className="font-bold text-card-foreground">{p.dates?.sowConfirmed || 'Pending'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Permit</span><span className="font-bold text-card-foreground">{p.dates?.permitSubmitted || 'Pending'}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Last HO Contact</span><span className="font-bold text-card-foreground">{p.dates?.lastHOContact || 'N/A'}</span></div>
                   </div>
                 </div>
 
@@ -1395,7 +1395,7 @@ const InstallerPortal = () => {
                             }`}>{t.priority}</span>
                           </div>
                           <span className={`text-[10px] font-bold ${t.status === 'resolved' ? 'text-[hsl(var(--green))]' : 'text-[hsl(var(--yellow))]'}`}>
-                            {t.status.replace('_', ' ')}
+                            {((t.status || 'unknown').replace('_', ' '))}
                           </span>
                         </div>
                         <div className="text-xs font-bold text-card-foreground mb-2">
