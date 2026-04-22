@@ -54,7 +54,7 @@ const SuperSupport = () => {
   };
 
   return (
-    <div className="animate-fade-in-up" style={{ height: 'calc(100vh - 180px)' }}>
+    <div className="portal-section-enter" style={{ height: 'calc(100vh - 180px)' }}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-black text-foreground flex items-center gap-2">
           <Shield className="w-5 h-5 text-[hsl(var(--red))]" />
@@ -176,8 +176,8 @@ const SuperSupport = () => {
 
       {/* New Ticket Modal */}
       {showNewTicket && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center" onClick={() => setShowNewTicket(false)}>
-          <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-6 w-[440px] animate-scale-in" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center modal-backdrop-enter" onClick={() => setShowNewTicket(false)}>
+          <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-6 w-[440px] modal-content-enter" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-black text-foreground mb-4 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-[hsl(var(--red))]" />
               Escalate to Super Support
