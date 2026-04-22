@@ -10,6 +10,12 @@ export interface ProjectMilestoneState {
   dateEntries: Record<string, string>;
   fundStatus: Record<number, 'none' | 'pending' | 'approved' | 'released'>;
   opsNotes: Record<number, string>;
+  /** Installer marks milestone as submitted for QC review */
+  installerSubmitted: Record<number, boolean>;
+  /** Ops approval tracking per milestone */
+  opsApproved: Record<number, boolean>;
+  /** Dual approval tracking for fund releases above $10K */
+  dualApproval: Record<number, { firstApprover?: string; firstApprovedAt?: string; secondApprover?: string; secondApprovedAt?: string; required: boolean }>;
 }
 
 // Shared ticket type
@@ -43,6 +49,17 @@ export interface FinancierUpload {
   uploadedBy: string;
 }
 
+// Rejected project with routing metadata
+export interface RejectedProject {
+  project: Project;
+  reason: string;
+  rejectedBy: string;
+  rejectedByRole: 'installer' | 'financier' | 'ops';
+  rejectedAt: string;
+  originalInstaller: string;
+  originalFinancier: string;
+}
+
 // Per-project communication message
 export interface ProjectMessage {
   sender: string;
@@ -60,15 +77,17 @@ interface ProjectStoreState {
   financierUploads: Record<string, FinancierUpload[]>;
   projectMessages: Record<string, ProjectMessage[]>;
   sellProjects: SellProject[];
+  rejectedProjects: RejectedProject[];
 }
 
 interface ProjectStoreActions {
   acceptDeal: (projectId: string, updatedUsage?: number) => void;
   toggleChecklist: (projectId: string, checklistItemId: string, done: boolean) => void;
-  uploadFile: (projectId: string, checklistItemId: string, fileName: string, file?: File) => void;
+  uploadFile: (projectId: string, checklistItemId: string, fileName: string) => void;
   setTextEntry: (projectId: string, checklistItemId: string, text: string) => void;
   setDateEntry: (projectId: string, checklistItemId: string, date: string) => void;
   approveMilestone: (projectId: string, milestoneIndex: number) => void;
+  submitMilestoneForQC: (projectId: string, milestoneIndex: number) => void;
   approveFundRelease: (projectId: string, milestoneIndex: number) => void;
   releaseFund: (projectId: string, milestoneIndex: number) => void;
   setOpsNotes: (projectId: string, milestoneIndex: number, notes: string) => void;
@@ -86,6 +105,15 @@ interface ProjectStoreActions {
   addFinancierUpdate: (projectId: string, text: string, author: string) => void;
   addFinancierUpload: (projectId: string, fileName: string, type: 'document' | 'photo', uploadedBy: string) => void;
   addProjectMessage: (projectId: string, message: ProjectMessage) => void;
+  // Reject & Reassign
+  rejectProject: (projectId: string, reason: string, rejectedBy: string, rejectedByRole: 'installer' | 'financier' | 'ops') => void;
+  reassignProject: (projectId: string, field: 'installer' | 'financier', newValue: string) => void;
+  getRejectedProjects: () => RejectedProject[];
+  // Milestone lock check
+  isMilestoneLocked: (projectId: string, milestoneIndex: number) => boolean;
+  // Delete actions (cross-portal sync)
+  deleteProject: (projectId: string) => void;
+  deleteSellProject: (projectId: string) => void;
   // Sell project actions
   addSellProject: (project: SellProject) => void;
   updateSellProject: (project: SellProject) => void;
@@ -106,6 +134,9 @@ const createDefaultMilestoneState = (): ProjectMilestoneState => ({
   dateEntries: {},
   fundStatus: {},
   opsNotes: {},
+  installerSubmitted: {},
+  opsApproved: {},
+  dualApproval: {},
 });
 
 // Initial mock messages per project
@@ -168,6 +199,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
   const [financierUploads, setFinancierUploads] = useState<Record<string, FinancierUpload[]>>({});
   const [projectMessages, setProjectMessages] = useState<Record<string, ProjectMessage[]>>(INITIAL_PROJECT_MESSAGES);
   const [sellProjects, setSellProjects] = useState<SellProject[]>([...SELL_PROJECTS]);
+  const [rejectedProjects, setRejectedProjects] = useState<RejectedProject[]>([]);
 
   const getMilestoneState = useCallback((projectId: string): ProjectMilestoneState => {
     return milestoneStates[projectId] || createDefaultMilestoneState();
@@ -205,7 +237,7 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [updateMilestoneState]);
 
-  const uploadFile = useCallback((projectId: string, checklistItemId: string, fileName: string, _file?: File) => {
+  const uploadFile = useCallback((projectId: string, checklistItemId: string, fileName: string) => {
     updateMilestoneState(projectId, prev => ({
       ...prev,
       uploads: {
@@ -231,6 +263,13 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [updateMilestoneState]);
 
+  const submitMilestoneForQC = useCallback((projectId: string, milestoneIndex: number) => {
+    updateMilestoneState(projectId, prev => ({
+      ...prev,
+      installerSubmitted: { ...prev.installerSubmitted, [milestoneIndex]: true },
+    }));
+  }, [updateMilestoneState]);
+
   const approveMilestone = useCallback((projectId: string, milestoneIndex: number) => {
     setProjects(prev => prev.map(p => {
       if (p.id !== projectId) return p;
@@ -242,9 +281,12 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
         stage: sop ? sop.name : 'Completed',
       };
     }));
+    // Auto-fund: ops approval triggers automatic fund release (per ASP workflow)
     updateMilestoneState(projectId, prev => ({
       ...prev,
-      fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'pending' },
+      fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'released' },
+      // Clear installer submitted flag for next milestone
+      installerSubmitted: { ...prev.installerSubmitted, [milestoneIndex]: false },
     }));
   }, [updateMilestoneState]);
 
@@ -255,12 +297,54 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [updateMilestoneState]);
 
-  const releaseFund = useCallback((projectId: string, milestoneIndex: number) => {
-    updateMilestoneState(projectId, prev => ({
-      ...prev,
-      fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'released' },
-    }));
-  }, [updateMilestoneState]);
+  const releaseFund = useCallback((projectId: string, milestoneIndex: number, approverName?: string) => {
+    const project = projects.find(p => p.id === projectId);
+    const sop = MILESTONE_SOPS[milestoneIndex];
+    const releaseAmount = project ? Math.round(project.projectCost * ((sop?.fundPercent || 0) / 100)) : 0;
+    const DUAL_APPROVAL_THRESHOLD = 10000;
+
+    if (releaseAmount > DUAL_APPROVAL_THRESHOLD) {
+      // Check dual approval state
+      updateMilestoneState(projectId, prev => {
+        const existing = prev.dualApproval[milestoneIndex] || { required: true };
+        if (!existing.firstApprover) {
+          // First approval
+          return {
+            ...prev,
+            dualApproval: {
+              ...prev.dualApproval,
+              [milestoneIndex]: {
+                ...existing,
+                required: true,
+                firstApprover: approverName || 'Financier',
+                firstApprovedAt: new Date().toISOString(),
+              },
+            },
+          };
+        } else {
+          // Second approval — release the funds
+          return {
+            ...prev,
+            fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'released' },
+            dualApproval: {
+              ...prev.dualApproval,
+              [milestoneIndex]: {
+                ...existing,
+                secondApprover: approverName || 'Senior Financier',
+                secondApprovedAt: new Date().toISOString(),
+              },
+            },
+          };
+        }
+      });
+    } else {
+      // Under threshold — single approval release
+      updateMilestoneState(projectId, prev => ({
+        ...prev,
+        fundStatus: { ...prev.fundStatus, [milestoneIndex]: 'released' },
+      }));
+    }
+  }, [updateMilestoneState, projects]);
 
   const setOpsNotes = useCallback((projectId: string, milestoneIndex: number, notes: string) => {
     updateMilestoneState(projectId, prev => ({
@@ -345,6 +429,90 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, []);
 
+  // ─── Reject & Reassign ───────────────────────────────────────────
+  const rejectProject = useCallback((projectId: string, reason: string, rejectedBy: string, rejectedByRole: 'installer' | 'financier' | 'ops') => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    const rejected: RejectedProject = {
+      project: { ...project },
+      reason,
+      rejectedBy,
+      rejectedByRole,
+      rejectedAt: new Date().toISOString(),
+      originalInstaller: project.installerName,
+      originalFinancier: 'ASP Capital',
+    };
+    setRejectedProjects(prev => [rejected, ...prev]);
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+  }, [projects]);
+
+  const reassignProject = useCallback((projectId: string, field: 'installer' | 'financier', newValue: string) => {
+    // Find in rejected list, reassign, and move back to active
+    const rejIdx = rejectedProjects.findIndex(r => r.project.id === projectId);
+    if (rejIdx === -1) return;
+    const rejected = rejectedProjects[rejIdx];
+    const updatedProject = {
+      ...rejected.project,
+      ...(field === 'installer' ? { installerName: newValue } : {}),
+    };
+    setRejectedProjects(prev => prev.filter((_, i) => i !== rejIdx));
+    setProjects(prev => [...prev, updatedProject]);
+    // Re-create milestone state
+    setMilestoneStates(prev => ({
+      ...prev,
+      [projectId]: prev[projectId] || createDefaultMilestoneState(),
+    }));
+  }, [rejectedProjects]);
+
+  const getRejectedProjects = useCallback(() => {
+    return rejectedProjects;
+  }, [rejectedProjects]);
+
+  // Milestone lock: milestone is locked if its index > current project milestone
+  const isMilestoneLocked = useCallback((projectId: string, milestoneIndex: number): boolean => {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return true;
+    return milestoneIndex > project.currentMilestone;
+  }, [projects]);
+
+  // ─── Delete actions (cross-portal sync) ───────────────────────────
+  const deleteProject = useCallback((projectId: string) => {
+    // Remove from projects list
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+    // Remove from QC queue
+    setQcQueue(prev => prev.filter(p => p.id !== projectId));
+    // Remove milestone state
+    setMilestoneStates(prev => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
+    // Remove all tickets for this project
+    setTickets(prev => prev.filter(t => t.projectId !== projectId));
+    // Remove financier updates
+    setFinancierUpdates(prev => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
+    // Remove financier uploads
+    setFinancierUploads(prev => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
+    // Remove project messages
+    setProjectMessages(prev => {
+      const next = { ...prev };
+      delete next[projectId];
+      return next;
+    });
+  }, []);
+
+  const deleteSellProject = useCallback((projectId: string) => {
+    setSellProjects(prev => prev.filter(p => p.id !== projectId));
+  }, []);
+
   // Sell project actions
   const addSellProject = useCallback((project: SellProject) => {
     setSellProjects(prev => [project, ...prev]);
@@ -361,7 +529,14 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
     // Add to main projects pipeline (installer/financier visible)
     const sp = sellProjects.find(p => p.id === projectId);
-    if (sp && sp.auroraData) {
+    if (sp) {
+      const aurora = sp.auroraData || {
+        systemSize: 'Pending Aurora Sync',
+        battery: 'TBD',
+        financier: 'TBD',
+        monthlyPayment: '$0',
+        adders: [],
+      };
       const newProject: Project = {
         id: `ASP-${2060 + projects.length}`,
         customerName: `${sp.firstName} ${sp.lastName}`,
@@ -371,18 +546,18 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
         status: 'active',
         currentMilestone: 0,
         totalMilestones: 7,
-        systemSize: sp.auroraData.systemSize,
-        battery: sp.auroraData.battery,
+        systemSize: aurora.systemSize,
+        battery: aurora.battery,
         soldPPW: 4.25,
-        contractValue: 0,
-        projectCost: 0,
+        contractValue: parseFloat(aurora.monthlyPayment.replace(/[^0-9.]/g, '')) * 300 || 28000,
+        projectCost: parseFloat(aurora.monthlyPayment.replace(/[^0-9.]/g, '')) * 300 || 28000,
         interestRate: 2.99,
         loanTerms: '25 year @ 2.99%',
         repName: 'Jordan Mills',
         installerName: 'SunTech Installations',
         addedDate: new Date().toISOString().split('T')[0],
         stage: 'Contract Signed',
-        adders: sp.auroraData.adders.map(a => ({ name: a.split(' (')[0], cost: parseInt(a.match(/\$(\d+)/)?.[1] || '0') * 100 })),
+        adders: aurora.adders.map(a => ({ name: a.split(' (')[0], cost: parseInt(a.match(/\$(\d+)/)?.[1] || '0') * 100 })),
         siteSurveyPhotos: [],
         permitStatus: 'pending',
         roofCondition: 'good',
@@ -431,12 +606,14 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     financierUploads,
     projectMessages,
     sellProjects,
+    rejectedProjects,
     acceptDeal,
     toggleChecklist,
     uploadFile,
     setTextEntry,
     setDateEntry,
     approveMilestone,
+    submitMilestoneForQC,
     approveFundRelease,
     releaseFund,
     setOpsNotes,
@@ -452,6 +629,12 @@ export const ProjectStoreProvider = ({ children }: { children: ReactNode }) => {
     addFinancierUpdate,
     addFinancierUpload,
     addProjectMessage,
+    rejectProject,
+    reassignProject,
+    getRejectedProjects,
+    isMilestoneLocked,
+    deleteProject,
+    deleteSellProject,
     addSellProject,
     updateSellProject,
     markSellProjectClean,
