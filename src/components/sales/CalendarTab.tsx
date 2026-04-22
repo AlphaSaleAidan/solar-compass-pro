@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { APPOINTMENTS } from '@/data/mockData';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Plus, Star, Clock, MapPin, Phone, Mail, ChevronDown, ChevronUp, Camera, FileText, MessageSquare, ArrowRight } from 'lucide-react';
 
 interface CalendarTabProps {
@@ -15,35 +16,110 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
   const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
   const [appointments, setAppointments] = useState(isDemo ? APPOINTMENTS : []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ── Supabase: fetch appointments for production users ──
+  const fetchAppointments = useCallback(async () => {
+    if (!user || user.isDemo) return;
+    const { data } = await supabase
+      .from('appointments')
+      .select('*')
+      .order('appointment_date', { ascending: false });
+    if (data) {
+      setAppointments(data.map((a: any) => ({
+        id: a.id,
+        name: a.customer_name,
+        address: a.address,
+        phone: a.phone || '',
+        email: a.email || '',
+        date: a.appointment_date,
+        time: a.appointment_time,
+        highBill: a.high_bill || 0,
+        lowBill: a.low_bill || 0,
+        allElectric: a.all_electric || false,
+        stars: a.stars || 0,
+        setter: a.setter || '',
+        closer: a.closer,
+        status: a.status || 'open',
+        gotBill: (a.high_bill || 0) > 0,
+        gotContact: !!(a.phone && a.email),
+        bothHomeowners: false,
+        meterPhoto: false,
+        billOver250: (a.high_bill || 0) > 250,
+        outcome: a.outcome,
+        closerNotes: a.closer_notes || '',
+        billPhoto: null as string | null,
+        meterPhotoUrl: null as string | null,
+        surveyPhotos: [] as string[],
+      })));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
+
+  // ── Real-time subscription for live updates ──
+  useEffect(() => {
+    if (!user || user.isDemo) return;
+    const channel = supabase
+      .channel('appointments-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
+        fetchAppointments();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, fetchAppointments]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newAppt = {
-      id: Date.now(),
-      name: form.name,
-      address: form.address,
-      phone: form.phone,
-      email: form.email,
-      date: form.date,
-      time: form.time,
-      highBill: Number(form.highBill) || 0,
-      lowBill: Number(form.lowBill) || 0,
-      allElectric: form.allElectric === 'yes',
-      stars: 0,
-      setter: 'You',
-      closer: null as string | null,
-      status: 'open',
-      gotBill: false,
-      gotContact: !!(form.phone && form.email),
-      bothHomeowners: false,
-      meterPhoto: false,
-      billOver250: Number(form.highBill) > 250,
-      outcome: null as string | null,
-      closerNotes: '',
-      billPhoto: null as string | null,
-      meterPhotoUrl: null as string | null,
-      surveyPhotos: [] as string[],
-    };
-    setAppointments(prev => [newAppt, ...prev]);
+
+    if (user && !user.isDemo) {
+      // Production: insert into Supabase
+      const { error } = await supabase.from('appointments').insert({
+        customer_name: form.name,
+        address: form.address,
+        phone: form.phone || null,
+        email: form.email || null,
+        appointment_date: form.date,
+        appointment_time: form.time,
+        high_bill: Number(form.highBill) || null,
+        low_bill: Number(form.lowBill) || null,
+        all_electric: form.allElectric === 'yes',
+        setter: user.name,
+        rep_id: user.id,
+        status: 'open',
+      });
+      if (error) console.error('Failed to create appointment:', error);
+      // Real-time subscription will refresh the list
+    } else {
+      // Demo: local state only
+      const newAppt = {
+        id: Date.now(),
+        name: form.name,
+        address: form.address,
+        phone: form.phone,
+        email: form.email,
+        date: form.date,
+        time: form.time,
+        highBill: Number(form.highBill) || 0,
+        lowBill: Number(form.lowBill) || 0,
+        allElectric: form.allElectric === 'yes',
+        stars: 0,
+        setter: 'You',
+        closer: null as string | null,
+        status: 'open',
+        gotBill: false,
+        gotContact: !!(form.phone && form.email),
+        bothHomeowners: false,
+        meterPhoto: false,
+        billOver250: Number(form.highBill) > 250,
+        outcome: null as string | null,
+        closerNotes: '',
+        billPhoto: null as string | null,
+        meterPhotoUrl: null as string | null,
+        surveyPhotos: [] as string[],
+      };
+      setAppointments(prev => [newAppt, ...prev]);
+    }
     setShowNewAppt(false);
     setForm({ name: '', address: '', phone: '', email: '', highBill: '', lowBill: '', allElectric: 'yes', date: '', time: '' });
   };
@@ -52,8 +128,11 @@ const CalendarTab = ({ onConvertToProject }: CalendarTabProps) => {
     return [appt.gotBill, appt.gotContact, appt.bothHomeowners, appt.meterPhoto, appt.billOver250].filter(Boolean).length;
   };
 
-  const setOutcome = (apptId: number, outcome: string) => {
+  const setOutcome = async (apptId: number | string, outcome: string) => {
     setAppointments(prev => prev.map(a => a.id === apptId ? { ...a, outcome } : a));
+    if (user && !user.isDemo) {
+      await supabase.from('appointments').update({ outcome }).eq('id', apptId);
+    }
   };
 
   const outcomeColors: Record<string, string> = {
