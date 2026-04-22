@@ -1,12 +1,16 @@
 import { useState, useRef } from 'react';
 import { useDataSource } from '@/contexts/DataSourceProvider';
 import { MILESTONE_SOPS } from '@/data/milestoneSOP';
+import MilestoneTimeline from '@/components/shared/MilestoneTimeline';
 import { MILESTONE_NAMES } from '@/data/mockData';
 import OpsNotesTextarea from '@/components/ops/OpsNotesTextarea';
 import { CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronRight, Shield, Zap, FileText, Camera, Send, Flag, Eye, Upload, ClipboardCheck, Clock, MessageSquare } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { cascadeMilestoneVerified } from '@/lib/notificationCascade';
 
 const MilestoneVerification = () => {
   const store = useDataSource();
+  const { user } = useAuth();
   const { projects } = store;
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [expandedMilestone, setExpandedMilestone] = useState<{ projectId: string; idx: number } | null>(null);
@@ -37,7 +41,7 @@ const MilestoneVerification = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!pendingUpload || !e.target.files?.length) return;
     const file = e.target.files[0];
-    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, file.name, file);
+    store.uploadFile(pendingUpload.projectId, pendingUpload.itemId, file.name);
     setPendingUpload(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -138,6 +142,10 @@ const MilestoneVerification = () => {
               {/* Expanded Detail */}
               {isExpanded && (
                 <div className="border-t border-border">
+                  {/* M1-M7 Visual Timeline */}
+                  <div className="px-5 pt-3">
+                    <MilestoneTimeline currentMilestone={p.currentMilestone} fundStatus={milestoneState.fundStatus} compact />
+                  </div>
                   {/* Project Quick Info */}
                   <div className="px-5 py-3 bg-[hsl(var(--bg3))]/50 border-b border-border grid grid-cols-5 gap-4 text-xs">
                     <div><span className="text-muted-foreground">System:</span> <span className="font-bold text-foreground">{p.systemSize}</span></div>
@@ -289,7 +297,7 @@ const MilestoneVerification = () => {
                                           {item.requiresDate && (
                                             <div className="mt-2">
                                               {dateEntry ? (
-                                                <div className="text-[10px] text-[hsl(var(--green))] font-bold">📅 {dateEntry}</div>
+                                                <div className="text-[10px] text-[hsl(var(--green))] font-bold">{dateEntry}</div>
                                               ) : (
                                                 <input
                                                   type="date"
@@ -313,7 +321,15 @@ const MilestoneVerification = () => {
                                     </div>
                                     <button
                                       disabled={!allReady}
-                                      onClick={() => store.approveMilestone(p.id, milestoneIdx)}
+                                      onClick={() => {
+                                        store.approveMilestone(p.id, milestoneIdx);
+                                        // Wave → Financier + Installer notified
+                                        if (user && !user.isDemo) {
+                                          const mNames = ['SOW Confirmed', 'Permit + Materials', 'Install Scheduled', 'Install Complete', 'Utility Inspection', 'PTO Granted', 'Speed Bonus'];
+                                          const pcts = ['15%', '20%', '15%', '20%', '20%', '10%', '5%'];
+                                          cascadeMilestoneVerified(p.id, user.id, p.customerName || `Project ${p.id}`, mNames[milestoneIdx] || `M${milestoneIdx+1}`, pcts[milestoneIdx] || '');
+                                        }
+                                      }}
                                       className="px-4 py-2 bg-[hsl(var(--green))]/15 text-[hsl(var(--green))] border border-[hsl(var(--green))]/30 rounded-lg text-xs font-bold hover:bg-[hsl(var(--green))]/25 transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5"
                                     >
                                       <ClipboardCheck className="w-3.5 h-3.5" /> Approve M{milestoneIdx + 1} & Queue Fund Release
@@ -370,7 +386,7 @@ const MilestoneVerification = () => {
 
       {/* Report Writing Modal */}
       {reportModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center" onClick={() => setReportModal(null)}>
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center modal-backdrop-enter" onClick={() => setReportModal(null)}>
           <div className="bg-[hsl(var(--bg2))] border border-border rounded-xl p-6 w-[500px] animate-scale-in" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-black text-foreground mb-1 flex items-center gap-2">
               <FileText className="w-4 h-4 text-[hsl(var(--blue))]" />
