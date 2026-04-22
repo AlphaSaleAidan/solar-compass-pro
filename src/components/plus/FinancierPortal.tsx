@@ -234,11 +234,11 @@ const FinancierPortal = () => {
             <div className="bg-muted/50 border border-border rounded-xl p-4">
               <h3 className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-3">Project Timeline</h3>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex justify-between"><span className="text-muted-foreground">Submitted</span><span className="font-bold text-card-foreground">{p.dates.submitted}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Site Survey</span><span className="font-bold text-card-foreground">{p.dates.siteSurvey || 'Pending'}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">SOW Confirmed</span><span className="font-bold text-card-foreground">{p.dates.sowConfirmed || 'Pending'}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Permit</span><span className="font-bold text-card-foreground">{p.dates.permitSubmitted || 'Pending'}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Last HO Contact</span><span className="font-bold text-card-foreground">{p.dates.lastHOContact}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Submitted</span><span className="font-bold text-card-foreground">{p.dates?.submitted || 'N/A'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Site Survey</span><span className="font-bold text-card-foreground">{p.dates?.siteSurvey || 'Pending'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">SOW Confirmed</span><span className="font-bold text-card-foreground">{p.dates?.sowConfirmed || 'Pending'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Permit</span><span className="font-bold text-card-foreground">{p.dates?.permitSubmitted || 'Pending'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Last HO Contact</span><span className="font-bold text-card-foreground">{p.dates?.lastHOContact || 'N/A'}</span></div>
               </div>
             </div>
 
@@ -812,7 +812,7 @@ const FinancierPortal = () => {
                         p.status === 'delayed' ? 'bg-[hsl(var(--yellow))]/10 text-[hsl(var(--yellow))] border-[hsl(var(--yellow))]/25' :
                         p.status === 'on_hold' ? 'bg-[hsl(var(--red))]/10 text-[hsl(var(--red))] border-[hsl(var(--red))]/25' :
                         'bg-primary/10 text-primary border-primary/25'
-                      }`}>{p.status.replace('_', ' ')}</span>
+                      }`}>{((p.status || 'unknown').replace('_', ' '))}</span>
                     </div>
                   </div>
 
