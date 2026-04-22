@@ -24,7 +24,7 @@ const ExecutiveDashboard = () => {
 
     // Average milestone position
     const avgMilestone = projects.length > 0
-      ? projects.reduce((s, p) => s + p.currentMilestone, 0) / projects.length
+      ? projects.reduce((s, p) => s + (p.currentMilestone || 0), 0) / projects.length
       : 0;
 
     // QC stats
