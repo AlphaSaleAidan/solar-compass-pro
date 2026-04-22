@@ -94,9 +94,14 @@ const AppHeader = ({ activeTab, onTabChange }: AppHeaderProps) => {
     return tab;
   };
 
-  const aspTabs = user.role === 'sales_rep'
-    ? ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', 'Alpha', 'Activity']
-    : ['Executive', 'QC Review', 'Final Approval', 'Milestones', 'Projects', 'Communication', 'Super Support', 'Activity'];
+  const salesTabs = ['Dashboard', 'Pipeline', 'Commissions', 'Calendar', 'Rankings', 'Alpha', 'Activity'];
+  const opsTabs = ['Executive', 'QC Review', 'Final Approval', 'Milestones', 'Projects', 'Communication', 'Super Support', 'Activity'];
+  // Master and backend_ops get the Admin tab
+  if (isMaster || user.role === 'backend_ops') {
+    if (user.role === 'sales_rep') salesTabs.push('Admin');
+    else opsTabs.push('Admin');
+  }
+  const aspTabs = user.role === 'sales_rep' ? salesTabs : opsTabs;
 
   const aspPlusTabs = user.role === 'financier'
     ? ['Portal', 'Activity']
