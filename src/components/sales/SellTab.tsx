@@ -170,15 +170,18 @@ const SellTab = ({ initialProjectData }: SellTabProps) => {
     credit_fail: sellProjects.filter(p => p.creditStatus === 'credit_fail').length,
   };
 
-  // Sold deals data (simulated from credit_passed projects)
-  const soldDeals = sellProjects.filter(p => p.creditStatus === 'credit_passed').map(p => ({
-    ...p,
-    systemSize: `${(8 + Math.random() * 5).toFixed(1)} kW`,
-    ppw: (4.0 + Math.random() * 0.5).toFixed(2),
-    financier: ['GoodLeap', 'Sunlight Financial', 'Mosaic'][Math.floor(Math.random() * 3)],
-    battery: 'Duracell 20kW',
-    terms: '25 year @ 2.99%',
-  }));
+  // Sold deals data — pull from aurora_data when available, else show project fields
+  const soldDeals = sellProjects.filter(p => p.creditStatus === 'credit_passed').map(p => {
+    const ad = (p as any).auroraData || {};
+    return {
+      ...p,
+      systemSize: ad.systemSize || (p as any).systemSize || 'Pending',
+      ppw: ad.ppw || (p as any).ppw || 'N/A',
+      financier: ad.financier || (p as any).financier || 'Pending',
+      battery: ad.battery || 'N/A',
+      terms: ad.terms || '25 year @ 2.99%',
+    };
+  });
 
   return (
     <div className="relative min-h-[calc(100vh-58px)] overflow-hidden">
