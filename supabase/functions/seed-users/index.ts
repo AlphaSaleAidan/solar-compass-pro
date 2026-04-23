@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     },
     {
       email: "mpierce@alphasale.co",
-      password: "ASP26!Temp",
+      password: "ASP-Admin-2026!",
       full_name: "M. Pierce",
       role: "master" as const,
       platform_access: ["sales_rep", "backend_ops", "installer", "financier"],
