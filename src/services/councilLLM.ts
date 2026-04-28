@@ -75,7 +75,8 @@ function buildContext(
 
   // Run council analysis for live findings
   const analysis = runCouncilAnalysis(projects, sellProjects, milestoneStates);
-  const councilFindings = analysis.findings.slice(0, 15).map(f =>
+  const allFindings = analysis.reports.flatMap(r => r.findings);
+  const councilFindings = allFindings.slice(0, 15).map(f =>
     `[${f.severity.toUpperCase()}] ${AGENTS[f.agentId].name}: ${f.title} — ${f.description}${f.recommendation ? ` → ${f.recommendation}` : ''}`
   ).join('\n');
 
@@ -88,14 +89,14 @@ function buildContext(
   const activeProjects = projects.filter(p => p.status === 'active').length;
   const totalValue = projects.reduce((s, p) => s + (p.contractValue || 0), 0);
   const pendingDeals = sellProjects.filter(sp => !sp.convertedToSale).length;
-  const criticalFindings = analysis.findings.filter(f => f.severity === 'critical' || f.severity === 'high').length;
+  const criticalFindings = allFindings.filter(f => f.severity === 'critical' || f.severity === 'high').length;
 
   const summary = [
     `Alpha Sale Pro — Live Operations Summary`,
     `Active projects: ${activeProjects} | Total pipeline: $${totalValue.toLocaleString()}`,
     `Pending deals: ${pendingDeals} | Converted: ${sellProjects.filter(sp => sp.convertedToSale).length}`,
-    `Council findings: ${analysis.findings.length} total, ${criticalFindings} critical/high`,
-    `Agents: ${Object.values(analysis.agents).map(a => `${a.name} (${a.findings} findings)`).join(', ')}`,
+    `Council findings: ${allFindings.length} total, ${criticalFindings} critical/high`,
+    `Agents: ${analysis.reports.map(r => `${r.agent.name} (${r.findings.length} findings)`).join(', ')}`,
   ].join('\n');
 
   return { summary, projectDetails, dealDetails, milestoneDetails, councilFindings, sopReference };

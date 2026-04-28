@@ -209,9 +209,9 @@ export const SPIN_PRIZES = [
   { name: 'ASP Shades', icon: 'SH', value: 55, tier: 'normal', image: `${PRIZE_BASE}/asp_shades.svg` },
   { name: 'AirPods Pro', icon: 'AP', value: 150, tier: 'golden', image: `${PRIZE_BASE}/airpods_pro.svg` },
   { name: 'Apple Pencil', icon: 'PE', value: 120, tier: 'golden', image: `${PRIZE_BASE}/apple_pencil.svg` },
-  { name: '$85 Cash Drop', icon: '$', value: 85, tier: 'normal', image: `${PRIZE_BASE}/cash_85.png` },
+  { name: '$85 Cash Drop', icon: '$', value: 85, tier: 'normal', image: `${PRIZE_BASE}/cash_85.svg` },
   { name: 'Ray-Ban Meta', icon: 'RB', value: 300, tier: 'alpha', image: `${PRIZE_BASE}/rayban_meta.svg` },
-  { name: 'Meta Quest 3', icon: 'MQ', value: 450, tier: 'alpha', image: `${PRIZE_BASE}/meta_quest_3.png` },
+  { name: 'Meta Quest 3', icon: 'MQ', value: 450, tier: 'alpha', image: `${PRIZE_BASE}/meta_quest_3.svg` },
   { name: 'iPad Air', icon: 'iP', value: 500, tier: 'super_alpha', image: `${PRIZE_BASE}/ipad_air.svg` },
   { name: '5★ Fine Dining', icon: 'FD', value: 500, tier: 'super_alpha', image: `${PRIZE_BASE}/fine_dining.svg` },
   { name: 'Cruise Getaway', icon: 'CG', value: 400, tier: 'super_alpha', image: `${PRIZE_BASE}/cruise_getaway.svg` },
@@ -223,9 +223,9 @@ export const SPIN_PRIZES = [
   { name: 'MagSafe Charger', icon: 'MC', value: 45, tier: 'normal', image: `${PRIZE_BASE}/magsafe_charger.svg` },
   { name: 'Nike Gift Card', icon: 'NK', value: 100, tier: 'golden', image: `${PRIZE_BASE}/nike_gift_card.svg` },
   { name: 'Beats Studio', icon: 'BS', value: 200, tier: 'alpha', image: `${PRIZE_BASE}/beats_studio.svg` },
-  { name: '$50 Cash Drop', icon: '$', value: 50, tier: 'normal', image: `${PRIZE_BASE}/cash_50.png` },
+  { name: '$50 Cash Drop', icon: '$', value: 50, tier: 'normal', image: `${PRIZE_BASE}/cash_50.svg` },
   { name: 'Hydro Flask', icon: 'HF', value: 30, tier: 'normal', image: `${PRIZE_BASE}/hydro_flask.svg` },
-  { name: 'Amazon $25', icon: 'AZ', value: 25, tier: 'normal', image: `${PRIZE_BASE}/amazon_25.png` },
+  { name: 'Amazon $25', icon: 'AZ', value: 25, tier: 'normal', image: `${PRIZE_BASE}/amazon_25.svg` },
 ];
 
 export const SPIN_TIERS = [
