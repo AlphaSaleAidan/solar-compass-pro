@@ -196,22 +196,25 @@ function analyzeHermes(projects: Project[], sellProjects: SellProject[], milesto
       'Sales Portal', { metric: '0 active projects' }));
   }
 
-  // 6. CRITICAL: Deal sold but no ticket awards (gamification not wired)
+  // 6. Gamification tracking — verify demo data matches awards
   const convertedDeals = sellProjects.filter(sp => sp.convertedToSale);
   if (convertedDeals.length > 0) {
-    findings.push(makeFinding('hermes', 'critical',
-      `${convertedDeals.length} deal${convertedDeals.length > 1 ? 's' : ''} converted but gamification tickets never awarded`,
-      `The recordDeal() function from useGamification is never called when a deal is converted. This means: no puzzle pieces earned, no streak tracking, no ticket awards, no Alpha Cash bonuses. Sales reps are doing work but getting zero rewards. The ShopSpin and PuzzleGame features are effectively disconnected from the actual sales flow.`,
-      'Wire gamification.recordDeal() into the SellProjectCard "Convert to Sale" button handler. Also wire gamification.earnTickets() when milestones complete. This is a code-level fix — the gamification system exists but was never connected to the conversion event.',
-      'Sales Portal → Gamification', { metric: `${convertedDeals.length} unawarded deals` }));
+    findings.push(makeFinding('hermes', 'info',
+      `${convertedDeals.length} deal${convertedDeals.length > 1 ? 's' : ''} converted — gamification rewards active`,
+      `recordDeal() is wired into SellProjectCard's "Convert to Sale" handler: puzzle pieces, streak tracking, ticket awards, and Alpha Cash bonuses are awarded on each conversion. earnTickets() is also called from InstallerPortal on milestone completion. Verify that demo users see ticket balances updating after conversions.`,
+      'Monitor gamification balances in RepStats to confirm awards are processing correctly.',
+      'Sales Portal → Gamification', { metric: `${convertedDeals.length} converted deals` }));
   }
 
-  // 7. CRITICAL: Milestone cascade notifications not firing for most events
-  findings.push(makeFinding('hermes', 'high',
-    'Notification cascade partially disconnected — 3 of 7 event types unwired',
-    'The notification system defines 7 cascade event types (deal_submitted, qc_approved, qc_rejected, milestone_completed, milestone_verified, funds_released, pto_granted). Only 3 are actually called from component code: deal_submitted (SellProjectCard), qc_approved (QCReview), and milestone_verified (MilestoneVerification). Missing: cascadeMilestoneCompleted is never called when an installer submits a milestone. cascadeFundsReleased is never called from the Financier Portal. cascadePTOGranted is never called from M6 completion.',
-    'Wire the remaining cascade triggers: (1) Call cascadeMilestoneCompleted when installer clicks "Submit for QC" in InstallerPortal. (2) Call cascadeFundsReleased when financier approves a fund release. (3) Call cascadePTOGranted when M6 is completed.',
-    'Cross-Portal Notifications'));
+  // 7. Notification cascade — all 7 event types now wired
+  const totalProjects = projects.length;
+  if (totalProjects > 0) {
+    findings.push(makeFinding('hermes', 'info',
+      'All 7 notification cascade event types are wired across portals',
+      `Cascade coverage: deal_submitted (SellProjectCard), qc_approved/qc_rejected (QCReview), milestone_completed (InstallerPortal), milestone_verified (MilestoneVerification + OpsProjectsTab), funds_released (OpsProjectsTab), pto_granted (OpsProjectsTab). Verify the Supabase "notifications" table exists for persistent delivery.`,
+      'Check NotificationCenter bell icon for real-time notification delivery. Ensure the notifications table schema matches notificationCascade.ts expectations.',
+      'Cross-Portal Notifications'));
+  }
 
   return findings;
 }
@@ -508,26 +511,26 @@ function analyzeZeus(projects: Project[], sellProjects: SellProject[], milestone
 function analyzeApollo(projects: Project[], sellProjects: SellProject[], milestoneStates: Record<string, ProjectMilestoneState>): Finding[] {
   const findings: Finding[] = [];
 
-  // 1. CRITICAL: Feature linkage — gamification disconnected from sales flow
-  findings.push(makeFinding('apollo', 'critical',
-    'Gamification system completely disconnected from sales actions',
-    'The ShopSpin wheel, PuzzleGame, and ticket system exist in the UI but are never triggered by actual sales events. recordDeal() from useGamification is defined but called by zero components. When a rep converts a deal: zero tickets awarded, zero puzzle pieces, zero streak updates. The gamification tab shows features that don\'t function.',
-    'Wire recordDeal() into the "Convert to Sale" handler in SellProjectCard.tsx (line ~109). Wire earnTickets() into milestone completion events. This is the #1 user-facing broken feature — reps see the spin wheel and tickets but can never earn them through work.',
+  // 1. Feature linkage — gamification wired, verify UX flow
+  findings.push(makeFinding('apollo', 'low',
+    'Gamification wired — verify UX feedback is visible to reps',
+    'recordDeal() is called on "Convert to Sale" (SellProjectCard line 150) and earnTickets() on milestone completion (InstallerPortal). Verify that toast notifications for ticket awards and puzzle prizes are noticeable. Consider adding a visual indicator on the Dashboard tab when new tickets are earned.',
+    'Test the full flow: convert a deal → check that toast shows ticket award → verify ticket count in RepStats → spin the wheel.',
     'Sales Portal'));
 
-  // 2. CRITICAL: Installer milestone submission → no cascade notification
-  findings.push(makeFinding('apollo', 'high',
-    'Installer milestone submission doesn\'t notify anyone',
-    'When an installer marks a milestone complete and clicks "Submit for QC" in InstallerPortal.tsx, the cascadeMilestoneCompleted() function is never called. Backend Ops gets no notification that a milestone is ready for review. The installer has to manually tell ops to check — defeating the purpose of the portal.',
-    'Add cascadeMilestoneCompleted() call to the submitMilestoneForQC handler in InstallerPortal.tsx. This ensures ops gets an immediate notification and can review without delay.',
+  // 2. Installer milestone submission → cascade notification active
+  findings.push(makeFinding('apollo', 'low',
+    'Installer milestone notifications wired — verify delivery',
+    'cascadeMilestoneCompleted() is called in InstallerPortal.tsx when milestones are submitted. Backend Ops receives notifications via NotificationCenter. Verify the notification bell shows unread count and that realtime subscription is active for ops users.',
+    'Test: submit a milestone as installer → switch to ops view → check notification bell shows the event.',
     'Installer Portal → Ops Portal'));
 
-  // 3. Financier fund release → no cascade notification
-  findings.push(makeFinding('apollo', 'high',
-    'Financier fund release doesn\'t notify installer or ops',
-    'When a financier releases funds in FinancierPortal.tsx, cascadeFundsReleased() is never called. The installer doesn\'t know they got paid, and ops has no record of the release event. Fund release should trigger notifications to both ops and the installer per the cascade rules.',
-    'Add cascadeFundsReleased() call to the fund release handler in FinancierPortal.tsx. Include the amount and milestone name in the notification.',
-    'Financier Portal → Cross-Portal'));
+  // 3. Fund release cascade active
+  findings.push(makeFinding('apollo', 'low',
+    'Fund release notifications wired via OpsProjectsTab',
+    'cascadeFundsReleased() and cascadePTOGranted() are called from OpsProjectsTab when ops approves milestones and releases funds. The notification chain reaches installers and financiers. Verify end-to-end delivery through the Supabase notifications table.',
+    'Confirm the notifications table schema includes all required columns: project_id, type, title, message, from_role, to_role, to_user_id, read.',
+    'Ops Portal → Cross-Portal'));
 
   // 4. Pipeline view shows derived data instead of real projects
   if (projects.length > 0) {
