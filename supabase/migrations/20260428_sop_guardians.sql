@@ -30,29 +30,21 @@ CREATE TABLE IF NOT EXISTS sop_guardian_runs (
 ALTER TABLE sop_violations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sop_guardian_runs ENABLE ROW LEVEL SECURITY;
 
--- Backend ops and master can see all violations
 CREATE POLICY "Ops and master read violations"
   ON sop_violations FOR SELECT
-  USING (EXISTS (
-    SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('backend_ops', 'master')
-  ));
+  USING (has_role(auth.uid(), 'backend_ops'::app_role) OR has_role(auth.uid(), 'master'::app_role));
 
 CREATE POLICY "Ops and master update violations"
   ON sop_violations FOR UPDATE
-  USING (EXISTS (
-    SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('backend_ops', 'master')
-  ));
+  USING (has_role(auth.uid(), 'backend_ops'::app_role) OR has_role(auth.uid(), 'master'::app_role));
 
--- Server can insert violations (service role bypasses RLS)
 CREATE POLICY "Service insert violations"
   ON sop_violations FOR INSERT
   WITH CHECK (true);
 
 CREATE POLICY "Ops and master read guardian runs"
   ON sop_guardian_runs FOR SELECT
-  USING (EXISTS (
-    SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('backend_ops', 'master')
-  ));
+  USING (has_role(auth.uid(), 'backend_ops'::app_role) OR has_role(auth.uid(), 'master'::app_role));
 
 CREATE POLICY "Service insert guardian runs"
   ON sop_guardian_runs FOR INSERT
