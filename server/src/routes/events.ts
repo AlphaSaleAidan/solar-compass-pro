@@ -8,6 +8,7 @@
 
 import { Router, Request, Response } from 'express';
 import { processEvent, TRIGGER_MAP, type PipelineEvent, type EventType } from '../events/pipeline';
+import { requireAuth, type AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
 
 const router = Router();
@@ -27,8 +28,9 @@ const EventSchema = z.object({
 /**
  * POST /api/events
  * Process a pipeline event with full trigger chain
+ * Requires authenticated user
  */
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const parsed = EventSchema.parse(req.body);
     const event: PipelineEvent = {
@@ -59,8 +61,9 @@ router.post('/', async (req: Request, res: Response) => {
 /**
  * GET /api/events/triggers
  * List all triggers, their required variables, and side effects
+ * Requires authenticated user to prevent info disclosure
  */
-router.get('/triggers', (_req: Request, res: Response) => {
+router.get('/triggers', requireAuth, (_req: Request, res: Response) => {
   const triggers = Object.entries(TRIGGER_MAP).map(([type, config]) => ({
     event: type,
     ...config,
@@ -71,8 +74,9 @@ router.get('/triggers', (_req: Request, res: Response) => {
 /**
  * GET /api/events/flow
  * Full sequencing flow — what triggers what
+ * Requires authenticated user to prevent info disclosure
  */
-router.get('/flow', (_req: Request, res: Response) => {
+router.get('/flow', requireAuth, (_req: Request, res: Response) => {
   const flows = Object.entries(TRIGGER_MAP).map(([type, config]) => ({
     event: type,
     triggers: config.nextEvents,

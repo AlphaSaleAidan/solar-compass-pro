@@ -29,23 +29,29 @@ import eventRoutes from './routes/events';
 import webhookRoutes from './routes/webhooks';
 import authRoutes from './routes/auth';
 import { startCronJobs } from './jobs/crons';
+import { rateLimit } from './middleware/auth';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
+const isProd = process.env.NODE_ENV === 'production';
 
 // ─── Middleware ────────────────────────────────────────────
 app.use(helmet());
-app.use(cors({
-  origin: [
-    'https://alphasalepro.com',
-    'https://www.alphasalepro.com',
-    'http://localhost:5173',    // Vite dev
-    'http://localhost:8080',    // Lovable dev
-  ],
-  credentials: true,
-}));
-app.use(morgan('combined'));
+
+const allowedOrigins = [
+  'https://alphasalepro.com',
+  'https://www.alphasalepro.com',
+];
+if (!isProd) {
+  allowedOrigins.push('http://localhost:5173', 'http://localhost:8080');
+}
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+
+app.use(morgan(isProd ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
+
+// Global rate limit: 200 requests per minute per IP
+app.use(rateLimit({ windowMs: 60_000, max: 200 }));
 
 // ─── Routes ───────────────────────────────────────────────
 app.use('/api/health', healthRoutes);
@@ -57,7 +63,7 @@ app.use('/api/auth', authRoutes);
 app.get('/', (_req, res) => {
   res.json({
     name: 'Alpha Sale Pro — Backend API',
-    version: '1.0.0',
+    version: '1.0.3',
     docs: {
       health: '/api/health',
       buckets: '/api/health/buckets',

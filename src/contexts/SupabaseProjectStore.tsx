@@ -296,29 +296,37 @@ export const SupabaseProjectStoreProvider = ({ children }: { children: ReactNode
   useEffect(() => {
     if (!user || user.isDemo) return;
     const fetchTickets = async () => {
-      const { data: ticketRows } = await supabase.from('tickets').select('*').order('created_at', { ascending: false });
+      const [ticketResult, msgResult] = await Promise.all([
+        supabase.from('tickets').select('*').order('created_at', { ascending: false }),
+        supabase.from('ticket_messages').select('*').order('created_at', { ascending: true }),
+      ]);
+      const ticketRows = ticketResult.data;
+      const allMessages = msgResult.data || [];
       if (!ticketRows) return;
-      
-      const mapped: SharedTicket[] = [];
-      for (const t of ticketRows) {
-        const { data: msgs } = await supabase.from('ticket_messages').select('*').eq('ticket_id', t.id).order('created_at');
-        mapped.push({
-          id: t.id,
-          projectId: t.project_id || '',
-          subject: t.subject,
-          priority: t.priority as any,
-          status: t.status as any,
-          createdAt: t.created_at?.split('T')[0] || '',
-          createdBy: t.created_by_role || 'unknown',
-          createdByRole: t.created_by_role || 'ops',
-          messages: (msgs || []).map((m: any) => ({
-            sender: m.sender_name || 'User',
-            role: m.sender_role || 'ops',
-            text: m.message,
-            time: new Date(m.created_at).toLocaleString(),
-          })),
-        });
+
+      const msgsByTicket = new Map<string, typeof allMessages>();
+      for (const m of allMessages) {
+        const arr = msgsByTicket.get(m.ticket_id) || [];
+        arr.push(m);
+        msgsByTicket.set(m.ticket_id, arr);
       }
+
+      const mapped: SharedTicket[] = ticketRows.map(t => ({
+        id: t.id,
+        projectId: t.project_id || '',
+        subject: t.subject,
+        priority: t.priority as any,
+        status: t.status as any,
+        createdAt: t.created_at?.split('T')[0] || '',
+        createdBy: t.created_by_role || 'unknown',
+        createdByRole: t.created_by_role || 'ops',
+        messages: (msgsByTicket.get(t.id) || []).map((m: any) => ({
+          sender: m.sender_name || 'User',
+          role: m.sender_role || 'ops',
+          text: m.message,
+          time: new Date(m.created_at).toLocaleString(),
+        })),
+      }));
       setTickets(mapped);
     };
     fetchTickets();

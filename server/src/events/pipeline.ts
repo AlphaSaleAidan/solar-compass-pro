@@ -655,19 +655,20 @@ async function onDealConverted(event: PipelineEvent) {
   
   if (!sp) return;
 
-  // Create ops project
+  // Create ops project — column names match actual Supabase schema
+  const customerName = [sp.first_name, sp.last_name].filter(Boolean).join(' ') || sp.customer_name || 'Unknown';
   const { data: project } = await supabase
     .from('projects')
     .insert({
-      customer_name: sp.customer_name,
+      customer_name: customerName,
       address: sp.address,
-      system_size: sp.system_size,
-      pipeline_stage: 'in_pipeline',
+      system_size: sp.system_size || 0,
       current_milestone: 0,
-      status: 'in_pipeline',
-      qc_status: 'pending',
-      sales_rep_id: sp.created_by,
-      source: 'sell_pipeline',
+      total_milestones: 7,
+      status: 'active',
+      rep_id: sp.rep_id || sp.created_by,
+      sell_project_id: sell_project_id,
+      organization_id: sp.organization_id,
     })
     .select('id')
     .single();

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, ArrowLeft, CheckCircle, ShieldCheck } from 'lucide-react';
@@ -58,8 +58,13 @@ const Register = () => {
 
     if (inviteToken && inviteValid) {
       // Invited user: create Supabase auth account directly
-      if (!password || password.length < 6) {
-        setError('Password must be at least 6 characters');
+      if (!password || password.length < 8) {
+        setError('Password must be at least 8 characters');
+        setIsLoading(false);
+        return;
+      }
+      if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+        setError('Password must include at least one uppercase letter and one number');
         setIsLoading(false);
         return;
       }
@@ -163,15 +168,13 @@ const Register = () => {
               ? 'Your account has been created. Check your email to confirm, then log in.'
               : 'Your registration request has been submitted. An admin will review and approve your access.'}
           </motion.p>
-          <motion.a
-            href="/"
-            className="text-primary text-sm font-bold hover:underline"
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            ← Back to Login
-          </motion.a>
+            <Link to="/login" className="text-primary text-sm font-bold hover:underline">← Back to Login</Link>
+          </motion.div>
         </motion.div>
       </div>
     );
@@ -200,15 +203,15 @@ const Register = () => {
           transition={{ delay: 0.2, duration: 0.8 }}
         />
 
-        <motion.a
-          href="/"
-          className="flex items-center gap-1.5 text-gray-500 text-xs font-bold mb-6 hover:text-primary transition-colors"
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
-        </motion.a>
+          <Link to="/login" className="flex items-center gap-1.5 text-gray-500 text-xs font-bold mb-6 hover:text-primary transition-colors">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Login
+          </Link>
+        </motion.div>
 
         <div className="text-center mb-6">
           <motion.div
@@ -277,7 +280,7 @@ const Register = () => {
               <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required
                 className="w-full px-4 py-3 rounded-md text-sm outline-none transition-all duration-200 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                 style={inputStyle}
-                placeholder="Choose a password (6+ characters)" />
+                placeholder="8+ chars, uppercase + number required" />
             </motion.div>
           )}
 

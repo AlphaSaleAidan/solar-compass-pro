@@ -9,6 +9,7 @@
 import { Router, Request, Response } from 'express';
 import { processEvent, type PipelineEvent } from '../events/pipeline';
 import { supabase } from '../config/supabase';
+import { requireWebhookSecret, requireStripeSignature } from '../middleware/auth';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ const router = Router();
  * POST /api/webhooks/aurora
  * Receive project data from Aurora Solar
  */
-router.post('/aurora', async (req: Request, res: Response) => {
+router.post('/aurora', requireWebhookSecret, async (req: Request, res: Response) => {
   try {
     const data = req.body;
 
@@ -63,7 +64,7 @@ router.post('/aurora', async (req: Request, res: Response) => {
  * POST /api/webhooks/docusign
  * Receive envelope status updates from DocuSign
  */
-router.post('/docusign', async (req: Request, res: Response) => {
+router.post('/docusign', requireWebhookSecret, async (req: Request, res: Response) => {
   try {
     const { event: dsEvent, data } = req.body;
 
@@ -96,7 +97,7 @@ router.post('/docusign', async (req: Request, res: Response) => {
  * POST /api/webhooks/stripe
  * Receive payment events from Stripe
  */
-router.post('/stripe', async (req: Request, res: Response) => {
+router.post('/stripe', requireStripeSignature, async (req: Request, res: Response) => {
   try {
     const { type, data } = req.body;
 

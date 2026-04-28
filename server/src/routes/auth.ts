@@ -13,9 +13,17 @@ import { Router, Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { sendEmail, getAppUrl, isMailerConfigured } from '../services/mailer';
 import { passwordResetEmail, passwordChangedEmail } from '../templates/passwordReset';
+import { rateLimit, requireAuth } from '../middleware/auth';
 import { z } from 'zod';
 
 const router = Router();
+
+// Strict rate limit on auth endpoints: 5 requests per 15 minutes per IP
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60_000,
+  max: 5,
+  message: 'Too many requests. Please try again in 15 minutes.',
+});
 
 const ForgotPasswordSchema = z.object({
   email: z.string().email(),
@@ -34,7 +42,7 @@ const PasswordChangeNotifySchema = z.object({
  * 3. Rewrites the redirect URL to point to our frontend
  * 4. Sends branded ASP email via Resend
  */
-router.post('/forgot-password', async (req: Request, res: Response) => {
+router.post('/forgot-password', authRateLimit, async (req: Request, res: Response) => {
   try {
     const { email } = ForgotPasswordSchema.parse(req.body);
     const appUrl = getAppUrl();
@@ -96,12 +104,12 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       }
     } else {
       console.warn('[auth] Mailer not configured — recovery link generated but not emailed');
-      console.log('[auth] Recovery link (dev only):', resetUrl);
+      if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
+        console.log('[auth] Recovery link (dev only):', resetUrl);
+      }
       
       // In dev/staging without Resend, fall back to Supabase's built-in email
-      // by calling resetPasswordForEmail with the anon client
-      // This sends Supabase's default email but at least the user gets a link
-      const { createClient } = require('@supabase/supabase-js');
+      const { createClient } = await import('@supabase/supabase-js');
       const anonClient = createClient(
         process.env.SUPABASE_URL!,
         process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || '',
@@ -115,7 +123,6 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     return res.json({
       success: true,
       message: 'If an account exists with that email, a reset link has been sent.',
-      mailerConfigured: isMailerConfigured(),
     });
 
   } catch (err: any) {
@@ -133,7 +140,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
  * Called after a successful password update to send a confirmation email.
  * Optional — nice-to-have for security notifications.
  */
-router.post('/password-changed', async (req: Request, res: Response) => {
+router.post('/password-changed', requireAuth, async (req: Request, res: Response) => {
   try {
     const { email, userName } = PasswordChangeNotifySchema.parse(req.body);
 

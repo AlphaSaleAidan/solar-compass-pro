@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -168,8 +169,8 @@ const Login = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.55 }}
         >
-          <a href="/forgot-password" className="text-gray-500 text-xs hover:text-primary transition-colors">Forgot Password?</a>
-          <a href="/register" className="text-primary text-xs font-bold hover:underline transition-colors">Request Access →</a>
+          <Link to="/forgot-password" className="text-gray-500 text-xs hover:text-primary transition-colors">Forgot Password?</Link>
+          <Link to="/register" className="text-primary text-xs font-bold hover:underline transition-colors">Request Access →</Link>
         </motion.div>
 
         {/* Version tag */}

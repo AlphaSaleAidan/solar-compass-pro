@@ -103,15 +103,16 @@ export function startCronJobs() {
         if (p.current_milestone >= 4) repStats[rep].installs++;
       }
 
-      // Upsert leaderboard
-      for (const [userId, stats] of Object.entries(repStats)) {
-        await supabase.from('leaderboard').upsert({
-          user_id: userId,
-          deals_count: stats.deals,
-          installs_count: stats.installs,
-          revenue: stats.revenue,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
+      // Batch upsert leaderboard in one call
+      const rows = Object.entries(repStats).map(([userId, stats]) => ({
+        user_id: userId,
+        deals_count: stats.deals,
+        installs_count: stats.installs,
+        revenue: stats.revenue,
+        updated_at: new Date().toISOString(),
+      }));
+      if (rows.length > 0) {
+        await supabase.from('leaderboard').upsert(rows, { onConflict: 'user_id' });
       }
     } catch (err) {
       console.error('❌ Leaderboard refresh failed:', err);

@@ -20,7 +20,7 @@ router.get('/', async (_req: Request, res: Response) => {
 
   res.json({
     status: 'ok',
-    version: '1.0.2',
+    version: '1.0.3',
     timestamp: new Date().toISOString(),
     database: dbStatus,
     buckets: Object.keys(STORAGE_BUCKETS).length,

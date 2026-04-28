@@ -84,7 +84,7 @@ const RouteTransition = ({ children }: { children: React.ReactNode }) => (
 const AppContent = () => {
   const location = useLocation();
   return (
-    <Suspense fallback={<div className="min-h-screen" />}>
+    <Suspense fallback={<LoadingScreen />}>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<RouteTransition><LandingPage /></RouteTransition>} />
