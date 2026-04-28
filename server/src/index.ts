@@ -27,6 +27,7 @@ import healthRoutes from './routes/health';
 import eventRoutes from './routes/events';
 import webhookRoutes from './routes/webhooks';
 import authRoutes from './routes/auth';
+import councilRoutes from './routes/council';
 import { startCronJobs } from './jobs/crons';
 import { rateLimit } from './middleware/auth';
 
@@ -57,6 +58,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/council', councilRoutes);
 
 // ─── Root ─────────────────────────────────────────────────
 app.get('/', (_req, res) => {

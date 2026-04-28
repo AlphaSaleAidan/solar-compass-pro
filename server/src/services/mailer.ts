@@ -50,15 +50,15 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
       }),
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as Record<string, unknown>;
 
     if (!response.ok) {
       console.error('[mailer] Resend API error:', data);
-      return { success: false, error: data.message || 'Failed to send email' };
+      return { success: false, error: (data.message as string) || 'Failed to send email' };
     }
 
     console.log(`[mailer] Email sent to ${options.to} — id: ${data.id}`);
-    return { success: true, id: data.id };
+    return { success: true, id: data.id as string };
   } catch (err: any) {
     console.error('[mailer] Send error:', err.message);
     return { success: false, error: err.message };

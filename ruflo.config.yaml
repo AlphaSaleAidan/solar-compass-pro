@@ -1,0 +1,76 @@
+name: alpha-sale-pro
+version: "1.0.0"
+description: AI Council agents for Alpha Sale Pro solar operations platform
+
+agents:
+  - name: ui-inspector
+    role: >
+      Scans alphasalepro.com frontend for visual bugs, broken layouts,
+      missing error states, accessibility issues, and UX problems.
+      Reports findings in a structured list with file and line number.
+    focus:
+      - src/components/
+      - src/pages/
+    model: claude-haiku-4-5-20251001
+    maxTokens: 1000
+
+  - name: code-auditor
+    role: >
+      Scans for TypeScript errors, security issues, dead code, performance
+      problems, and architectural concerns across frontend and backend.
+    focus:
+      - src/
+      - server/src/
+    model: claude-haiku-4-5-20251001
+    maxTokens: 1000
+
+  - name: backend-operator
+    role: >
+      Monitors Supabase schema, RLS policies, API routes, data integrity,
+      and server health. Checks for missing indexes, policy gaps, and
+      data consistency issues.
+    focus:
+      - supabase/
+      - server/src/routes/
+      - server/src/config/
+    model: claude-haiku-4-5-20251001
+    maxTokens: 1000
+
+  - name: user-comms
+    role: >
+      Answers user questions about the Alpha Sale Pro platform, solar
+      installation process, deal status, milestones, and project details
+      with up-to-date context from Supabase.
+    focus:
+      - src/contexts/
+      - src/data/
+    model: claude-haiku-4-5-20251001
+    maxTokens: 1000
+    dataAccess:
+      - projects
+      - sell_projects
+      - milestone_states
+
+  - name: code-repair
+    role: >
+      Reads findings from UI Inspector and Code Auditor, then automatically
+      fixes each issue — broken imports, missing null checks, layout bugs,
+      TypeScript errors. Commits changes with descriptive messages.
+    focus:
+      - src/
+    model: claude-haiku-4-5-20251001
+    maxTokens: 1000
+    dependsOn:
+      - ui-inspector
+      - code-auditor
+
+costControls:
+  model: claude-haiku-4-5-20251001
+  maxTokensPerResponse: 1000
+  dailyCallsPerUser: 50
+  usageTracking: supabase
+
+gates:
+  roles:
+    - backend_ops
+    - master
