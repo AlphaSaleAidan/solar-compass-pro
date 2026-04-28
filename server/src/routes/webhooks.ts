@@ -1,15 +1,14 @@
 /**
  * Webhook Routes — External Integration Endpoints
- * 
+ *
  * POST /api/webhooks/aurora   — Aurora Solar project sync
  * POST /api/webhooks/docusign — DocuSign envelope status
- * POST /api/webhooks/stripe   — Payment events
  */
 
 import { Router, Request, Response } from 'express';
 import { processEvent, type PipelineEvent } from '../events/pipeline';
 import { supabase } from '../config/supabase';
-import { requireWebhookSecret, requireStripeSignature } from '../middleware/auth';
+import { requireWebhookSecret } from '../middleware/auth';
 
 const router = Router();
 
@@ -89,43 +88,6 @@ router.post('/docusign', requireWebhookSecret, async (req: Request, res: Respons
     res.json({ received: true });
   } catch (err) {
     console.error('DocuSign webhook error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-/**
- * POST /api/webhooks/stripe
- * Receive payment events from Stripe
- */
-router.post('/stripe', requireStripeSignature, async (req: Request, res: Response) => {
-  try {
-    const { type, data } = req.body;
-
-    if (type === 'payment_intent.succeeded') {
-      const projectId = data.object?.metadata?.project_id;
-      const milestoneIndex = data.object?.metadata?.milestone_index;
-
-      if (projectId && milestoneIndex !== undefined) {
-        const event: PipelineEvent = {
-          type: 'FUND_RELEASE_APPROVED',
-          timestamp: new Date().toISOString(),
-          actor: { userId: 'system', role: 'system', name: 'Stripe' },
-          projectId,
-          data: {
-            fund_release_id: data.object?.metadata?.fund_release_id,
-            approved_by: 'system',
-            payment_reference: data.object?.id,
-            amount: data.object?.amount / 100,
-          },
-        };
-
-        await processEvent(event);
-      }
-    }
-
-    res.json({ received: true });
-  } catch (err) {
-    console.error('Stripe webhook error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -12,7 +12,6 @@
  *   GET  /api/events/flow      — Full data flow sequences
  *   POST /api/webhooks/aurora  — Aurora Solar webhook
  *   POST /api/webhooks/docusign— DocuSign webhook
- *   POST /api/webhooks/stripe  — Stripe payment webhook
  *   POST /api/auth/forgot-password — Custom branded password reset
  *   POST /api/auth/password-changed — Password change confirmation
  *   GET  /api/auth/config           — Auth system status

@@ -64,44 +64,6 @@ export function requireWebhookSecret(req: Request, res: Response, next: NextFunc
 }
 
 /**
- * Stripe signature verification
- */
-export function requireStripeSignature(req: Request, res: Response, next: NextFunction) {
-  const sig = req.headers['stripe-signature'] as string;
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!endpointSecret) {
-    console.warn('[auth] STRIPE_WEBHOOK_SECRET not configured — rejecting');
-    return res.status(500).json({ error: 'Stripe webhook not configured' });
-  }
-
-  if (!sig) {
-    return res.status(401).json({ error: 'Missing Stripe signature' });
-  }
-
-  // Timestamp-based replay protection (Stripe scheme: t=timestamp,v1=signature)
-  try {
-    const elements = sig.split(',');
-    const timestampEl = elements.find(e => e.startsWith('t='));
-    if (timestampEl) {
-      const timestamp = parseInt(timestampEl.slice(2), 10);
-      const tolerance = 300; // 5 minutes
-      const now = Math.floor(Date.now() / 1000);
-      if (Math.abs(now - timestamp) > tolerance) {
-        return res.status(401).json({ error: 'Webhook timestamp too old' });
-      }
-    }
-  } catch {
-    // If parsing fails, let the signature check below handle it
-  }
-
-  // For full signature verification, use the Stripe SDK:
-  // stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret)
-  // For now we do header presence + timestamp check; upgrade when stripe SDK is added
-  next();
-}
-
-/**
  * In-memory sliding window rate limiter
  */
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
