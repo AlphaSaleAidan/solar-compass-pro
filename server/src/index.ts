@@ -28,6 +28,7 @@ import eventRoutes from './routes/events';
 import webhookRoutes from './routes/webhooks';
 import authRoutes from './routes/auth';
 import councilRoutes from './routes/council';
+import sopRoutes from './routes/sop';
 import { startCronJobs } from './jobs/crons';
 import { rateLimit } from './middleware/auth';
 
@@ -59,6 +60,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/council', councilRoutes);
+app.use('/api/sop', sopRoutes);
 
 // ─── Root ─────────────────────────────────────────────────
 app.get('/', (_req, res) => {

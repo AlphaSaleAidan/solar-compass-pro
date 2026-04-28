@@ -18,11 +18,15 @@ import { streamCouncilChat, fetchUsage, type UsageInfo } from '@/services/counci
 import {
   Shield, Activity, ChevronRight, Send, ArrowLeft,
   Loader2, AlertTriangle, AlertCircle, Info, CheckCircle2,
-  Zap, Eye, RefreshCw, X, Lock,
+  Zap, Eye, RefreshCw, X, Lock, Radar, Check, MoreHorizontal,
 } from 'lucide-react';
+import {
+  GUARDIAN_AGENTS, runFullScan, fetchViolations, updateViolation,
+  type Violation, type SwarmScanResult,
+} from '@/services/sopGuardianClient';
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
-type Tab = 'chat' | 'dashboard';
+type Tab = 'chat' | 'dashboard' | 'guardians';
 
 // ─── Shared Components ──────────────────────────────────────────────
 
@@ -106,7 +110,7 @@ const CouncilDashboard = () => {
               </div>
               <div>
                 <h1 className="text-xl font-black tracking-tight">The Pantheon</h1>
-                <p className="text-xs text-gray-500 font-medium">AI Council • 4 Agents</p>
+                <p className="text-xs text-gray-500 font-medium">AI Council • 4 Agents + 7 Guardians</p>
               </div>
             </div>
 
@@ -114,6 +118,7 @@ const CouncilDashboard = () => {
               {([
                 { id: 'chat' as Tab, icon: Send, label: 'Chat' },
                 { id: 'dashboard' as Tab, icon: Activity, label: 'Dashboard' },
+                { id: 'guardians' as Tab, icon: Radar, label: 'Guardians' },
               ]).map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -145,6 +150,8 @@ const CouncilDashboard = () => {
             sellProjects={sellProjects}
             milestoneStates={milestoneStates}
           />
+        ) : activeTab === 'guardians' ? (
+          <GuardiansView />
         ) : (
           <DashboardView projects={projects} sellProjects={sellProjects} milestoneStates={milestoneStates} />
         )}
@@ -577,6 +584,210 @@ const FindingCard = ({ finding, index, showAgent }: { finding: Finding; index: n
         )}
       </AnimatePresence>
     </motion.div>
+  );
+};
+
+// ─── Guardians View ────────────────────────────────────────────────
+
+const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+const SEVERITY_COLORS: Record<string, string> = {
+  critical: 'bg-red-500/10 border-red-500/20 text-red-400',
+  high: 'bg-orange-500/10 border-orange-500/20 text-orange-400',
+  medium: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400',
+  low: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+};
+
+const GuardiansView = () => {
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<SwarmScanResult | null>(null);
+  const [violations, setViolations] = useState<Violation[]>([]);
+  const [error, setError] = useState('');
+  const [filter, setFilter] = useState<string>('all');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const loadViolations = useCallback(async () => {
+    try {
+      const data = await fetchViolations();
+      setViolations(data.violations);
+    } catch {}
+  }, []);
+
+  useEffect(() => { loadViolations(); }, [loadViolations]);
+
+  const handleScan = async () => {
+    setScanning(true);
+    setError('');
+    try {
+      const result = await runFullScan();
+      setScanResult(result);
+      await loadViolations();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Scan failed');
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const handleResolve = async (id: string, status: 'acknowledged' | 'resolved') => {
+    setUpdatingId(id);
+    try {
+      await updateViolation(id, status);
+      setViolations(prev => prev.map(v => v.id === id ? { ...v, status } : v));
+    } catch {}
+    setUpdatingId(null);
+  };
+
+  const filteredViolations = useMemo(() => {
+    const sorted = [...violations].sort((a, b) =>
+      (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9)
+    );
+    if (filter === 'all') return sorted;
+    return sorted.filter(v => v.agent_id === filter);
+  }, [violations, filter]);
+
+  const agentEntries = Object.entries(GUARDIAN_AGENTS);
+  const agentViolationCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const v of violations) counts[v.agent_id] = (counts[v.agent_id] || 0) + 1;
+    return counts;
+  }, [violations]);
+
+  return (
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-6 space-y-6">
+      {/* Scan Controls */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-black">SOP Guardian Swarm</h2>
+          <p className="text-xs text-gray-500 mt-0.5">7 agents protecting your pipeline integrity</p>
+        </div>
+        <button onClick={handleScan} disabled={scanning}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white text-sm font-bold hover:from-purple-500 hover:to-cyan-500 transition-all disabled:opacity-50">
+          {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radar className="w-4 h-4" />}
+          {scanning ? 'Scanning...' : 'Run Full Scan'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
+          {error}
+        </div>
+      )}
+
+      {/* Scan Result Summary */}
+      {scanResult && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <div className="text-2xl font-black">{scanResult.totalViolations}</div>
+            <div className="text-[10px] text-gray-500 font-bold uppercase mt-1">Total Violations</div>
+          </div>
+          <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10">
+            <div className="text-2xl font-black text-red-400">{scanResult.criticalCount}</div>
+            <div className="text-[10px] text-red-400/60 font-bold uppercase mt-1">Critical</div>
+          </div>
+          <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/10">
+            <div className="text-2xl font-black text-orange-400">{scanResult.highCount}</div>
+            <div className="text-[10px] text-orange-400/60 font-bold uppercase mt-1">High</div>
+          </div>
+          <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <div className="text-2xl font-black text-cyan-400">{scanResult.durationMs}ms</div>
+            <div className="text-[10px] text-gray-500 font-bold uppercase mt-1">Scan Time</div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Agent Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {agentEntries.map(([id, agent]) => {
+          const count = agentViolationCounts[id] || 0;
+          const isActive = filter === id;
+          const scanAgent = scanResult?.agents.find(a => a.agentId === id);
+          return (
+            <button key={id} onClick={() => setFilter(isActive ? 'all' : id)}
+              className={`p-3 rounded-xl border text-left transition-all ${
+                isActive
+                  ? 'bg-white/[0.08] border-white/20'
+                  : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04]'
+              }`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-lg">{agent.icon}</span>
+                {count > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] font-bold">
+                    {count}
+                  </span>
+                )}
+              </div>
+              <div className="text-xs font-bold truncate">{agent.name}</div>
+              <div className="text-[10px] text-gray-500 mt-0.5 line-clamp-2">{agent.description}</div>
+              {scanAgent && (
+                <div className="text-[10px] text-gray-600 mt-1">{scanAgent.durationMs}ms</div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Violations List */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-gray-400">
+            {filter === 'all' ? 'All Open Violations' : `${GUARDIAN_AGENTS[filter]?.name} Violations`}
+            <span className="text-gray-600 ml-2">({filteredViolations.length})</span>
+          </h3>
+          {filter !== 'all' && (
+            <button onClick={() => setFilter('all')} className="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold">
+              Show All
+            </button>
+          )}
+        </div>
+
+        {filteredViolations.length === 0 && (
+          <div className="text-center py-12 text-gray-600 text-sm">
+            {violations.length === 0 ? 'No violations found. Run a scan to check.' : 'No violations for this filter.'}
+          </div>
+        )}
+
+        <AnimatePresence mode="popLayout">
+          {filteredViolations.map(v => (
+            <motion.div key={v.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+              className={`p-4 rounded-xl border ${SEVERITY_COLORS[v.severity] || 'bg-white/[0.03] border-white/[0.06]'}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-mono font-bold opacity-60">{v.rule_code}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase opacity-80">{v.severity}</span>
+                    {v.status === 'acknowledged' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold">ACK</span>
+                    )}
+                  </div>
+                  <div className="text-sm font-bold mb-1">{v.title}</div>
+                  <div className="text-xs opacity-70 leading-relaxed">{v.description}</div>
+                  <div className="text-[10px] text-gray-600 mt-1.5">
+                    {GUARDIAN_AGENTS[v.agent_id]?.icon} {GUARDIAN_AGENTS[v.agent_id]?.name} • {new Date(v.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {v.status === 'open' && (
+                    <button onClick={() => handleResolve(v.id, 'acknowledged')}
+                      disabled={updatingId === v.id}
+                      className="p-1.5 rounded-lg bg-white/[0.06] border border-white/10 hover:bg-white/[0.1] transition-all"
+                      title="Acknowledge">
+                      {updatingId === v.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
+                  <button onClick={() => handleResolve(v.id, 'resolved')}
+                    disabled={updatingId === v.id}
+                    className="p-1.5 rounded-lg bg-white/[0.06] border border-white/10 hover:bg-emerald-500/20 hover:border-emerald-500/30 transition-all"
+                    title="Resolve">
+                    {updatingId === v.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 };
 

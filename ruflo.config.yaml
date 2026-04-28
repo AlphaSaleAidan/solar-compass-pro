@@ -64,6 +64,44 @@ agents:
       - ui-inspector
       - code-auditor
 
+# ─── SOP Guardian Swarm ─────────────────────────────────────
+
+guardians:
+  - name: lead-gatekeeper
+    rule: Validates leads before conversion — credit check, Aurora sync, required fields
+    checks: [LG-001, LG-002, LG-003, LG-004, LG-005]
+    tables: [sell_projects]
+
+  - name: qc-inspector
+    rule: Enforces clean/dirty gate — SLA timing, rejection notes, document signing
+    checks: [QC-001, QC-002, QC-003]
+    tables: [sell_projects]
+
+  - name: milestone-sequencer
+    rule: Guards M1→M7 sequential progression — no skips, no unapproved advances
+    checks: [MS-001, MS-002, MS-003]
+    tables: [projects, milestone_states]
+
+  - name: fund-controller
+    rule: Validates fund release — ops approval, dual approval for >$10K, percentage limits
+    checks: [FC-001, FC-002, FC-003]
+    tables: [projects, milestone_states]
+
+  - name: doc-auditor
+    rule: Checks required document uploads per milestone before approval
+    checks: [DA-001]
+    tables: [projects, milestone_states]
+
+  - name: data-integrity
+    rule: Schema consistency — orphaned records, missing states, invalid milestone numbers
+    checks: [DI-001, DI-002, DI-003]
+    tables: [projects, sell_projects, milestone_states]
+
+  - name: notification-enforcer
+    rule: SLA timing — overdue reviews, speed bonus window, homeowner contact cadence
+    checks: [NE-001, NE-002, NE-003]
+    tables: [projects]
+
 costControls:
   model: claude-haiku-4-5-20251001
   maxTokensPerResponse: 1000
