@@ -28,6 +28,10 @@ jobs:
       - run: npm ci --legacy-peer-deps
 
       - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_GK_ENC: ${{ secrets.VITE_GK_ENC }}
 
       # SPA fix: copy index.html as 404.html so all routes resolve
       - run: cp dist/index.html dist/404.html
